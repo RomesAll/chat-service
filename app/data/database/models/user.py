@@ -1,19 +1,9 @@
-from enum import Enum
 from typing import Iterable
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from base import BaseOrm
-from uuid import UUID, uuid4
-import pprint
+from uuid import UUID
 
-class UserFields(str, Enum):
-    ID = 'id'
-    USER_NAME = 'user_name'
-    BIO = 'bio'
-    YEARS_OLD = 'years_old'
-    EMAIL = 'email'
-    IS_DELETED = 'is_deleted'
-    PASSWORD = 'password'
 
 class UserOrm(BaseOrm):
     __tablename__ = 'user'
@@ -33,7 +23,7 @@ class UserOrm(BaseOrm):
 
     def to_dict(
             self,
-            exclude: Iterable[UserFields] | None = None,
+            exclude: Iterable[str] | None = None,
             uuid_is_str: bool = False
     ):
         serializers_data = {
@@ -47,7 +37,7 @@ class UserOrm(BaseOrm):
         }
         if not exclude:
             return serializers_data
-        exclude_data = {field.value for field in exclude}
+        exclude_data = {field for field in exclude}
         return {
             field : value
             for field, value in serializers_data.items()
