@@ -1,5 +1,5 @@
 from typing import Iterable
-from sqlalchemy import String
+from sqlalchemy import String, UUID as PUUID
 from sqlalchemy.orm import Mapped, mapped_column
 from base import BaseOrm
 from uuid import UUID
@@ -7,7 +7,7 @@ from uuid import UUID
 
 class UserOrm(BaseOrm):
     __tablename__ = 'user'
-    id: Mapped[UUID] = mapped_column(primary_key=True, unique=True)
+    id: Mapped[UUID] = mapped_column(PUUID, primary_key=True, unique=True)
     user_name: Mapped[str] = mapped_column(unique=True)
     bio: Mapped[str] = mapped_column(String(100), default='')
     years_old: Mapped[int]
