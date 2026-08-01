@@ -1,18 +1,15 @@
-from typing import Iterable
-from sqlalchemy import String, UUID as PUUID
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-from base import BaseOrm
-from uuid import UUID
+from base import BaseOrm, IdMixin, TimeStampMixin
 
 
-class UserOrm(BaseOrm):
+class UserOrm(BaseOrm, IdMixin, TimeStampMixin):
+    """Orm модель для пользователей"""
     __tablename__ = 'user'
-    id: Mapped[UUID] = mapped_column(PUUID, primary_key=True, unique=True)
     user_name: Mapped[str] = mapped_column(unique=True)
     bio: Mapped[str] = mapped_column(String(100), default='')
     years_old: Mapped[int]
     email: Mapped[str] = mapped_column(primary_key=True, unique=True)
-    is_deleted: Mapped[bool] = mapped_column(default=False)
     password: Mapped[str]
 
     def __repr__(self):
@@ -20,34 +17,3 @@ class UserOrm(BaseOrm):
 
     def __str__(self):
         return f'Пользователь {self.user_name} ({self.years_old} лет)'
-
-    def to_dict(
-            self,
-            exclude: Iterable[str] | None = None,
-            uuid_is_str: bool = False
-    ):
-        serializers_data = {
-            'id': str(self.id) if uuid_is_str else self.id,
-            'user_name': self.user_name,
-            'bio': self.bio,
-            'years_old': self.years_old,
-            'email': self.email,
-            'is_deleted': self.is_deleted,
-            'password': self.password
-        }
-        if not exclude:
-            return serializers_data
-        exclude_data = {field for field in exclude}
-        return {
-            field : value
-            for field, value in serializers_data.items()
-            if field not in exclude_data
-        }
-
-    def soft_delete(self) -> bool:
-        self.is_deleted = True
-        return bool(self.is_deleted)
-
-    def soft_recovery(self) -> bool:
-        self.is_deleted = False
-        return bool(self.is_deleted)
