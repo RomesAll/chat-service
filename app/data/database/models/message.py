@@ -1,8 +1,9 @@
 from sqlalchemy import Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID as PUUID
-from base import BaseOrm, TimeStampMixin, IdMixin
+from base import BaseOrm
 from uuid import UUID
+from models.mixins import IdMixin, TimeStampMixin
 
 
 class PrivateMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
