@@ -1,10 +1,11 @@
 from enum import Enum
 from typing import Any
 from uuid import UUID
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class OperatorEnum(str, Enum):
+    """Список условий"""
     EQ = 'eq'
     NE = 'ne'
     GT = 'gt'
@@ -18,16 +19,19 @@ class OperatorEnum(str, Enum):
 
 
 class SortEnum(str, Enum):
+    """Режимы сортировок"""
     ASC = 'asc'
     DESC = 'desc'
 
 
 class PaginationDto(BaseModel):
-    limit: int = Field(20, ge=1, le=500, description='Количество записей')
+    """Пагинация для записей"""
+    limit: int = Field(20, ge=1, le=500, description='Количество записей', )
     offset: int = Field(0, ge=0, description='Смещение')
 
 
 class FilterDto(BaseModel):
+    """Фильтрация записей"""
     field: str = Field(..., description='Название колонки (поля)')
     operator: OperatorEnum = Field(OperatorEnum.EQ, description='Оператор сравнения')
     value: Any = Field(..., description='Значение для фильтрации')
@@ -52,23 +56,28 @@ class FilterDto(BaseModel):
 
 
 class SortDto(BaseModel):
+    """Сортировка"""
     field: str = Field(..., description='Название колонки (поля)')
     order: SortEnum = Field(SortEnum.ASC, description="Порядок сортировки")
 
 
 class BaseDtoGetRequest(BaseModel):
+    """Базовый класс для получения списка записей с пагинацией, фильтрами и сортировкой"""
     pagination: PaginationDto = Field(..., description='Пагинация для записей')
     filters: list[FilterDto] = Field(default_factory=list, description='Фильтрация для записей')
     sort: list[SortDto] = Field(default_factory=list, description='Сортировка для записей')
 
 
 class DtoGetByIdRequest(BaseModel):
+    """Получение записей по id"""
     id: UUID | int | str = Field(..., description='Идентификатор записи в бд')
 
 
 class BaseDtoPostRequest(BaseModel):
+    """Добавление записей"""
     return_record: bool
 
 
 class BaseDtoUpdateRequest(BaseDtoPostRequest):
+    """Обновление записей"""
     record_id: DtoGetByIdRequest = Field(..., exclude=True)
