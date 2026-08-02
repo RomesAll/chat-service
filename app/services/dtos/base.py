@@ -57,6 +57,18 @@ class SortDto(BaseModel):
 
 
 class BaseDtoGetRequest(BaseModel):
-    pagination: PaginationDto
-    filters: list[FilterDto]
-    sort: list[SortDto]
+    pagination: PaginationDto = Field(..., description='Пагинация для записей')
+    filters: list[FilterDto] = Field(default_factory=list, description='Фильтрация для записей')
+    sort: list[SortDto] = Field(default_factory=list, description='Сортировка для записей')
+
+
+class DtoGetByIdRequest(BaseModel):
+    id: UUID | int | str = Field(..., description='Идентификатор записи в бд')
+
+
+class BaseDtoPostRequest(BaseModel):
+    return_record: bool
+
+
+class BaseDtoUpdateRequest(BaseDtoPostRequest):
+    record_id: DtoGetByIdRequest = Field(..., exclude=True)
