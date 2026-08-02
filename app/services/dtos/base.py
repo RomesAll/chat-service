@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -66,6 +67,7 @@ class BaseDtoGetRequest(BaseModel):
     pagination: PaginationDto = Field(..., description='Пагинация для записей')
     filters: list[FilterDto] = Field(default_factory=list, description='Фильтрация для записей')
     sort: list[SortDto] = Field(default_factory=list, description='Сортировка для записей')
+    include_deleted: bool = Field(False, description='Включить удаленные объекты?')
 
 
 class DtoGetByIdRequest(BaseModel):
@@ -81,3 +83,13 @@ class BaseDtoPostRequest(BaseModel):
 class BaseDtoUpdateRequest(BaseDtoPostRequest):
     """Обновление записей"""
     record_id: DtoGetByIdRequest = Field(..., exclude=True)
+
+
+class BaseDtoDeleteRequest(BaseDtoUpdateRequest):
+    """Удаление записей"""
+    pass
+
+
+class BaseDtoGetResponse(BaseModel):
+    """Базовый класс для хранения полученных записей из хранилища (бд)"""
+    datetime_get: datetime = Field(default_factory=lambda : datetime.now(tz=timezone.utc), description='Время получения записей')
