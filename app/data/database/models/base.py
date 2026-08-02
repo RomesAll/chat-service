@@ -1,63 +1,11 @@
-from datetime import datetime
-from enum import Enum
-from typing import Iterable, Any
+from typing import Iterable
 from uuid import UUID
-from sqlalchemy import UUID as PUUID, inspect
-from sqlalchemy import DateTime, text
+from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from metaclasses import OrmManagerMeta, DynamicFields
 
 
-class DynamicFields:
-    """Подсказка для idea, чтобы он не подчеркивал поле Fields в orm моделях"""
-    def __getattr__(self, name: str) -> str: ...
-    def __iter__(self) -> Iterable[Any]: ...
-
-
-class OrmFieldInfoMeta(type(DeclarativeBase)):
-    """
-    Метакласс для динамического создания enum с полями orm моделей.
-    В объектах моделей будет динамически создаваться атрибут Fields.
-    Они будут содержать список полей модели, которые могут пригодиться, например,
-    для метода to_dict в параметре exclude, чтобы передать туда поля для исключения,
-
-    например:
-        user.to_dict(exclude=[UserOrm.Fields.ID])
-
-    """
-    def __init__(self, name, base, attrs):
-        """Метод для перехвата создания объектов класса"""
-        super().__init__(name, base, attrs)
-        if hasattr(self, '__table__'):
-            fields_dict = {
-                field.description.upper(): field.description
-                for field in list(self.__table__.columns)
-            }
-            enum_name = f'{name}Fields'
-            enum = Enum(enum_name, fields_dict, type=str)
-            self.Fields: DynamicFields = enum
-
-
-class IdMixin:
-    """Миксин для id"""
-    id: Mapped[UUID] = mapped_column(PUUID, primary_key=True, unique=True)
-
-
-class TimeStampMixin:
-    """Миксин для временных меток"""
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=text("TIMEZONE('UTC', now())"),
-        nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=text("TIMEZONE('UTC', now())"),
-        server_onupdate=text("TIMEZONE('UTC', now())"),
-        nullable=False
-    )
-
-
-class BaseOrm(DeclarativeBase, metaclass=OrmFieldInfoMeta):
+class BaseOrm(DeclarativeBase, metaclass=OrmManagerMeta):
     """Базовый абстрактный класс для orm моделей"""
     __abstract__ = True
     Fields: DynamicFields
@@ -102,3 +50,9 @@ class BaseOrm(DeclarativeBase, metaclass=OrmFieldInfoMeta):
         """Мягкое восстановление"""
         self.is_deleted = False
         return bool(self.is_deleted)
+
+
+    @classmethod
+    def get_all_models(cls):
+        """Получить все зарегистрированные модели (доступно через экземпляр класса)"""
+        return cls.__class__.get_all_models()
