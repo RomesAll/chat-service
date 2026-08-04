@@ -29,7 +29,7 @@ class RegistryMeta(SqlAlchemyOrmBaseMeta):
         new_class = super().__new__(cls, name, bases, attrs)
         if not attrs.get('__abstract__', False) and '__tablename__' in attrs:
             RegistryMeta.__registry[name.lower()] = new_class
-            print(f"Registered model: {name}")
+            print(f"Модель зарегистрирована: {name}")
         return new_class
 
     @classmethod
@@ -59,7 +59,7 @@ class AutoCreateTable(RegistryMeta):
                 table = cast(Table, class_obj.__table__)
                 table.create(cls.__engine, checkfirst=True)
         except SQLAlchemyError as e:
-            pass
+            raise 
         return new_class
 
 

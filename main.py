@@ -5,7 +5,7 @@ from app.shared.dtos.base import BaseDtoCreateUpdateDeleteWithReturnValueRequest
     PaginationDto, SortDto, SortEnum, FilterDto, OperatorEnum
 from app.shared.dtos.room import RoomDtoGetResponse
 from models.metaclasses import AutoCreateTable
-# from app.services.dtos.base import (
+# from app.business_logic.dtos.base import (
 #     DtoGetByIdRequest,
 #     BaseDtoGetRequest,
 #     BaseDtoPostRequest,

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from app.data.database.models.base import BaseOrm
+from app.data_access.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_
 from sqlalchemy.orm import Session
 
