@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from app.services.dtos.base import (
-    BaseDtoCreateUpdateDeleteWithReturnValueRequest,
+    BaseDtoPostRequest,
+    BaseDtoUpdateRequest,
+    BaseDtoDeleteRequest,
     BaseDtoGetResponse,
     DtoIdRecordRequest,
     BaseDtoGetListRequest
@@ -28,7 +30,7 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def save(self, dto_post_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | None:
+    def save(self, dto_post_request: BaseDtoPostRequest) -> BaseDtoGetResponse | None:
         """
         Сохранение записи
         :param dto_post_request: принимает объект BaseDtoPostRequest
@@ -37,7 +39,7 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def update(self, dto_update_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | None:
+    def update(self, dto_update_request: BaseDtoUpdateRequest) -> BaseDtoGetResponse | None:
         """
         Обновление записи
         :param dto_update_request: принимает объект BaseDtoUpdateRequest
@@ -46,7 +48,7 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def delete(self, dto_delete_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | None:
+    def delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
         """
         Удаление записи
         :param dto_delete_request: принимает объект BaseDtoDeleteRequest
@@ -55,7 +57,7 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def recovery(self, dto_delete_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | None:
+    def recovery(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
         """
         Восстановление записи
         :param dto_delete_request: принимает объект BaseDtoDeleteRequest
