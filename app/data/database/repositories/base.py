@@ -4,10 +4,9 @@ from sqlalchemy import select, between, and_, or_
 from sqlalchemy.orm import Session
 from interfaces.repository import IRepository
 from app.services.dtos.base import (
-    BaseDtoCreateUpdateDeleteWithReturnValueRequest,
     BaseDtoGetResponse,
     DtoIdRecordRequest,
-    BaseDtoGetListRequest, SortEnum, OperatorEnum
+    BaseDtoGetListRequest, SortEnum, OperatorEnum, BaseDtoPostRequest, BaseDtoUpdateRequest, BaseDtoDeleteRequest
 )
 
 
@@ -87,14 +86,14 @@ class BaseRepository(IRepository):
         dto_response = self.dto_response(**orm_object.to_dict())
         return dto_response
 
-    def save(self, dto_post_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | None:
+    def save(self, dto_post_request: BaseDtoPostRequest) -> BaseDtoGetResponse | None:
         """Сохранение записи в бд"""
         orm_object = self.model(**dto_post_request.model_dump())
         self.session.add(orm_object)
         self.session.flush()
         return self._get_dto_or_none(dto_post_request, orm_object)
 
-    def update(self, dto_update_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | None:
+    def update(self, dto_update_request: BaseDtoUpdateRequest) -> BaseDtoGetResponse | None:
         """Обновление записи в бд"""
         orm_object = self._find_orm_object(dto_update_request)
         raw_data: dict = dto_update_request.model_dump(exclude_unset=True)
@@ -103,14 +102,14 @@ class BaseRepository(IRepository):
         self.session.flush()
         return self._get_dto_or_none(dto_update_request, orm_object)
 
-    def delete(self, dto_delete_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | bool | None:
+    def delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
         """Мягкое удаление из бд"""
         orm_object = self._find_orm_object(dto_delete_request)
         result: bool = orm_object.soft_delete()
         return_object = self._get_dto_or_none(dto_delete_request, orm_object)
         return return_object if return_object else result
 
-    def recovery(self, dto_delete_request: BaseDtoCreateUpdateDeleteWithReturnValueRequest) -> BaseDtoGetResponse | bool | None:
+    def recovery(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
         """Восстановление удаленной записи"""
         orm_object = self._find_orm_object(dto_delete_request)
         result: bool = orm_object.soft_recovery()
@@ -127,7 +126,7 @@ class BaseRepository(IRepository):
             raise Exception
         return orm_object
 
-    def _get_dto_or_none(self, dto, orm_object) -> BaseDtoGetResponse | None:
+    def _get_dto_or_none(self, dto: BaseDtoPostRequest, orm_object: BaseOrm) -> BaseDtoGetResponse | None:
         """Получение dto модели для ответа или none"""
         if dto.return_record:
             dto_response = self.dto_response(**orm_object.to_dict())
