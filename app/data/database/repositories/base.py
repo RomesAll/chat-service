@@ -3,7 +3,7 @@ from app.data.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_
 from sqlalchemy.orm import Session
 from interfaces.repository import IRepository
-from app.services.dtos.base import (
+from app.shared.dtos.base import (
     BaseDtoGetResponse,
     DtoIdRecordRequest,
     BaseDtoGetListRequest, SortEnum, OperatorEnum, BaseDtoPostRequest, BaseDtoUpdateRequest, BaseDtoDeleteRequest

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.services.dtos.user import UserDtoGetResponse
+from app.shared.dtos.user import UserDtoGetResponse
 from models.user import UserOrm
 from .base import BaseRepository
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from app.services.dtos.base import (
+from app.shared.dtos.base import (
     BaseDtoPostRequest,
     BaseDtoUpdateRequest,
     BaseDtoDeleteRequest,

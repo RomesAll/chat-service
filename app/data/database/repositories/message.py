@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.services.dtos.message import PrivateMessageDtoGetResponse, GroupMessageDtoGetResponse
+from app.shared.dtos.message import PrivateMessageDtoGetResponse, GroupMessageDtoGetResponse
 from models.message import PrivateMessageOrm, GroupMessageOrm
 from .base import BaseRepository
 

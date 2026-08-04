@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.services.dtos.room import RoomDtoGetResponse
+from app.shared.dtos.room import RoomDtoGetResponse
 from models.room import RoomOrm
 from .base import BaseRepository
 
