@@ -1,7 +1,7 @@
-from sqlalchemy import String
+from sqlalchemy import String, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-from base import BaseOrm
-from models.mixins import IdMixin, TimeStampMixin
+from .base import BaseOrm
+from .mixins import IdMixin, TimeStampMixin
 
 
 class RoomOrm(BaseOrm, IdMixin, TimeStampMixin):

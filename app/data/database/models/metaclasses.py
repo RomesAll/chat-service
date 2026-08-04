@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import Iterable, Any, Type, cast
-from sqlalchemy import Table, create_engine
+from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
-from exceptions import (
+from app.data.exceptions import (
     ValidationOrmNotDocError,
     ValidationOrmIncorrectDocError,
     ValidationOrmNotTableNameError,
@@ -59,7 +59,7 @@ class AutoCreateTable(RegistryMeta):
                 table = cast(Table, class_obj.__table__)
                 table.create(cls.__engine, checkfirst=True)
         except SQLAlchemyError as e:
-            pass
+            raise
         return new_class
 
 

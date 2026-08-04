@@ -1,9 +1,9 @@
 from sqlalchemy import Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID as PUUID
-from base import BaseOrm
+from .base import BaseOrm
 from uuid import UUID
-from models.mixins import IdMixin, TimeStampMixin
+from .mixins import IdMixin, TimeStampMixin
 
 
 class PrivateMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
@@ -12,6 +12,12 @@ class PrivateMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
     sender_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))
     recipient_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))
     message: Mapped[str] = mapped_column(Text)
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}(id={self.id}, sender_id={self.sender_id}, recipient_id={self.recipient_id})>'
+
+    def __str__(self):
+        return f'Сообщение от {self.sender_id} пользователю {self.recipient_id}'
 
 
 class GroupMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
