@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from app.data.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_
 from sqlalchemy.orm import Session
+
+from exceptions import RecordNotFound
 from interfaces.repository import IRepository
 from app.shared.dtos.base import (
     BaseDtoGetResponse,
@@ -123,7 +125,7 @@ class BaseRepository(IRepository):
         )
         orm_object: BaseOrm | None = self.session.execute(stmt).scalar_one_or_none()
         if not orm_object:
-            raise Exception
+            raise RecordNotFound(dto_request.id)
         return orm_object
 
     def _get_dto_or_none(self, dto: BaseDtoPostRequest, orm_object: BaseOrm) -> BaseDtoGetResponse | None:
