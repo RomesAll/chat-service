@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator, ConfigDict
 
 
 class OperatorEnum(str, Enum):
@@ -32,11 +32,10 @@ class PaginationDto(BaseModel):
 
 
 class FilterDto(BaseModel):
-    """Фильтрация записей"""
+    """Правила фильтрации записей"""
     field: str = Field(..., description='Название колонки (поля)')
     operator: OperatorEnum = Field(OperatorEnum.EQ, description='Оператор сравнения')
     value: Any = Field(..., description='Значение для фильтрации')
-    logic: str = Field('AND', description='Логическая операция AND или OR (с предыдущем фильтров')
 
     @model_validator(mode='after')
     def validate(self):
@@ -50,46 +49,64 @@ class FilterDto(BaseModel):
             if not isinstance(self.value, list):
                 raise ValueError('IN требует список')
 
-        if self.logic.upper() not in ['AND', 'OR']:
-            raise ValueError('logic должен быть AND или OR')
-
         return self
 
 
 class SortDto(BaseModel):
-    """Сортировка"""
+    """Хранения данных для сортировки"""
     field: str = Field(..., description='Название колонки (поля)')
-    order: SortEnum = Field(SortEnum.ASC, description="Порядок сортировки")
+    order_mode: SortEnum = Field(SortEnum.ASC, description="Порядок сортировки")
 
 
-class BaseDtoGetRequest(BaseModel):
+class BaseDtoGetListRequest(BaseModel):
     """Базовый класс для получения списка записей с пагинацией, фильтрами и сортировкой"""
     pagination: PaginationDto = Field(..., description='Пагинация для записей')
     filters: list[FilterDto] = Field(default_factory=list, description='Фильтрация для записей')
+    filters_logic: str = Field('AND', description='Логическая операция AND или OR (с предыдущем фильтров')
     sort: list[SortDto] = Field(default_factory=list, description='Сортировка для записей')
     include_deleted: bool = Field(False, description='Включить удаленные объекты?')
 
+    @model_validator(mode='after')
+    def validate(self):
+        if self.filters_logic.upper() not in ['AND', 'OR']:
+            raise ValueError('logic должен быть AND или OR')
+        return self
 
-class DtoGetByIdRequest(BaseModel):
-    """Получение записей по id"""
+
+class DtoIdRecordRequest(BaseModel):
+    """Dto модель для хранения id записей"""
     id: UUID | int | str = Field(..., description='Идентификатор записи в бд')
 
 
-class BaseDtoPostRequest(BaseModel):
-    """Добавление записей"""
-    return_record: bool
+class BaseDtoPostRequest(BaseModel, DtoIdRecordRequest):
+    """Базовый класс dto модели для хранения данных предназначенных для сохранения"""
+    return_record: bool = Field(..., exclude=True)
 
 
 class BaseDtoUpdateRequest(BaseDtoPostRequest):
-    """Обновление записей"""
-    record_id: DtoGetByIdRequest = Field(..., exclude=True)
+    """Базовый класс dto модели для хранения данных предназначенных для обновления"""
+    id: UUID | int | str = Field(..., exclude=True, description='Идентификатор записи в бд')
 
 
-class BaseDtoDeleteRequest(BaseDtoUpdateRequest):
-    """Удаление записей"""
+class BaseDtoDeleteRequest(BaseDtoPostRequest):
+    """Базовый класс dto модели для хранения данных предназначенных для удаления"""
     pass
 
 
-class BaseDtoGetResponse(BaseModel):
-    """Базовый класс для хранения полученных записей из хранилища (бд)"""
-    datetime_get: datetime = Field(default_factory=lambda : datetime.now(tz=timezone.utc), description='Время получения записей')
+class BaseDtoGetResponse(DtoIdRecordRequest):
+    """Базовый класс dto модели для хранения полученной информации"""
+    created_at: datetime
+    updated_at: datetime
+    datetime_get: datetime = Field(
+        default_factory=lambda: datetime.now(tz=timezone.utc),
+        description='Время получения записей'
+    )
+    is_deleted: bool = False
+    model_config = ConfigDict(extra='allow')
+
+    @field_validator('created_at', 'updated_at')
+    def validate_utc_time(cls, value):
+        if isinstance(value, datetime):
+            if value.tzinfo != timezone.utc:
+                value = value.replace(tzinfo=timezone.utc)
+        return value
