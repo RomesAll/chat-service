@@ -1,3 +1,7 @@
+from uuid import UUID
+from pydantic import BaseModel
+from fastapi.websockets import WebSocket
+
 from .base import (
     BaseDtoGetResponse,
     BaseDtoPostRequest
@@ -33,3 +37,18 @@ class UserDtoUpdateRequest(UserDtoPostRequest):
 class UserDtoDeleteRequest(BaseDtoPostRequest):
     """Dto модель для хранения данных о пользователях для удаления"""
     pass
+
+
+class UserInfo(BaseModel):
+    """Информация о пользователей"""
+    id: UUID
+    user_name: str
+    years_old: int
+    is_deleted: bool
+    email: str
+
+
+class ActiveSession(BaseModel):
+    """Активные сессии пользователя"""
+    info: UserInfo
+    websockets: set[WebSocket]
