@@ -1,8 +1,8 @@
-from typing import Literal, Any
-from uuid import UUID
+from typing import Any
 
 
 class ValidationOrm(Exception):
+    """Ошибки валидации orm моделей"""
     def __init__(self, orm_model, message: str | None = None):
         if message:
             result_message = f'Ошибка валидации ORM модели {orm_model}: {message}'
@@ -13,18 +13,21 @@ class ValidationOrm(Exception):
 
 
 class ValidationOrmDocError(ValidationOrm):
+    """Ошибки валидации документации orm моделей"""
     def __init__(self, orm_model, message: str):
         result_message = f'Документация (обязательно): {message}'
         super().__init__(orm_model, result_message)
 
 
 class ValidationOrmNotDocError(ValidationOrmDocError):
+    """Отсутствие документации для orm моделей"""
     def __init__(self, orm_model):
         result_message = 'отсутствует'
         super().__init__(orm_model, result_message)
 
 
 class ValidationOrmIncorrectDocError(ValidationOrmDocError):
+    """Некорректная документация для orm моделей"""
     MIN_COUNT_CHAR = 10
 
     def __init__(self, orm_model, current_count_char: int):
@@ -35,18 +38,21 @@ class ValidationOrmIncorrectDocError(ValidationOrmDocError):
 
 
 class ValidationOrmTableNameError(ValidationOrm):
+    """Ошибка в названии таблицы у orm моделей"""
     def __init__(self, orm_model, message: str):
         result_message = f'Название таблицы (обязательно): {message}'
         super().__init__(orm_model, result_message)
 
 
 class ValidationOrmNotTableNameError(ValidationOrmTableNameError):
+    """Отсутствует название таблицы у orm моделей"""
     def __init__(self, orm_model):
         result_message = 'отсутствует'
         super().__init__(orm_model, result_message)
 
 
 class ValidationOrmIncorrectTableNameError(ValidationOrmTableNameError):
+    """Ошибка валидации таблицы у orm моделей"""
     MIN_COUNT_CHAR = 3
 
     def __init__(self, orm_model, current_count_char: int):
@@ -57,45 +63,67 @@ class ValidationOrmIncorrectTableNameError(ValidationOrmTableNameError):
 
 
 class DataBaseError(Exception):
+    """Базовая ошибка базы данных"""
     def __init__(self, message):
         message = f'Ошибка базы данных, {message}'
         super().__init__(message)
 
 
 class ConnectionDBError(DataBaseError):
+    """Ошибка подключения к базе данных"""
     def __init__(self, cause: str):
         message = f'не удалось подключиться по причине: {cause}'
         super().__init__(message)
 
 
 class DBOperationalError(ConnectionDBError):
+    """Неверный хост, порт или бд не запущена"""
     def __init__(self, original: str):
         message = f'возможно неверный хост, порт, бд не запущена, оригинальная ошибка {original}'
         super().__init__(message)
 
 
 class DBInterfaceError(ConnectionDBError):
+    """Неверный логин или пароль для бд"""
     def __init__(self, original: str):
         message = f'неверный логин или пароль, оригинальная ошибка {original}'
         super().__init__(message)
 
 
 class DBTimeoutError(ConnectionDBError):
+    """Ошибка таймаута бд"""
     def __init__(self, original: str):
         message = f'сервер БД перегружен или не отвечает, оригинальная ошибка {original}'
         super().__init__(message)
 
 
 class RecordNotFound(DataBaseError):
+    """Запись в бд не найдена"""
     def __init__(self, id: Any):
         message = f'не удалось найти запись с id: {id}'
         super().__init__(message)
 
 
-class BreachIntegrity(DataBaseError):
+class InCorrectStmtError(DataBaseError):
+    """Неверный stmt для бд"""
     def __init__(
             self,
-            operation: Literal['вставки', 'обновлении', 'удалении'],
+            stmt: object,
+            cause: str
+    ):
+        self.stmt = stmt
+        self.cause = cause
+        message = (f'неверный запрос.\n'
+                   f'Оригинальный sql запрос: {stmt}.\n'
+                   f'Причина: {cause}')
+        super().__init__(message)
+
+
+class BreachIntegrity(DataBaseError):
+    """Ошибки связанные с нарушением целостности бд"""
+    def __init__(
+            self,
+            operation: str,
             data: dict,
             stmt: object,
             cause: str
@@ -111,9 +139,10 @@ class BreachIntegrity(DataBaseError):
 
 
 class UniqueViolationError(BreachIntegrity):
+    """Ошибка уникльности"""
     def __init__(
             self,
-            operation: Literal['вставки', 'обновлении', 'удалении'],
+            operation: str,
             data: dict,
             stmt: object,
             cause: str
@@ -127,9 +156,10 @@ class UniqueViolationError(BreachIntegrity):
 
 
 class ForeignKeyViolationError(BreachIntegrity):
+    """Ошибка во внешних ключах"""
     def __init__(
             self,
-            operation: Literal['вставки', 'обновлении', 'удалении'],
+            operation: str,
             data: dict,
             stmt: object,
             cause: str
@@ -143,9 +173,10 @@ class ForeignKeyViolationError(BreachIntegrity):
 
 
 class NotNullViolationError(BreachIntegrity):
+    """Ошибка not null столбцов"""
     def __init__(
             self,
-            operation: Literal['вставки', 'обновлении', 'удалении'],
+            operation: str,
             data: dict,
             stmt: object,
             cause: str
@@ -159,9 +190,10 @@ class NotNullViolationError(BreachIntegrity):
 
 
 class CheckViolationError(BreachIntegrity):
+    """Ошибка в проверке на стороне бд в Check"""
     def __init__(
             self,
-            operation: Literal['вставки', 'обновлении', 'удалении'],
+            operation: str,
             data: dict,
             stmt: object,
             cause: str
