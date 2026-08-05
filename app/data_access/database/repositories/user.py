@@ -1,9 +1,9 @@
 from typing import cast
 from sqlalchemy.orm import Session
 from app.shared.dtos.base import DtoIdRecordRequest
-from app.shared.dtos.user import UserDtoGetResponse
+from app.shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest
 from models.user import UserOrm
-from shared.dtos.base import BaseDtoGetListRequest, BaseDtoGetResponse
+from shared.dtos.base import BaseDtoGetListRequest
 from .base import BaseRepository
 
 
@@ -31,3 +31,14 @@ class UserRepository(BaseRepository):
         :return:
         """
         return cast(UserDtoGetResponse, super().get_by_id(dto_record_id))
+
+    def save(self, dto_post_request: UserDtoPostRequest) -> UserDtoGetResponse | None:
+        """
+        Сохранение пользователей
+        :param dto_post_request:
+        :return:
+        """
+        result = super().save(dto_post_request)
+        if result:
+            return cast(UserDtoGetResponse, result)
+        return None
