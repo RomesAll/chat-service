@@ -4,6 +4,7 @@ from app.shared.dtos.base import DtoIdRecordRequest
 from app.shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest
 from models.user import UserOrm
 from shared.dtos.base import BaseDtoGetListRequest
+from shared.dtos.user import UserDtoDeleteRequest
 from .base import BaseRepository
 
 
@@ -50,6 +51,39 @@ class UserRepository(BaseRepository):
         :return:
         """
         result = super().update(dto_update_request)
+        if result:
+            return cast(UserDtoGetResponse, result)
+        return None
+
+    def soft_delete(self, dto_delete_request: UserDtoDeleteRequest) -> UserDtoGetResponse | bool | None:
+        """
+        Мягкое удаление пользователя с возможностью восстановления
+        :param dto_delete_request:
+        :return:
+        """
+        result = super().soft_delete(dto_delete_request)
+        if result:
+            return cast(UserDtoGetResponse, result)
+        return None
+
+    def hard_delete(self, dto_delete_request: UserDtoDeleteRequest) -> UserDtoGetResponse | bool | None:
+        """
+        Жесткое удаление пользователя без возможности восстановления
+        :param dto_delete_request:
+        :return:
+        """
+        result = super().hard_delete(dto_delete_request)
+        if result:
+            return cast(UserDtoGetResponse, result)
+        return None
+
+    def recovery(self, dto_delete_request: UserDtoDeleteRequest) -> UserDtoGetResponse | bool | None:
+        """
+        Восстановление пользователя
+        :param dto_delete_request:
+        :return:
+        """
+        result = super().recovery(dto_delete_request)
         if result:
             return cast(UserDtoGetResponse, result)
         return None

@@ -1,7 +1,7 @@
 from business_logic.user.exception_handler import HandleException
 from repositories.user import UserRepository
 from shared.dtos.base import DtoIdRecordRequest, BaseDtoGetListRequest
-from shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest
+from shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest, UserDtoDeleteRequest
 
 
 @HandleException()
@@ -55,4 +55,40 @@ class UserManager:
         :return:
         """
         result: UserDtoGetResponse | None = self.user_repo.update(dto_update_request)
+        return result
+
+    def soft_delete(
+            self,
+            dto_delete_request: UserDtoDeleteRequest
+    ) -> UserDtoGetResponse | bool | None:
+        """
+        Мягкое удаление пользователя с возможностью восстановления
+        :param dto_delete_request:
+        :return:
+        """
+        result: UserDtoGetResponse | bool | None = self.user_repo.soft_delete(dto_delete_request)
+        return result
+
+    def hard_delete(
+            self,
+            dto_delete_request: UserDtoDeleteRequest
+    ) -> UserDtoGetResponse | bool | None:
+        """
+        Жесткое удаление пользователя без возможности восстановления
+        :param dto_delete_request:
+        :return:
+        """
+        result: UserDtoGetResponse | bool | None = self.user_repo.hard_delete(dto_delete_request)
+        return result
+
+    def recovery(
+            self,
+            dto_delete_request: UserDtoDeleteRequest
+    ) -> UserDtoGetResponse | bool | None:
+        """
+        Восстановление пользователя
+        :param dto_delete_request:
+        :return:
+        """
+        result: UserDtoGetResponse | bool | None = self.user_repo.recovery(dto_delete_request)
         return result
