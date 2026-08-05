@@ -1,7 +1,7 @@
 from business_logic.user.exception_handler import HandleException
 from repositories.user import UserRepository
 from shared.dtos.base import DtoIdRecordRequest, BaseDtoGetListRequest
-from shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest
+from shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest
 
 
 @HandleException()
@@ -43,4 +43,16 @@ class UserManager:
         :return:
         """
         result: UserDtoGetResponse | None = self.user_repo.save(dto_post_request)
+        return result
+
+    def update(
+            self,
+            dto_update_request: UserDtoUpdateRequest
+    ):
+        """
+        Обновление данных пользователей
+        :param dto_update_request:
+        :return:
+        """
+        result: UserDtoGetResponse | None = self.user_repo.update(dto_update_request)
         return result

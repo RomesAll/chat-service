@@ -1,7 +1,7 @@
 from typing import cast
 from sqlalchemy.orm import Session
 from app.shared.dtos.base import DtoIdRecordRequest
-from app.shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest
+from app.shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest
 from models.user import UserOrm
 from shared.dtos.base import BaseDtoGetListRequest
 from .base import BaseRepository
@@ -39,6 +39,17 @@ class UserRepository(BaseRepository):
         :return:
         """
         result = super().save(dto_post_request)
+        if result:
+            return cast(UserDtoGetResponse, result)
+        return None
+
+    def update(self, dto_update_request: UserDtoUpdateRequest) -> UserDtoGetResponse | None:
+        """
+        Обновление данных пользователя
+        :param dto_update_request:
+        :return:
+        """
+        result = super().update(dto_update_request)
         if result:
             return cast(UserDtoGetResponse, result)
         return None
