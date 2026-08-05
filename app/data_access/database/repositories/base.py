@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from app.data_access.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_, delete
 from sqlalchemy.orm import Session
-
 from exceptions import RecordNotFound
 from interfaces.repository import IRepository
 from app.shared.dtos.base import (
@@ -45,13 +44,12 @@ class BaseRepository(IRepository):
         stmt = (
             select(self.model).
             limit(limit).
-            offset(offset).
-            where(
-                self.model.is_deleted == include_deleted
-            )
+            offset(offset)
         )
         stmt = self._accept_orders(stmt, dto_get_request)
         stmt = self._accept_filters(stmt, dto_get_request)
+        if not include_deleted:
+            stmt = stmt.where(self.model.is_deleted == include_deleted)
         orm_objects = self.session.execute(stmt).scalars().all()
         dtos_response = [self.dto_response(**orm_object.to_dict()) for orm_object in orm_objects]
         return dtos_response
@@ -64,9 +62,9 @@ class BaseRepository(IRepository):
             operator = filter.operator
             value = filter.value
             filters.append(OPERATOR_MAP.get(operator)(field, value))
-        if dto_get_request.filters_logic == 'AND':
+        if dto_get_request.filters_logic == 'AND' and filters:
             stmt = stmt.where(and_(*filters))
-        elif dto_get_request.filters_logic == 'OR':
+        elif dto_get_request.filters_logic == 'OR' and filters:
             stmt = stmt.where(or_(*filters))
         return stmt
 
@@ -79,7 +77,8 @@ class BaseRepository(IRepository):
                 orders.append(orm_field.desc())
             elif order.order_mode == SortEnum.ASC:
                 orders.append(orm_field.asc())
-        stmt = stmt.order_by(*orders)
+        if orders:
+            stmt = stmt.order_by(*orders)
         return stmt
 
     def get_by_id(self, dto_record_id: DtoIdRecordRequest) -> BaseDtoGetResponse:
