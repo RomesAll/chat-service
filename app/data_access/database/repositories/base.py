@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from app.data_access.database.models.base import BaseOrm
-from sqlalchemy import select, between, and_, or_
+from sqlalchemy import select, between, and_, or_, delete
 from sqlalchemy.orm import Session
 
 from exceptions import RecordNotFound
@@ -85,7 +85,7 @@ class BaseRepository(IRepository):
     def get_by_id(self, dto_record_id: DtoIdRecordRequest) -> BaseDtoGetResponse:
         """Получение записи по id"""
         orm_object = self._find_orm_object(dto_record_id)
-        dto_response = self.dto_response(**orm_object.to_dict())
+        dto_response: BaseDtoGetResponse = self.dto_response(**orm_object.to_dict())
         return dto_response
 
     def save(self, dto_post_request: BaseDtoPostRequest) -> BaseDtoGetResponse | None:
@@ -104,12 +104,20 @@ class BaseRepository(IRepository):
         self.session.flush()
         return self._get_dto_or_none(dto_update_request, orm_object)
 
-    def delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
-        """Мягкое удаление из бд"""
+    def soft_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
+        """Мягкое удаление из бд (с возможностью восстановления)"""
         orm_object = self._find_orm_object(dto_delete_request)
         result: bool = orm_object.soft_delete()
         return_object = self._get_dto_or_none(dto_delete_request, orm_object)
         return return_object if return_object else result
+
+    def hard_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
+        """Удаление из бд"""
+        orm_object = self._find_orm_object(dto_delete_request)
+        stmt = delete(self.model).where(orm_object.id == dto_delete_request.id)
+        self.session.execute(stmt)
+        return_object = self._get_dto_or_none(dto_delete_request, orm_object)
+        return return_object if return_object else None
 
     def recovery(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
         """Восстановление удаленной записи"""
