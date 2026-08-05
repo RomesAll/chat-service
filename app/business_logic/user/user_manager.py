@@ -1,0 +1,34 @@
+from business_logic.user.exception_handler import HandleException
+from repositories.user import UserRepository
+from shared.dtos.base import DtoIdRecordRequest, BaseDtoGetListRequest
+from shared.dtos.user import UserDtoGetResponse
+
+
+@HandleException()
+class UserManager:
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
+
+    def get(
+            self,
+            dto_get_request: BaseDtoGetListRequest
+    ):
+        """
+        Получение списка пользователей
+        :param dto_get_request:
+        :return:
+        """
+        users: list[UserDtoGetResponse] = self.user_repo.get(dto_get_request)
+        return users
+
+    def get_one(
+            self,
+            dto_record_id: DtoIdRecordRequest
+    ) -> UserDtoGetResponse:
+        """
+        Получение пользователя по id
+        :param dto_record_id: принимает DtoIdRecordRequest с id типа (int, UUID, str)
+        :return: отдает объект UserDtoGetResponse (дочерний объект BaseDtoGetResponse)
+        """
+        user: UserDtoGetResponse = self.user_repo.get_by_id(dto_record_id)
+        return user
