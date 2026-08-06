@@ -23,20 +23,21 @@ class GroupMessageDtoGetResponse(BaseDtoGetResponse):
     type: MessageType
 
 
-class PrivateMessageDtoPostRequest(BaseDtoPostRequest):
+class BaseMessageDtoPostRequest(BaseDtoPostRequest):
+    """Базовая dto модель для приватных и групповых сообщений"""
+    sender_id: UUID
+    message: str
+    type: MessageType
+
+
+class PrivateMessageDtoPostRequest(BaseMessageDtoPostRequest):
     """Dto модель для хранения данных о приватных сообщениях для сохранения"""
-    sender_id: UUID
     recipient_id: UUID
-    message: str
-    type: MessageType
 
 
-class GroupMessageDtoPostRequest(BaseDtoPostRequest):
+class GroupMessageDtoPostRequest(BaseMessageDtoPostRequest):
     """Dto модель для хранения данных о групповых сообщениях для сохранения"""
-    sender_id: UUID
     chat_id: UUID
-    message: str
-    type: MessageType
 
 
 class MessageDtoUpdateRequest(BaseDtoUpdateRequest):
