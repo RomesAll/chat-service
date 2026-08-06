@@ -75,7 +75,7 @@ class BaseDtoGetListRequest(BaseModel):
 
 class DtoIdRecordRequest(BaseModel):
     """Dto модель для хранения id записей"""
-    id: UUID | int | str = Field(..., description='Идентификатор записи в бд')
+    id: UUID = Field(..., description='Идентификатор записи в бд')
 
 
 class BaseDtoPostRequest(DtoIdRecordRequest):
