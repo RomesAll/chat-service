@@ -2,10 +2,11 @@ from typing import Iterable
 from uuid import UUID
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from metaclasses import OrmManagerMeta, DynamicFields
+from .metaclasses import OrmManagerMeta, DynamicFields
+from .mixins import IdMixin, TimeStampMixin
 
 
-class BaseOrm(DeclarativeBase, metaclass=OrmManagerMeta):
+class BaseOrm(DeclarativeBase, IdMixin, TimeStampMixin, metaclass=OrmManagerMeta):
     """Базовый абстрактный класс для orm моделей"""
     __abstract__ = True
     Fields: DynamicFields

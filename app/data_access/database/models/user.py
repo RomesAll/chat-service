@@ -1,6 +1,6 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-from base import BaseOrm
+from .base import BaseOrm
 from models.mixins import IdMixin, TimeStampMixin
 
 

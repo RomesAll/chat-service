@@ -1,6 +1,6 @@
 from uuid import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import text
+from sqlalchemy import func
 from sqlalchemy.types import UUID as PUUID, DateTime
 from datetime import datetime
 
@@ -14,12 +14,12 @@ class TimeStampMixin:
     """Миксин для временных меток"""
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("TIMEZONE('UTC', now())"),
+        server_default=func.now(),
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=text("TIMEZONE('UTC', now())"),
-        server_onupdate=text("TIMEZONE('UTC', now())"),
+        server_default=func.now(),
+        server_onupdate=func.now(),
         nullable=False
     )
