@@ -78,9 +78,9 @@ class DtoIdRecordRequest(BaseModel):
     id: UUID | int | str = Field(..., description='Идентификатор записи в бд')
 
 
-class BaseDtoPostRequest(BaseModel, DtoIdRecordRequest):
+class BaseDtoPostRequest(DtoIdRecordRequest):
     """Базовый класс dto модели для хранения данных предназначенных для сохранения"""
-    return_record: bool = Field(..., exclude=True)
+    return_record: bool = Field(False, exclude=True)
 
 
 class BaseDtoUpdateRequest(BaseDtoPostRequest):
