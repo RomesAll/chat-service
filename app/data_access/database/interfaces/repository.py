@@ -48,9 +48,18 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
+    def hard_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
         """
-        Удаление записи
+        Удаление записи из бд без возможности восстановления
+        :param dto_delete_request: принимает объект BaseDtoDeleteRequest
+        :return: возвращает либо None (если мы в dto указали return_value=False), либо удаленный объект
+        """
+        pass
+
+    @abstractmethod
+    def soft_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
+        """
+        Мягкое удаление записи с возможностью восстановления
         :param dto_delete_request: принимает объект BaseDtoDeleteRequest
         :return: возвращает либо None (если мы в dto указали return_value=False), либо удаленный объект
         """
