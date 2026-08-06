@@ -1,6 +1,8 @@
 from .base import (
     BaseDtoGetResponse,
-    BaseDtoPostRequest
+    BaseDtoPostRequest,
+    BaseDtoUpdateRequest,
+    BaseDtoDeleteRequest
 )
 
 
@@ -14,11 +16,11 @@ class RoomDtoPostRequest(BaseDtoPostRequest):
     name: str
 
 
-class RoomDtoUpdateRequest(RoomDtoPostRequest):
+class RoomDtoUpdateRequest(BaseDtoUpdateRequest):
     """Dto модель для хранения данных о группах для обновления"""
     is_deleted: bool
 
 
-class RoomDtoDeleteRequest(BaseDtoPostRequest):
+class RoomDtoDeleteRequest(BaseDtoDeleteRequest):
     """Dto модель для хранения данных о группах для удаления"""
     pass
