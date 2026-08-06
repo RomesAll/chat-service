@@ -1,10 +1,8 @@
-from business_logic.user.exception_handler import HandleException
 from repositories.user import UserRepository
 from shared.dtos.base import DtoIdRecordRequest, BaseDtoGetListRequest
 from shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest, UserDtoDeleteRequest
 
 
-@HandleException()
 class UserManager:
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
