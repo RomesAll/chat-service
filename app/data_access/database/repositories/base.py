@@ -4,12 +4,12 @@ from sqlalchemy import select, between, and_, or_, delete
 from sqlalchemy.orm import Session
 from exceptions import RecordNotFound
 from interfaces.repository import IRepository
+from repositories.exception_handler import HandleSqlAlchemyException
 from app.shared.dtos.base import (
     BaseDtoGetResponse,
     DtoIdRecordRequest,
     BaseDtoGetListRequest, SortEnum, OperatorEnum, BaseDtoPostRequest, BaseDtoUpdateRequest, BaseDtoDeleteRequest
 )
-
 
 OPERATOR_MAP = {
     OperatorEnum.EQ: lambda f, v: f == v,
@@ -24,6 +24,7 @@ OPERATOR_MAP = {
 }
 
 
+@HandleSqlAlchemyException()
 class BaseRepository(IRepository):
     """Базовый репозиторий для работы с данными"""
     def __init__(
@@ -112,10 +113,13 @@ class BaseRepository(IRepository):
 
     def hard_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
         """Удаление из бд"""
-        orm_object = self._find_orm_object(dto_delete_request)
-        stmt = delete(self.model).where(orm_object.id == dto_delete_request.id)
-        self.session.execute(stmt)
-        return_object = self._get_dto_or_none(dto_delete_request, orm_object)
+        stmt = delete(self.model).where(self.model.id == dto_delete_request.id).returning(self.model)
+        result = self.session.execute(stmt)
+        return_object = None
+        if dto_delete_request.return_record:
+            deleted_models: BaseOrm | None = result.scalars().first()
+            if deleted_models:
+                return_object = self._get_dto_or_none(dto_delete_request, deleted_models)
         return return_object if return_object else None
 
     def recovery(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | bool | None:
@@ -125,7 +129,7 @@ class BaseRepository(IRepository):
         return_object = self._get_dto_or_none(dto_delete_request, orm_object)
         return return_object if return_object else result
 
-    def _find_orm_object(self, dto_request: DtoIdRecordRequest):
+    def _find_orm_object(self, dto_request: DtoIdRecordRequest) -> BaseOrm:
         """Поиск записи в бд по id"""
         stmt = select(self.model).where(
             self.model.id == dto_request.id
