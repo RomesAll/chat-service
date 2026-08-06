@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 import psycopg.errors
 from sqlalchemy.exc import (
     IntegrityError,
@@ -20,15 +20,12 @@ from exceptions import (
     InCorrectStmtError
 )
 
-if TYPE_CHECKING:
-    from business_logic.user.user_manager import UserManager
 
-
-class HandleException:
+class HandleSqlAlchemyException:
     """
-    Класс декоратор для обработки ошибок базы данных
+    Класс декоратор для обработки ошибок sqlalchemy
     """
-    def __call__(self, cls: 'UserManager'):
+    def __call__(self, cls):
         for attr_name, attr_value in cls.__dict__.items():
             if callable(attr_value) and not attr_name.startswith('__'):
                 setattr(cls, attr_name, self._wrap_method(attr_value))
