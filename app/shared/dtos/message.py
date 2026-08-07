@@ -1,56 +1,60 @@
 from enum import Enum
 from uuid import UUID
-from .base import (
-    BaseDtoGetResponse,
-    BaseDtoPostRequest,
-    BaseDtoUpdateRequest, BaseDtoDeleteRequest
+from base import (
+    BaseDtoOrmRecordGetResponse,
+    BaseDtoOrmRecordPostRequest,
+    BaseDtoOrmRecordPutResponse,
+    BaseDtoOrmRecordDeleteResponse
 )
 
 
-class PrivateMessageDtoGetResponse(BaseDtoGetResponse):
-    """Dto модель для хранения полученной информации о приватных сообщениях"""
+class MessageType(str, Enum):
+    """Перечисление для типов сообщений"""
+    PRIVATE = 'private'
+    GROUP = 'group'
+
+
+class BaseMessageDtoGetResponse(BaseDtoOrmRecordGetResponse):
+    """Базовый Message DTO для операции получения (Get) информации о сообщении"""
     sender_id: UUID
+    message: str
+    type: MessageType
+
+
+class PrivateMessageDtoGetResponse(BaseMessageDtoGetResponse):
+    """Private message DTO для операции получения (Get) информации о приватных сообщениях"""
     recipient_id: UUID
-    message: str
-    type: MessageType
 
 
-class GroupMessageDtoGetResponse(BaseDtoGetResponse):
-    """Dto модель для хранения полученной информации о групповых сообщениях"""
-    sender_id: UUID
+class GroupMessageDtoGetResponse(BaseMessageDtoGetResponse):
+    """Group message DTO для операции получения (Get) информации о групповых сообщениях"""
     chat_id: UUID
-    message: str
-    type: MessageType
 
 
-class BaseMessageDtoPostRequest(BaseDtoPostRequest):
-    """Базовая dto модель для приватных и групповых сообщений"""
+class BaseMessageDtoPostRequest(BaseDtoOrmRecordPostRequest):
+    """Базовый Message DTO для операции добавления (Post) информации о сообщении"""
     sender_id: UUID
     message: str
     type: MessageType
 
 
 class PrivateMessageDtoPostRequest(BaseMessageDtoPostRequest):
-    """Dto модель для хранения данных о приватных сообщениях для сохранения"""
+    """Private message DTO для операции добавления (Post) информации о приватных сообщениях"""
     recipient_id: UUID
 
 
 class GroupMessageDtoPostRequest(BaseMessageDtoPostRequest):
-    """Dto модель для хранения данных о групповых сообщениях для сохранения"""
+    """Group message DTO для операции добавления (Post) информации о групповых сообщениях"""
     chat_id: UUID
 
 
-class MessageDtoUpdateRequest(BaseDtoUpdateRequest):
-    """Dto модель для хранения данных о приватных и групповых сообщении для обновления"""
+class MessageDtoUpdateRequest(BaseDtoOrmRecordPutResponse):
+    """Message DTO для операции обновления (Put) информации о сообщении"""
     message: str
     is_deleted: bool
 
 
-class MessageDtoDeleteRequest(BaseDtoDeleteRequest):
-    """Dto модель для хранения данных о сообщениях для удаления"""
+class MessageDtoDeleteRequest(BaseDtoOrmRecordDeleteResponse):
+    """Message DTO для операции удаления (Delete) информации о сообщении"""
     pass
 
-
-class MessageType(str, Enum):
-    PRIVATE = 'private'
-    GROUP = 'group'

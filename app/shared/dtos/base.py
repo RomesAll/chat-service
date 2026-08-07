@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, model_validator, field_validator, ConfigD
 
 
 class OperatorEnum(str, Enum):
-    """Список условий"""
+    """Перечисление вариантов условий для фильтрации"""
     EQ = 'eq'
     NE = 'ne'
     GT = 'gt'
@@ -20,19 +20,19 @@ class OperatorEnum(str, Enum):
 
 
 class SortEnum(str, Enum):
-    """Режимы сортировок"""
+    """Перечисление вариантов сортировок"""
     ASC = 'asc'
     DESC = 'desc'
 
 
 class PaginationDto(BaseModel):
-    """Пагинация для записей"""
+    """DTO для хранения правил пагинаций объектов"""
     limit: int = Field(20, ge=1, le=500, description='Количество записей', )
     offset: int = Field(0, ge=0, description='Смещение')
 
 
 class FilterDto(BaseModel):
-    """Правила фильтрации записей"""
+    """DTO для хранения правил фильтрации объектов"""
     field: str = Field(..., description='Название колонки (поля)')
     operator: OperatorEnum = Field(OperatorEnum.EQ, description='Оператор сравнения')
     value: Any = Field(..., description='Значение для фильтрации')
@@ -53,13 +53,17 @@ class FilterDto(BaseModel):
 
 
 class SortDto(BaseModel):
-    """Хранения данных для сортировки"""
+    """DTO для хранения настройки сортировок"""
     field: str = Field(..., description='Название колонки (поля)')
     order_mode: SortEnum = Field(SortEnum.ASC, description="Порядок сортировки")
 
 
 class BaseDtoGetListRequest(BaseModel):
-    """Базовый класс для получения списка записей с пагинацией, фильтрами и сортировкой"""
+    """
+    Базовый DTO для операции получения списка объектов по
+    определенным фильтрам, сортировкам и с учетом пагинации
+    и неактивных объектов
+    """
     pagination: PaginationDto = Field(..., description='Пагинация для записей')
     filters: list[FilterDto] = Field(default_factory=list, description='Фильтрация для записей')
     filters_logic: str = Field('AND', description='Логическая операция AND или OR (с предыдущем фильтров')
@@ -73,28 +77,45 @@ class BaseDtoGetListRequest(BaseModel):
         return self
 
 
-class DtoIdRecordRequest(BaseModel):
-    """Dto модель для хранения id записей"""
-    id: UUID = Field(..., description='Идентификатор записи в бд')
+class BaseModelWithPrint(BaseModel):
+    """
+    Базовый DTO для красивого вывода в консоль моделей
+    """
+    def __str__(self):
+        result = f'\n|------|{self.__class__.__name__}|------|'
+        result += self.print() + '\n'
+        return result
+
+    def print(self, level: int = 0, max_level = 2):
+        fields = list(self.__class__.model_fields.keys())
+        delimiter_indent = len(max(fields, key=len)) + 1
+        result = '\n' if level == 0 else ''
+        if level >= max_level:
+            return f'{'      ' * level}[{self.__class__.__name__}]: {self}\n'
+        for ind, field in enumerate(fields, start=0):
+            value = getattr(self, field)
+            current_row_indent = delimiter_indent - len(field)
+            if type(value) in [list, tuple, set]:
+                result += f'{'      ' * level}[{field.upper()}]{' ' * current_row_indent}:\n'
+                for wrap_ind, wrap_value in enumerate(value, start=0):
+                    if isinstance(wrap_value, BaseModelWithPrint):
+                        result += wrap_value.print(level + 1) + '\n\n'
+                    else:
+                        result += f'{'      ' * (level + 1)}[{wrap_value.__class__.__name__}]{' ' * current_row_indent}: {value}\n'
+            else:
+                result += f'{'      ' * level}[{field.upper()}]{' ' * current_row_indent}: {value}'
+                if ind < len(fields) - 1:
+                    result += '\n'
+        return result
 
 
-class BaseDtoPostRequest(DtoIdRecordRequest):
-    """Базовый класс dto модели для хранения данных предназначенных для сохранения"""
-    return_record: bool = Field(False, exclude=True)
+class BaseDtoOrmRecord(BaseModelWithPrint):
+    """Базовый DTO с общими полями для всех операций"""
+    id: UUID
 
 
-class BaseDtoUpdateRequest(BaseDtoPostRequest):
-    """Базовый класс dto модели для хранения данных предназначенных для обновления"""
-    id: UUID | int | str = Field(..., exclude=True, description='Идентификатор записи в бд')
-
-
-class BaseDtoDeleteRequest(BaseDtoPostRequest):
-    """Базовый класс dto модели для хранения данных предназначенных для удаления"""
-    pass
-
-
-class BaseDtoGetResponse(DtoIdRecordRequest):
-    """Базовый класс dto модели для хранения полученной информации"""
+class BaseDtoOrmRecordGetResponse(BaseDtoOrmRecord):
+    """Базовый DTO с общими полями для операции получения (Get)"""
     created_at: datetime
     updated_at: datetime
     datetime_get: datetime = Field(
@@ -110,3 +131,18 @@ class BaseDtoGetResponse(DtoIdRecordRequest):
             if value.tzinfo != timezone.utc:
                 value = value.replace(tzinfo=timezone.utc)
         return value
+
+
+class BaseDtoOrmRecordPostRequest(BaseDtoOrmRecord):
+    """Базовый DTO с общими полями для операции добавления (Post)"""
+    return_record: bool = Field(False, exclude=True)
+
+
+class BaseDtoOrmRecordPutResponse(BaseDtoOrmRecordPostRequest):
+    """Базовый DTO с общими полями для операции обновления (Put)"""
+    id: UUID = Field(..., exclude=True)
+
+
+class BaseDtoOrmRecordDeleteResponse(BaseDtoOrmRecordPostRequest):
+    """Базовый DTO с общими полями для операции удаления (Delete)"""
+    pass
