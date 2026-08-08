@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from starlette.websockets import WebSocket
-from shared.dtos.message import BaseMessageDtoPostRequest
+from shared.dtos.message import BaseMessageDtoSend
 
 
 class IMessageRoute(ABC):
@@ -9,6 +8,6 @@ class IMessageRoute(ABC):
     """
 
     @abstractmethod
-    async def send_message(self, message_request: BaseMessageDtoPostRequest, connections: set[WebSocket]):
+    async def send_message(self, message_send_request: BaseMessageDtoSend):
         """Отправка сообщения"""
         pass
