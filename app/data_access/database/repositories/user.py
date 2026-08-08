@@ -1,89 +1,16 @@
-from typing import cast
 from sqlalchemy.orm import Session
-from app.shared.dtos.base import DtoIdRecordRequest
-from app.shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest, UserDtoUpdateRequest
+from app.shared.dtos.base import BaseDtoOrmRecord
+from app.shared.dtos.user import UserDtoGetResponse, UserDtoPostRequest
 from models.user import UserOrm
-from shared.dtos.base import BaseDtoGetListRequest
-from shared.dtos.user import UserDtoDeleteRequest
 from .base import BaseRepository
 
 
-class UserRepository(BaseRepository):
+class UserRepository(
+    BaseRepository[BaseDtoOrmRecord, UserDtoGetResponse, UserDtoPostRequest]
+):
     """Репозиторий для работы с данными пользователей"""
+
     def __init__(self, session: Session):
-        super().__init__(
-            dto_response=UserDtoGetResponse,
-            session=session,
-            model=UserOrm
-        )
-
-    def get(self, dto_get_request: BaseDtoGetListRequest) -> list[UserDtoGetResponse]:
-        """
-        Получение списка пользователей
-        :param dto_get_request:
-        :return:
-        """
-        return cast(list[UserDtoGetResponse], super().get(dto_get_request))
-
-    def get_by_id(self, dto_record_id: DtoIdRecordRequest) -> UserDtoGetResponse:
-        """
-        Получение пользователей по id
-        :param dto_record_id:
-        :return:
-        """
-        return cast(UserDtoGetResponse, super().get_by_id(dto_record_id))
-
-    def save(self, dto_post_request: UserDtoPostRequest) -> UserDtoGetResponse | None:
-        """
-        Сохранение пользователей
-        :param dto_post_request:
-        :return:
-        """
-        result = super().save(dto_post_request)
-        if result:
-            return cast(UserDtoGetResponse, result)
-        return None
-
-    def update(self, dto_update_request: UserDtoUpdateRequest) -> UserDtoGetResponse | None:
-        """
-        Обновление данных пользователя
-        :param dto_update_request:
-        :return:
-        """
-        result = super().update(dto_update_request)
-        if result:
-            return cast(UserDtoGetResponse, result)
-        return None
-
-    def soft_delete(self, dto_delete_request: UserDtoDeleteRequest) -> UserDtoGetResponse | bool | None:
-        """
-        Мягкое удаление пользователя с возможностью восстановления
-        :param dto_delete_request:
-        :return:
-        """
-        result = super().soft_delete(dto_delete_request)
-        if result:
-            return cast(UserDtoGetResponse, result)
-        return None
-
-    def hard_delete(self, dto_delete_request: UserDtoDeleteRequest) -> UserDtoGetResponse | bool | None:
-        """
-        Жесткое удаление пользователя без возможности восстановления
-        :param dto_delete_request:
-        :return:
-        """
-        result = super().hard_delete(dto_delete_request)
-        if result:
-            return cast(UserDtoGetResponse, result)
-        return None
-
-    def recovery(self, dto_delete_request: UserDtoDeleteRequest) -> UserDtoGetResponse | bool | None:
-        """
-        Восстановление пользователя
-        :param dto_delete_request:
-        :return:
-        """
-        result = super().recovery(dto_delete_request)
-        if result:
-            return cast(UserDtoGetResponse, result)
-        return None
+        super().__init__(session=session)
+        self.dto_response = UserDtoGetResponse
+        self.model = UserOrm
