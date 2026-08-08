@@ -1,18 +1,26 @@
 from abc import ABC, abstractmethod
+from typing import Generic
+from typing_extensions import TypeVar
 from app.shared.dtos.base import (
-    BaseDtoPostRequest,
-    BaseDtoUpdateRequest,
-    BaseDtoDeleteRequest,
-    BaseDtoGetResponse,
-    DtoIdRecordRequest,
+    BaseDtoOrmRecordPostRequest,
+    BaseDtoOrmRecordGetResponse,
+    BaseDtoOrmRecord,
     BaseDtoGetListRequest
 )
 
+TDtoId = TypeVar('TDtoId', bound=BaseDtoOrmRecord)
+TDtoGetResponse = TypeVar('TDtoGetResponse', bound=BaseDtoOrmRecordGetResponse)
+TDtoPostPutDeleteRequest = TypeVar('TDtoPostPutDeleteRequest', bound=BaseDtoOrmRecordPostRequest)
 
-class IRepository(ABC):
-    """Интерфейс репозитория для доступа к данным"""
+
+class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], ABC):
+    """Класс интерфейса репозитория для доступа к данным"""
+
     @abstractmethod
-    def get(self, dto_get_request: BaseDtoGetListRequest) -> BaseDtoGetResponse:
+    def get(
+            self,
+            dto_get_request: BaseDtoGetListRequest
+    ) -> list[TDtoGetResponse]:
         """
         Метод получения списка записей
         :param dto_get_request: принимает dto объект BaseDtoGetRequest
@@ -21,7 +29,10 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, dto_record_id: DtoIdRecordRequest) -> BaseDtoGetResponse:
+    def get_by_id(
+            self,
+            dto_record_id: TDtoId
+    ) -> TDtoGetResponse:
         """
         Метод получения записей по id
         :param dto_record_id: принимает dto объект DtoGetByIdRequest
@@ -30,7 +41,10 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def save(self, dto_post_request: BaseDtoPostRequest) -> BaseDtoGetResponse | None:
+    def save(
+            self,
+            dto_post_request: TDtoPostPutDeleteRequest
+    ) -> TDtoGetResponse | None:
         """
         Сохранение записи
         :param dto_post_request: принимает объект BaseDtoPostRequest
@@ -39,7 +53,10 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def update(self, dto_update_request: BaseDtoUpdateRequest) -> BaseDtoGetResponse | None:
+    def update(
+            self,
+            dto_update_request: TDtoPostPutDeleteRequest
+    ) -> TDtoGetResponse | None:
         """
         Обновление записи
         :param dto_update_request: принимает объект BaseDtoUpdateRequest
@@ -48,7 +65,10 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def hard_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
+    def hard_delete(
+            self,
+            dto_delete_request: TDtoPostPutDeleteRequest
+    ) -> TDtoGetResponse | None:
         """
         Удаление записи из бд без возможности восстановления
         :param dto_delete_request: принимает объект BaseDtoDeleteRequest
@@ -57,7 +77,10 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def soft_delete(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
+    def soft_delete(
+            self,
+            dto_delete_request: TDtoPostPutDeleteRequest
+    ) -> TDtoGetResponse | None:
         """
         Мягкое удаление записи с возможностью восстановления
         :param dto_delete_request: принимает объект BaseDtoDeleteRequest
@@ -66,7 +89,10 @@ class IRepository(ABC):
         pass
 
     @abstractmethod
-    def recovery(self, dto_delete_request: BaseDtoDeleteRequest) -> BaseDtoGetResponse | None:
+    def recovery(
+            self,
+            dto_delete_request: TDtoPostPutDeleteRequest
+    ) -> TDtoGetResponse | None:
         """
         Восстановление записи
         :param dto_delete_request: принимает объект BaseDtoDeleteRequest
