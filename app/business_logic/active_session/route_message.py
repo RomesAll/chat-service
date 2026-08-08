@@ -1,11 +1,9 @@
-from starlette.websockets import WebSocket
-
 from business_logic.active_session.message_sender.group_message import GroupMessageRoute
 from business_logic.active_session.message_sender.interface import IMessageRoute
 from business_logic.active_session.message_sender.private_message import PrivateMessageRoute
 from business_logic.exceptions import RouteMessageError
 from models.message import MessageType
-from shared.dtos.message import BaseMessageDtoPostRequest
+from shared.dtos.message import BaseMessageDtoSend
 
 
 class RouteMessage:
@@ -27,11 +25,10 @@ class RouteMessage:
 
     async def routing_message(
             self,
-            message_request: BaseMessageDtoPostRequest,
-            connections: set[WebSocket]
+            message_request: BaseMessageDtoSend,
     ):
         """Маршрутизация сообщений"""
         service: IMessageRoute | None = self.MAPPING_MESSAGE_TYPE.get(message_request.type)
         if not service:
             raise RouteMessageError(message_request)
-        await service.send_message(message_request, connections)
+        await service.send_message(message_request)
