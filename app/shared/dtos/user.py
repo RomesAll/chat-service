@@ -50,6 +50,6 @@ class UserDtoChangePsw(BaseDtoOrmRecord):
 
 class ActiveSession(BaseModel):
     """User DTO для хранения активных подключений (websocket соединений) пользователя"""
-    info: UserDtoGetResponse
+    info: UserDtoBriefInfo
     websockets: set[WebSocket] = Field(default_factory=set)
     model_config = ConfigDict(arbitrary_types_allowed=True)
