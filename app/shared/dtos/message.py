@@ -1,5 +1,8 @@
 from enum import Enum
 from uuid import UUID
+from pydantic import ConfigDict
+from starlette.websockets import WebSocket
+
 from .base import (
     BaseDtoOrmRecordGetResponse,
     BaseDtoOrmRecordPostRequest,
@@ -22,12 +25,12 @@ class BaseMessageDtoGetResponse(BaseDtoOrmRecordGetResponse):
 
 
 class PrivateMessageDtoGetResponse(BaseMessageDtoGetResponse):
-    """Private message DTO для операции получения (Get) информации о приватных сообщениях"""
+    """Private message_sender DTO для операции получения (Get) информации о приватных сообщениях"""
     recipient_id: UUID
 
 
 class GroupMessageDtoGetResponse(BaseMessageDtoGetResponse):
-    """Group message DTO для операции получения (Get) информации о групповых сообщениях"""
+    """Group message_sender DTO для операции получения (Get) информации о групповых сообщениях"""
     chat_id: UUID
 
 
@@ -39,12 +42,12 @@ class BaseMessageDtoPostRequest(BaseDtoOrmRecordPostRequest):
 
 
 class PrivateMessageDtoPostRequest(BaseMessageDtoPostRequest):
-    """Private message DTO для операции добавления (Post) информации о приватных сообщениях"""
+    """Private message_sender DTO для операции добавления (Post) информации о приватных сообщениях"""
     recipient_id: UUID
 
 
 class GroupMessageDtoPostRequest(BaseMessageDtoPostRequest):
-    """Group message DTO для операции добавления (Post) информации о групповых сообщениях"""
+    """Group message_sender DTO для операции добавления (Post) информации о групповых сообщениях"""
     chat_id: UUID
 
 
@@ -58,3 +61,17 @@ class MessageDtoDeleteRequest(BaseDtoOrmRecordDeleteResponse):
     """Message DTO для операции удаления (Delete) информации о сообщении"""
     pass
 
+
+class BaseMessageDtoSend(BaseMessageDtoPostRequest):
+    connections: set[WebSocket]
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class GroupMessageDtoSend(BaseMessageDtoSend):
+    """Message DTO для broadcast сообщений"""
+    chat_id: UUID
+
+
+class PrivateMessageDtoSend(BaseMessageDtoSend):
+    """Message DTO для broadcast сообщений"""
+    recipient_id: UUID
