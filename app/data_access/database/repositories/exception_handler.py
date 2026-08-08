@@ -8,7 +8,7 @@ from sqlalchemy.exc import (
     SQLAlchemyError,
     ProgrammingError
 )
-from exceptions import (
+from app.data_access.exceptions import (
     DBOperationalError,
     DBInterfaceError,
     DBTimeoutError,

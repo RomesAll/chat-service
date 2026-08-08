@@ -3,7 +3,7 @@ from typing import Iterable, Any, Type, cast
 from sqlalchemy import Table, create_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
-from exceptions import (
+from app.data_access.exceptions import (
     ValidationOrmNotDocError,
     ValidationOrmIncorrectDocError,
     ValidationOrmNotTableNameError,
@@ -23,18 +23,18 @@ class SqlAlchemyOrmBaseMeta(type(DeclarativeBase)):
 
 class RegistryMeta(SqlAlchemyOrmBaseMeta):
     """Метакласс для автоматической регистрации всех моделей."""
-    __registry = {}
+    _registry = {}
 
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         if not attrs.get('__abstract__', False) and '__tablename__' in attrs:
-            RegistryMeta.__registry[name.lower()] = new_class
+            RegistryMeta._registry[name.lower()] = new_class
             print(f"Модель зарегистрирована: {name}")
         return new_class
 
     @classmethod
     def get_all_models(cls):
-        return list(cls.__registry.values())
+        return list(cls._registry.values())
 
 
 class AutoCreateTable(RegistryMeta):
@@ -116,8 +116,6 @@ class OrmFieldInfoMeta(ValidationOrmMeta):
 
 
 class OrmManagerMeta(OrmFieldInfoMeta):
-    def __init__(self, name, bases, attrs):
-        super().__init__(name, bases, attrs)
-
-    def __new__(cls, name, bases, attrs):
-        return super().__new__(cls, name, bases, attrs)
+    @classmethod
+    def get_all_models(cls):
+        return list(cls._registry.values())

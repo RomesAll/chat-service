@@ -1,6 +1,6 @@
 from enum import Enum
 from uuid import UUID
-from base import (
+from .base import (
     BaseDtoOrmRecordGetResponse,
     BaseDtoOrmRecordPostRequest,
     BaseDtoOrmRecordPutResponse,
