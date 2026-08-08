@@ -14,7 +14,6 @@ class UserOrm(BaseOrm, IdMixin, TimeStampMixin):
     password: Mapped[str]
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}(id={self.id}, user_name={self.user_name})>'
-
-    def __str__(self):
-        return f'Пользователь {self.user_name} ({self.years_old} лет)'
+        base_repr = super().__repr__()
+        result = base_repr.replace(')>', f', user_name={self.user_name}, years_old={self.years_old})>')
+        return result

@@ -2,7 +2,7 @@ from sqlalchemy import Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID as PUUID
 from app.shared.dtos.message import MessageType
-from base import BaseOrm
+from .base import BaseOrm
 from uuid import UUID
 from models.mixins import IdMixin, TimeStampMixin
 
@@ -16,10 +16,9 @@ class PrivateMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
     type: Mapped[MessageType] = mapped_column(default=MessageType.PRIVATE)
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}(id={self.id}, sender_id={self.sender_id}, recipient_id={self.recipient_id})>'
-
-    def __str__(self):
-        return f'Сообщение от {self.sender_id} пользователю {self.recipient_id}'
+        base_repr = super().__repr__()
+        result = base_repr.replace(')>', f', sender_id={self.sender_id}, recipient_id={self.recipient_id})>')
+        return result
 
 
 class GroupMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
@@ -31,7 +30,6 @@ class GroupMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
     type: Mapped[MessageType] = mapped_column(default=MessageType.GROUP)
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}(id={self.id}, sender_id={self.sender_id}, chat_id={self.chat_id})>'
-
-    def __str__(self):
-        return f'Сообщение от {self.sender_id} в группу {self.chat_id}'
+        base_repr = super().__repr__()
+        result = base_repr.replace(')>', f', sender_id={self.sender_id}, chat_id={self.chat_id})>')
+        return result
