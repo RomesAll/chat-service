@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Iterable, Any, Type, cast
-from sqlalchemy import Table, create_engine
+from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from app.data_access.exceptions import (
@@ -28,8 +28,9 @@ class RegistryMeta(SqlAlchemyOrmBaseMeta):
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         if not attrs.get('__abstract__', False) and '__tablename__' in attrs:
-            RegistryMeta._registry[name.lower()] = new_class
-            print(f"Модель зарегистрирована: {name}")
+            if RegistryMeta._registry.get(name.lower()) is None:
+                RegistryMeta._registry[name.lower()] = new_class
+                print(f"Модель зарегистрирована: {name}")
         return new_class
 
     @classmethod

@@ -1,7 +1,7 @@
 from sqlalchemy import Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID as PUUID
-from app.shared.dtos.message import MessageType
+from app.shared.dtos import MessageType
 from .base import BaseOrm
 from uuid import UUID
 from models.mixins import IdMixin, TimeStampMixin
