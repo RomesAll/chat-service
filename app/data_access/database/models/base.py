@@ -2,9 +2,11 @@ from typing import Iterable
 from uuid import UUID
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from .metaclasses import OrmManagerMeta, DynamicFields
+from .metaclasses import OrmManagerMeta, DynamicFields, AutoCreateTable
+from app.data_access.database.database import db
 from .mixins import IdMixin, TimeStampMixin
 
+AutoCreateTable.set_engine(engine=db.engine)
 
 class BaseOrm(DeclarativeBase, IdMixin, TimeStampMixin, metaclass=OrmManagerMeta):
     """Базовый абстрактный класс для orm моделей"""
@@ -29,9 +31,10 @@ class BaseOrm(DeclarativeBase, IdMixin, TimeStampMixin, metaclass=OrmManagerMeta
                 data = getattr(self, field.name)
                 if isinstance(data, UUID) and uuid_is_str:
                     data = str(data)
-                serializers_data.update({
-                    field.name: data
-                })
+                if data is not None:
+                    serializers_data.update({
+                        field.name: data
+                    })
 
         if not exclude:
             return serializers_data
