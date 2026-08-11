@@ -1,26 +1,33 @@
-from base import (
-    BaseDtoOrmRecordGetResponse,
-    BaseDtoOrmRecordPostRequest,
-    BaseDtoOrmRecordPutResponse,
-    BaseDtoOrmRecordDeleteResponse
+from uuid import UUID
+from .base import (
+    BaseDtoGetResponse,
+    BaseDtoPostDeleteRequest,
+    BaseDtoPutPathRequest,
+    BaseModelWithPrint,
 )
 
 
-class RoomDtoGetResponse(BaseDtoOrmRecordGetResponse):
+class RoomDtoGetResponse(BaseDtoGetResponse):
     """Room DTO для операции получения (Get) информации о комнате"""
     name: str
 
 
-class RoomDtoPostRequest(RoomDtoGetResponse, BaseDtoOrmRecordPostRequest):
+class RoomDtoPostRequest(BaseDtoPostDeleteRequest):
     """Room DTO для операции добавления (Post) информации о комнате"""
-    pass
-
-
-class RoomDtoUpdateRequest(BaseDtoOrmRecordPutResponse):
-    """Room DTO для операции обновления (Put) информации о комнате"""
     name: str
 
 
-class RoomDtoDeleteRequest(BaseDtoOrmRecordDeleteResponse):
+class RoomDtoUpdateRequest(RoomDtoPostRequest, BaseDtoPutPathRequest):
+    """Room DTO для операции обновления (Put) информации о комнате"""
+    pass
+
+
+class RoomDtoDeleteRequest(BaseDtoPostDeleteRequest):
     """Room DTO для операции удаления (Delete) информации о комнате"""
     pass
+
+
+class InvitationUserInRoomDtoRequest(BaseModelWithPrint):
+    """DTO для добавления пользователя в комнату"""
+    room_id: UUID
+    user_id: UUID
