@@ -1,13 +1,17 @@
 from sqlalchemy.orm import Session
-from app.shared.dtos.message import PrivateMessageDtoGetResponse, GroupMessageDtoGetResponse
 from models.message import PrivateMessageOrm, GroupMessageOrm
-from shared.dtos.base import BaseDtoOrmRecord
-from shared.dtos.message import PrivateMessageDtoPostRequest, GroupMessageDtoPostRequest
 from .base import BaseRepository
+from app.shared.dtos import (
+    PrivateMessageDtoGetResponse,
+    GroupMessageDtoGetResponse,
+    BaseDtoClientRequest,
+    PrivateMessageDtoPostRequest,
+    GroupMessageDtoPostRequest
+)
 
 
 class PrivateMessageRepository(
-    BaseRepository[BaseDtoOrmRecord, PrivateMessageDtoGetResponse, PrivateMessageDtoPostRequest]
+    BaseRepository[BaseDtoClientRequest, PrivateMessageDtoGetResponse, PrivateMessageDtoPostRequest]
 ):
     """Репозиторий для работы с данными приватных сообщений"""
 
@@ -18,7 +22,7 @@ class PrivateMessageRepository(
 
 
 class GroupMessageRepository(
-    BaseRepository[BaseDtoOrmRecord, GroupMessageDtoGetResponse, GroupMessageDtoPostRequest]
+    BaseRepository[BaseDtoClientRequest, GroupMessageDtoGetResponse, GroupMessageDtoPostRequest]
 ):
     """Репозиторий для работы с данными групповых сообщений"""
 

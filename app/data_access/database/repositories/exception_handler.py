@@ -17,7 +17,7 @@ from app.data_access.exceptions import (
     NotNullViolationError,
     CheckViolationError,
     DataBaseError,
-    InCorrectStmtError
+    InCorrectStmtError, BreachIntegrity
 )
 
 
@@ -55,6 +55,7 @@ class HandleSqlAlchemyException:
                     raise NotNullViolationError(operation, data, stmt, cause)
                 if isinstance(e.orig, psycopg.errors.CheckViolation):
                     raise CheckViolationError(operation, data, stmt, cause)
+                raise BreachIntegrity(operation, data, stmt, cause)
             except OperationalError as e:
                 """Исключения связанные с неверным хостом, портом или бд не запущена"""
                 raise DBOperationalError(str(e.orig))
