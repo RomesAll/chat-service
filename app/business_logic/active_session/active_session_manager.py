@@ -3,12 +3,8 @@ from typing import Any
 from uuid import UUID
 from weakref import WeakKeyDictionary
 from starlette.websockets import WebSocket
-from app.shared.dtos.user import ActiveSession, UserDtoBriefInfo
+from app.shared.dtos import ActiveSession, UserDtoBriefInfo
 from business_logic.exceptions import UserConnectionNotFound
-from business_logic.active_session.message_sender.group_message import GroupMessageRoute
-from business_logic.active_session.message_sender.private_message import PrivateMessageRoute
-from business_logic.active_session.route_message import RouteMessage
-from shared.dtos.message import BaseMessageDtoSend
 
 
 class ActiveSessionManager:
@@ -21,25 +17,15 @@ class ActiveSessionManager:
         self.room_connections: dict[UUID, WeakSet[WebSocket]] = {}
         # Коллекции для хранения подключения -> множества id комнат
         self.connection_rooms: WeakKeyDictionary[Any, set] = WeakKeyDictionary()
-        # Маршрутизатор сообщений
-        self.route_message = RouteMessage(
-            group_message_route=GroupMessageRoute(),
-            private_message_route=PrivateMessageRoute()
-        )
+        self.route_message = None
 
     # Методы для управления подключениями в атрибуте active_sessions
 
-    async def send_message(
-            self,
-            message: BaseMessageDtoSend
-    ):
-        """Метод делегирования отправки сообщения маршрутизатору"""
-        await self.route_message.routing_message(message)
-
     def get_or_create_session(
             self,
-            user_info: UserDtoBriefInfo,
             *,
+            user_id: UUID,
+            user_info: UserDtoBriefInfo | None = None,
             create_if_not_exist: bool = False
     ) -> ActiveSession:
         """
@@ -51,13 +37,16 @@ class ActiveSessionManager:
 
         Мод "create_if_not_exist = True" предназначен для случаев когда пользователь хочет получить ActiveSession
         (и создать если нет), а потом добавить новое подключение Websocket.
-        :param user_info: информация о пользователе
+        :param user_id: id пользователя
+        :param user_info: информация о пользователе (опционально), но если нужно создать, то (обязательно)
         :param create_if_not_exist: создать ActiveSession если его нет
         :return:
         """
-        if (active_session := self.active_sessions.get(user_info.id)) is None:
+        if (active_session := self.active_sessions.get(user_id)) is None:
             if create_if_not_exist:
-                active_session = ActiveSession(info=user_info)
+                if not user_info:
+                    raise Exception
+                active_session = ActiveSession(info=user_info, websockets=set())
                 self.active_sessions[user_info.id] = active_session
             else:
                 raise Exception
@@ -70,34 +59,34 @@ class ActiveSessionManager:
     ):
         """Добавить новое подключение для пользователя"""
         active_session: ActiveSession = self.get_or_create_session(
-            user_info,
+            user_id=user_info.id,
+            user_info=user_info,
             create_if_not_exist=True
         )
         active_session.websockets.add(connection)
 
     def disconnect(
             self,
-            user_info: UserDtoBriefInfo
+            user_id: UUID
     ):
         """Отключение пользователя"""
         try:
-            self.active_sessions.pop(user_info.id)
+            self.active_sessions.pop(user_id)
         except KeyError:
-            raise UserConnectionNotFound(user_info.id)
+            raise UserConnectionNotFound(user_id)
 
     def remove_user_active_session(
             self,
-            user_info: UserDtoBriefInfo,
+            user_id: UUID,
             connection: WebSocket
     ):
         """Удалить конкретное подключение"""
         active_session: ActiveSession = self.get_or_create_session(
-            user_info,
-            create_if_not_exist=False
+            user_id=user_id,
         )
         active_session.websockets.discard(connection)
         if not active_session.websockets:
-            self.disconnect(user_info)
+            self.disconnect(user_id)
 
     # Методы для управления подключениями в комнате room_sockets, socket_rooms
     # поскольку в room_sockets, socket_rooms хранятся слабые ссылки, удалять их
@@ -105,8 +94,8 @@ class ActiveSessionManager:
 
     def get_or_create_room_connections(
             self,
-            room_id: UUID,
             *,
+            room_id: UUID,
             create_if_not_exist: bool = False
     ) -> WeakSet[WebSocket]:
         """
@@ -133,12 +122,12 @@ class ActiveSessionManager:
 
     def add_user_connections_in_room(
             self,
-            user_info: UserDtoBriefInfo,
+            user_id: UUID,
             room_id: UUID
     ):
         """Добавление всех подключений пользователя в комнату"""
         user_active_session: ActiveSession = self.get_or_create_session(
-            user_info,
+            user_id=user_id,
             create_if_not_exist=False
         )
         for user_connection in user_active_session.websockets:
@@ -151,7 +140,7 @@ class ActiveSessionManager:
     ):
         """Добавление конкретных подключений в комнату"""
         room_connections: WeakSet[WebSocket] = self.get_or_create_room_connections(
-            room_id,
+            room_id=room_id,
             create_if_not_exist=True
         )
         room_connections.add(connection)
@@ -159,3 +148,17 @@ class ActiveSessionManager:
             current_connection_rooms = set()
             self.connection_rooms[connection] = current_connection_rooms
         current_connection_rooms.add(room_id)
+
+
+_manager_instance = None
+
+def get_session_manager() -> ActiveSessionManager:
+    """Единственная точка доступа к менеджеру"""
+    global _manager_instance
+    if _manager_instance is None:
+        _manager_instance = ActiveSessionManager()
+    return _manager_instance
+
+active_session_manager = get_session_manager()
+
+__all__ = ['get_session_manager', 'active_session_manager', 'ActiveSessionManager']

@@ -1,5 +1,5 @@
 from uuid import UUID
-from shared.dtos.message import BaseMessageDtoPostRequest
+from app.shared.dtos import BaseMessageDtoPostRequest
 
 
 class UserConnectionNotFound(Exception):
@@ -21,7 +21,7 @@ class SendMessageError(Exception):
 class RouteMessageError(Exception):
     """Ошибка маршрутизации сообщения"""
     def __init__(self, message_info: BaseMessageDtoPostRequest):
-        message = f'Не удалось маршрутизировать сообщение {message_info}, типа: {message_info.type}'
+        message = f'Не удалось маршрутизировать сообщение {message_info}'
         super().__init__(message)
 
 
