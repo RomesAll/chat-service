@@ -1,20 +1,33 @@
 from abc import ABC, abstractmethod
 from typing import Generic
+from uuid import UUID
+
 from typing_extensions import TypeVar
-from app.shared.dtos.base import (
-    BaseDtoOrmRecordPostRequest,
-    BaseDtoOrmRecordGetResponse,
-    BaseDtoOrmRecord,
+from app.shared.dtos import (
+    BaseDtoClientRequest,
+    BaseDtoGetResponse,
     BaseDtoGetListRequest
 )
 
-TDtoId = TypeVar('TDtoId', bound=BaseDtoOrmRecord)
-TDtoGetResponse = TypeVar('TDtoGetResponse', bound=BaseDtoOrmRecordGetResponse)
-TDtoPostPutDeleteRequest = TypeVar('TDtoPostPutDeleteRequest', bound=BaseDtoOrmRecordPostRequest)
+TDtoId = TypeVar('TDtoId', bound=BaseDtoClientRequest)
+TDtoGetResponse = TypeVar('TDtoGetResponse', bound=BaseDtoGetResponse)
+TDtoPostPutDeleteRequest = TypeVar('TDtoPostPutDeleteRequest', bound=BaseDtoClientRequest)
 
 
 class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], ABC):
     """Класс интерфейса репозитория для доступа к данным"""
+
+    @abstractmethod
+    def check_exist(
+            self,
+            dto_record_id: TDtoId | UUID
+    ) -> bool:
+        """
+        Метод для проверки существования записи
+        :param dto_record_id:
+        :return:
+        """
+        pass
 
     @abstractmethod
     def get(
@@ -31,7 +44,7 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     @abstractmethod
     def get_by_id(
             self,
-            dto_record_id: TDtoId
+            dto_record_id: TDtoId | UUID
     ) -> TDtoGetResponse:
         """
         Метод получения записей по id
