@@ -1,47 +1,53 @@
-from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr
+from typing import Self
+from uuid import UUID
+from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator
 from fastapi.websockets import WebSocket
-from base import (
-    BaseDtoOrmRecordGetResponse,
-    BaseDtoOrmRecordPostRequest,
-    BaseDtoOrmRecordPutResponse,
-    BaseDtoOrmRecordDeleteResponse, BaseDtoOrmRecord
+from .base import (
+    BaseDtoGetResponse,
+    BaseDtoClientRequest,
+    BaseDtoPostDeleteRequest,
+    BaseDtoPutPathRequest
 )
 
 
-class UserDtoGetResponse(BaseDtoOrmRecordGetResponse):
+class UserDtoGetResponse(BaseDtoGetResponse):
     """User DTO для операции получения (Get) информации о пользователе"""
     user_name: str
-    bio: str
-    years_old: int
+    bio: str = Field(None)
+    years_old: int = Field(None)
     email: EmailStr
 
 
-class UserDtoPostRequest(UserDtoGetResponse, BaseDtoOrmRecordPostRequest):
+class UserDtoPostRequest(BaseDtoPostDeleteRequest):
     """User DTO для операции добавления (Post) информации о пользователе"""
-    password: SecretStr
+    user_name: str
+    email: EmailStr
+    password: SecretStr = Field(..., exclude=True)
+    repeat_password: SecretStr = Field(..., exclude=True)
 
 
-class UserDtoUpdateRequest(BaseDtoOrmRecordPutResponse):
+class UserDtoUpdateRequest(BaseDtoPutPathRequest):
     """User DTO для операции обновления (Put) информации о пользователе"""
-    user_name: str = Field(None)
-    bio: str = Field(None)
-    years_old: int = Field(None)
-    is_deleted: bool = Field(None)
+    user_name: str | None = Field(default=None, examples=[None])
+    bio: str | None = Field(default=None, examples=[None])
+    years_old: int | None = Field(default=None, examples=[None])
+    is_deleted: bool | None = Field(default=None, examples=[None])
 
 
-class UserDtoDeleteRequest(BaseDtoOrmRecordDeleteResponse):
+class UserDtoDeleteRequest(BaseDtoPostDeleteRequest):
     """User DTO для операции удаления (Delete) информации о пользователе"""
     pass
 
 
-class UserDtoBriefInfo(BaseDtoOrmRecord):
+class UserDtoBriefInfo(BaseModel):
     """User DTO для хранения краткой информации о пользователе"""
+    id: UUID
     user_name: str
     years_old: int
     email: str
 
 
-class UserDtoChangePsw(BaseDtoOrmRecord):
+class UserDtoChangePsw(BaseDtoClientRequest):
     """User DTO для смены старого пароля на новый"""
     old_password: SecretStr
     new_password: SecretStr
