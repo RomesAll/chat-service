@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from enum import Enum
+from enum import Enum, unique
 from typing import Any
 from uuid import UUID
 from pydantic import BaseModel, Field, model_validator, field_validator, ConfigDict
@@ -109,12 +109,37 @@ class BaseModelWithPrint(BaseModel):
         return result
 
 
-class BaseDtoOrmRecord(BaseModelWithPrint):
-    """Базовый DTO с общими полями для всех операций"""
+@unique
+class ActionType(Enum):
+    SEND_PRIVATE_MSG_AUTO_DELETE = 100
+    SEND_PRIVATE_MSG_AND_SAVE = 101
+    SEND_GROUP_MSG_AUTO_DELETE = 102
+    SEND_GROUP_MSG_AND_SAVE = 103
+
+    REGISTER_USER = 104
+    UPDATE_USER = 105
+    SOFT_DELETE_USER = 106
+    HARD_DELETE_USER = 107
+    RECOVERY_USER = 108
+    GET_USERS = 109
+    GET_ONE_USER = 110
+
+    INVITATION_USER_IN_ROOM = 111
+    CREATE_ROOM = 112
+    UPDATE_ROOM = 113
+    SOFT_DELETE_ROOM = 114
+    HARD_DELETE_ROOM = 115
+    RECOVERY_ROOM = 116
+    GET_ROOM = 117
+    GET_ONE_ROOM = 118
+
+
+class BaseDtoClientRequest(BaseModelWithPrint):
+    """Базовый DTO для хранения запроса клиента на определенные действия"""
     id: UUID
 
 
-class BaseDtoOrmRecordGetResponse(BaseDtoOrmRecord):
+class BaseDtoGetResponse(BaseDtoClientRequest):
     """Базовый DTO с общими полями для операции получения (Get)"""
     created_at: datetime
     updated_at: datetime
@@ -123,7 +148,7 @@ class BaseDtoOrmRecordGetResponse(BaseDtoOrmRecord):
         description='Время получения записей'
     )
     is_deleted: bool = False
-    model_config = ConfigDict(extra='allow')
+    model_config = ConfigDict(extra='ignore')
 
     @field_validator('created_at', 'updated_at')
     def validate_utc_time(cls, value):
@@ -133,16 +158,13 @@ class BaseDtoOrmRecordGetResponse(BaseDtoOrmRecord):
         return value
 
 
-class BaseDtoOrmRecordPostRequest(BaseDtoOrmRecord):
-    """Базовый DTO с общими полями для операции добавления (Post)"""
-    return_record: bool = Field(False, exclude=True)
-
-
-class BaseDtoOrmRecordPutResponse(BaseDtoOrmRecordPostRequest):
-    """Базовый DTO с общими полями для операции обновления (Put)"""
-    id: UUID = Field(..., exclude=True)
-
-
-class BaseDtoOrmRecordDeleteResponse(BaseDtoOrmRecordPostRequest):
-    """Базовый DTO с общими полями для операции удаления (Delete)"""
+class BaseDtoPostDeleteRequest(BaseDtoClientRequest):
+    """Базовый DTO с общими полями для операции добавления (Post), удаления (Delete)"""
     pass
+
+
+class BaseDtoPutPathRequest(BaseDtoPostDeleteRequest):
+    """Базовый DTO с общими полями для операции обновления (Put, Path)"""
+    def get_updates(self) -> dict:
+        """Возвращает только установленные поля"""
+        return self.model_dump(exclude_unset=True)
