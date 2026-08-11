@@ -27,3 +27,5 @@ class Database:
     def create_session(self) -> Session:
         """Прямое получение сессии"""
         return self.session_factory()
+
+db = Database()
