@@ -4,10 +4,10 @@ from sqlalchemy import UUID as PUUID
 from app.shared.dtos import MessageType
 from .base import BaseOrm
 from uuid import UUID
-from models.mixins import IdMixin, TimeStampMixin
+from .mixins import IdMixin
 
 
-class PrivateMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
+class PrivateMessageOrm(BaseOrm, IdMixin):
     """Orm модель для приватных сообщений"""
     __tablename__ = 'private_message'
     sender_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))
@@ -21,7 +21,7 @@ class PrivateMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
         return result
 
 
-class GroupMessageOrm(BaseOrm, IdMixin, TimeStampMixin):
+class GroupMessageOrm(BaseOrm, IdMixin):
     """Orm модель для публичных сообщений"""
     __tablename__ = 'group_message'
     sender_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))

@@ -4,11 +4,11 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from .metaclasses import OrmManagerMeta, DynamicFields, AutoCreateTable
 from app.data_access.database.database import db
-from .mixins import IdMixin, TimeStampMixin
+from .mixins import TimeStampMixin
 
 AutoCreateTable.set_engine(engine=db.engine)
 
-class BaseOrm(DeclarativeBase, IdMixin, TimeStampMixin, metaclass=OrmManagerMeta):
+class BaseOrm(DeclarativeBase, TimeStampMixin, metaclass=OrmManagerMeta):
     """Базовый абстрактный класс для orm моделей"""
     __abstract__ = True
     Fields: DynamicFields
@@ -62,7 +62,6 @@ class BaseOrm(DeclarativeBase, IdMixin, TimeStampMixin, metaclass=OrmManagerMeta
 
     def __repr__(self):
         return (f'<{self.__class__.__name__}('
-                f'id={self.id}, '
                 f'is_deleted={self.is_deleted}, '
                 f'created_at={self.created_at.strftime('%d.%m.%Y %H:%M') if self.created_at else self.created_at}, '
                 f'updated_at={self.updated_at.strftime('%d.%m.%Y %H:%M') if self.updated_at else self.updated_at})>')
