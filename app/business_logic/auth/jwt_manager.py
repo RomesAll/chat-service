@@ -80,6 +80,7 @@ class JWTFacade:
                 user_id=user_id,
                 sub=sub,
                 refresh_id=uuid4(),
+                role=role
             )
         )
         return JWTRefreshTokenResponse(
