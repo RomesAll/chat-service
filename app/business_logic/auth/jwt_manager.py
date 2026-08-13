@@ -2,8 +2,10 @@ from abc import abstractmethod, ABC
 from copy import copy
 from datetime import timedelta, datetime, timezone
 from typing import TypeVar, Generic
-from app.shared.dtos import JWTAccessToken, JWTRefreshToken, JWTBaseToken
+from uuid import uuid4
+from app.shared.dtos import JWTAccessToken, JWTRefreshToken, JWTBaseToken, JWTRefreshTokenResponse
 import jwt
+from models.user import RoleEnum
 
 T = TypeVar('T', bound=JWTBaseToken)
 
@@ -56,3 +58,31 @@ class JWTRefreshManager(JWTBaseManager[JWTRefreshToken]):
     def _create_token_instance(cls, to_decode_token: dict) -> JWTRefreshToken:
         """Создает экземпляр токена"""
         return JWTRefreshToken(**to_decode_token)
+
+
+class JWTFacade:
+    """Фасадный класс для создания access и refresh токенов"""
+    jwt_access_manager = JWTAccessManager
+    jwt_refresh_manager = JWTRefreshManager
+
+    @classmethod
+    def create_tokens(cls, user_id: str, sub: str, role: RoleEnum) -> JWTRefreshTokenResponse:
+        """Создания пары access и refresh токенов"""
+        access_token: str = JWTAccessManager.create_token(
+            JWTAccessToken(
+                user_id=user_id,
+                sub=sub,
+                role=role
+            )
+        )
+        refresh_token: str = JWTRefreshManager.create_token(
+            JWTRefreshToken(
+                user_id=user_id,
+                sub=sub,
+                refresh_id=uuid4(),
+            )
+        )
+        return JWTRefreshTokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token
+        )
