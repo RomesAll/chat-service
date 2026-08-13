@@ -32,7 +32,7 @@ async def send_private_message(
     ).execute(dto_request)
     return Response(
         status_code=status.HTTP_204_NO_CONTENT,
-        content=f'Сообщение отправлено пользователю {user_info['user_id']}'
+        content=f'Сообщение отправлено пользователю {user_info.user_id}'
     )
 
 
@@ -45,7 +45,7 @@ async def send_private_message(
 )
 async def send_group_message(
         dto_request: GroupMessageDtoPostRequest,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN])),
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN])),
 ):
     await SendGroupMsgAndSave(
         uow=UnitOfWork(db),
@@ -53,5 +53,5 @@ async def send_group_message(
     ).execute(dto_request)
     return Response(
         status_code=status.HTTP_204_NO_CONTENT,
-        content=f'Сообщение пользователя {user_info['user_id']} отправлено в комнату {dto_request.chat_id}'
+        content=f'Сообщение пользователя {user_info.user_id} отправлено в комнату {dto_request.chat_id}'
     )

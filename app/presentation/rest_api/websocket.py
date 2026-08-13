@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from business_logic.active_session.active_session_manager import active_session_manager
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.user.get_one_user import GetOneUsers
 from database import db
-from dtos import UserDtoBriefInfo, UserDtoGetResponse
-from presentation.dependencies.auth import AuthChecker
+from app.shared.dtos import UserDtoBriefInfo, UserDtoGetResponse
 
 route = APIRouter()
 
@@ -13,12 +12,13 @@ route = APIRouter()
 @route.websocket("/ws/{client_id}")
 async def realtime_connection_v1(
         websocket: WebSocket,
-        user_info: dict = Depends(AuthChecker())
+        client_id: str
+        #user_info: dict = Depends(AuthChecker())
 ):
     await websocket.accept()
     user_full_info: UserDtoGetResponse = GetOneUsers(
         uow=UnitOfWork(db)
-    ).execute(user_info['user_id'])
+    ).execute(client_id)
     user_brief_info = UserDtoBriefInfo(
         id=user_full_info.id,
         user_name=user_full_info.user_name,
@@ -32,4 +32,4 @@ async def realtime_connection_v1(
             raw_data: dict = await websocket.receive_json()
             print(raw_data)
     except WebSocketDisconnect:
-        print(user_info['user_id'], 'отключился')
+        print(client_id, 'отключился')

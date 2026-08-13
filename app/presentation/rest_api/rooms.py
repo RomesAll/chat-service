@@ -6,7 +6,7 @@ from business_logic.use_cases.room.invitation_user_in_room import InvitationUser
 from database import db
 from dtos import (
     RoomDtoPostRequest,
-    InvitationUserInRoomDtoRequest, RoomDtoGetResponse
+    InvitationUserInRoomDtoRequest, RoomDtoGetResponse, JWTAccessToken
 )
 from models.user import RoleEnum
 from presentation.dependencies.auth import AuthChecker, RoleChecker
@@ -24,7 +24,7 @@ route = APIRouter()
 def create_room(
         new_room: RoomDtoPostRequest,
         return_record: bool = True,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN])),
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN])),
 ):
     result: RoomDtoGetResponse = CreateRoom(
         uow=UnitOfWork(db),
@@ -49,7 +49,7 @@ def create_room(
 )
 def invitation_user_in_room(
         invitation_user: InvitationUserInRoomDtoRequest,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN])),
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN])),
 ):
     InvitationUserInRoom(
         uow=UnitOfWork(db),
@@ -57,5 +57,5 @@ def invitation_user_in_room(
     ).execute(invitation_user)
     return Response(
         status_code=status.HTTP_201_CREATED,
-        content=f'{invitation_user.user_id} добавил {user_info['user_id']} в комнату {invitation_user.room_id}'
+        content=f'{invitation_user.user_id} добавил {user_info.user_id} в комнату {invitation_user.room_id}'
     )

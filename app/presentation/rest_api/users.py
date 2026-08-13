@@ -14,10 +14,10 @@ from dtos import (
     PaginationDto,
     SortDto,
     SortEnum,
-    UserDtoUpdateRequest
+    UserDtoUpdateRequest, JWTAccessToken
 )
 from models.user import RoleEnum
-from presentation.dependencies.auth import AuthChecker, RoleChecker
+from presentation.dependencies.auth import RoleChecker
 
 route = APIRouter()
 
@@ -63,7 +63,7 @@ def get_users(
 )
 def get_one_user(
         user_id: str,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = GetOneUsers(
         uow=UnitOfWork(db)
@@ -85,7 +85,7 @@ path='/users',
 def update_user(
         update_user_info: UserDtoUpdateRequest,
         return_record: bool = True,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = UpdateUser(
         uow=UnitOfWork(db)
@@ -112,7 +112,7 @@ def update_user(
 )
 def soft_delete_user(
         user_id: str,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: str = SoftDeleteUser(
         uow=UnitOfWork(db)
@@ -132,7 +132,7 @@ def soft_delete_user(
 )
 def hard_delete_user(
         user_id: str,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: str = HardDeleteUser(
         uow=UnitOfWork(db)
@@ -153,7 +153,7 @@ def hard_delete_user(
 def recovery_user(
         user_id: str,
         return_record: bool = True,
-        user_info: dict = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        user_info: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = RecoveryUser(
         uow=UnitOfWork(db)
