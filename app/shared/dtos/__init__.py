@@ -39,6 +39,12 @@ from .user import (
     ActiveSession,
     UserDtoDeleteRequest
 )
+from .jwt import (
+    JWTBaseToken,
+    JWTAccessToken,
+    JWTRefreshToken,
+    JWTRefreshTokenResponse
+)
 
 __all__ = [
     'OperatorEnum',
@@ -73,5 +79,9 @@ __all__ = [
     'MessageDtoDeleteRequest',
     'RoomDtoDeleteRequest',
     'UserDtoDeleteRequest',
-    'InvitationUserInRoomDtoRequest'
+    'InvitationUserInRoomDtoRequest',
+    'JWTBaseToken',
+    'JWTAccessToken',
+    'JWTRefreshToken',
+    'JWTRefreshTokenResponse'
 ]

@@ -30,4 +30,8 @@ class RoomDtoDeleteRequest(BaseDtoPostDeleteRequest):
 class InvitationUserInRoomDtoRequest(BaseModelWithPrint):
     """DTO для добавления пользователя в комнату"""
     room_id: UUID
-    user_id: UUID
+    user_id: str
+
+class UserInRoomDtoGetResponse(InvitationUserInRoomDtoRequest, BaseDtoGetResponse):
+    pass
+

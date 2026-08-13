@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 from pydantic import BaseModel, Field
 from enum import Enum
+from models.user import RoleEnum
 
 
 class TokenType(str, Enum):
@@ -10,7 +11,7 @@ class TokenType(str, Enum):
 
 
 class JWTBaseToken(BaseModel):
-    user_id: UUID
+    user_id: str
     sub: str
     type: TokenType
     exp: int | None = None
@@ -22,9 +23,15 @@ class JWTBaseToken(BaseModel):
 
 
 class JWTAccessToken(JWTBaseToken):
+    role: RoleEnum
     type: TokenType = Field(default=TokenType.ACCESS_TOKEN)
 
 
 class JWTRefreshToken(JWTBaseToken):
     refresh_id: UUID
     type: TokenType = Field(default=TokenType.REFRESH_TOKEN)
+
+
+class JWTRefreshTokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str

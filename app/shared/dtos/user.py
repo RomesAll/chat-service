@@ -2,6 +2,8 @@ from typing import Self
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator
 from fastapi.websockets import WebSocket
+
+from models.user import RoleEnum
 from .base import (
     BaseDtoGetResponse,
     BaseDtoClientRequest,
@@ -12,39 +14,47 @@ from .base import (
 
 class UserDtoGetResponse(BaseDtoGetResponse):
     """User DTO для операции получения (Get) информации о пользователе"""
+    id: str
     user_name: str
+    role: RoleEnum
     bio: str = Field(None)
     years_old: int = Field(None)
     email: EmailStr
+    phone: str
 
 
 class UserDtoPostRequest(BaseDtoPostDeleteRequest):
     """User DTO для операции добавления (Post) информации о пользователе"""
+    id: str
     user_name: str
     email: EmailStr
+    phone: str
     password: SecretStr = Field(..., exclude=True)
     repeat_password: SecretStr = Field(..., exclude=True)
 
 
 class UserDtoUpdateRequest(BaseDtoPutPathRequest):
     """User DTO для операции обновления (Put) информации о пользователе"""
+    id: str
     user_name: str | None = Field(default=None, examples=[None])
     bio: str | None = Field(default=None, examples=[None])
     years_old: int | None = Field(default=None, examples=[None])
+    phone: str | None = Field(default=None, examples=[None])
     is_deleted: bool | None = Field(default=None, examples=[None])
 
 
 class UserDtoDeleteRequest(BaseDtoPostDeleteRequest):
     """User DTO для операции удаления (Delete) информации о пользователе"""
-    pass
+    id: str
 
 
 class UserDtoBriefInfo(BaseModel):
     """User DTO для хранения краткой информации о пользователе"""
-    id: UUID
+    id: str
     user_name: str
-    years_old: int
+    years_old: int | None = None
     email: str
+    phone: str
 
 
 class UserDtoChangePsw(BaseDtoClientRequest):
