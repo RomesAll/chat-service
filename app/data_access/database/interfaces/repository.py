@@ -20,7 +20,7 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     @abstractmethod
     def check_exist(
             self,
-            dto_record_id: TDtoId | UUID
+            dto_record_id: UUID | str | int
     ) -> bool:
         """
         Метод для проверки существования записи
@@ -44,11 +44,11 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     @abstractmethod
     def get_by_id(
             self,
-            dto_record_id: TDtoId | UUID
+            record_id: UUID | str | int
     ) -> TDtoGetResponse:
         """
         Метод получения записей по id
-        :param dto_record_id: принимает dto объект DtoGetByIdRequest
+        :param record_id
         :return:
         """
         pass
@@ -57,7 +57,7 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     def save(
             self,
             dto_post_request: TDtoPostPutDeleteRequest
-    ) -> TDtoGetResponse | None:
+    ) -> TDtoGetResponse:
         """
         Сохранение записи
         :param dto_post_request: принимает объект BaseDtoPostRequest
@@ -69,7 +69,7 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     def update(
             self,
             dto_update_request: TDtoPostPutDeleteRequest
-    ) -> TDtoGetResponse | None:
+    ) -> TDtoGetResponse:
         """
         Обновление записи
         :param dto_update_request: принимает объект BaseDtoUpdateRequest
@@ -80,11 +80,11 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     @abstractmethod
     def hard_delete(
             self,
-            dto_delete_request: TDtoPostPutDeleteRequest
-    ) -> TDtoGetResponse | None:
+            record_id: UUID | str | int
+    ) -> UUID | str | int:
         """
         Удаление записи из бд без возможности восстановления
-        :param dto_delete_request: принимает объект BaseDtoDeleteRequest
+        :param record_id:
         :return: возвращает либо None (если мы в dto указали return_value=False), либо удаленный объект
         """
         pass
@@ -92,11 +92,11 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     @abstractmethod
     def soft_delete(
             self,
-            dto_delete_request: TDtoPostPutDeleteRequest
-    ) -> TDtoGetResponse | None:
+            record_id: UUID | str | int
+    ) -> UUID | str | int:
         """
         Мягкое удаление записи с возможностью восстановления
-        :param dto_delete_request: принимает объект BaseDtoDeleteRequest
+        :param record_id:
         :return: возвращает либо None (если мы в dto указали return_value=False), либо удаленный объект
         """
         pass
@@ -104,11 +104,11 @@ class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], AB
     @abstractmethod
     def recovery(
             self,
-            dto_delete_request: TDtoPostPutDeleteRequest
-    ) -> TDtoGetResponse | None:
+            record_id: UUID | str | int
+    ) -> TDtoGetResponse:
         """
         Восстановление записи
-        :param dto_delete_request: принимает объект BaseDtoDeleteRequest
+        :param record_id:
         :return: возвращает либо None (если мы в dto указали return_value=False), либо удаленный объект
         """
         pass
