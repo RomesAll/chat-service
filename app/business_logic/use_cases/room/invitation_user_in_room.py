@@ -7,6 +7,7 @@ from repositories.room import UserInRoomRepository
 
 
 class InvitationUserInRoom(IUseCase):
+    """Use case для добавления пользователя в комнату"""
     def __init__(
             self,
             uow: UnitOfWork,

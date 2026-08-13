@@ -10,6 +10,7 @@ security = HTTPBearer()
 
 
 class AuthChecker:
+    """Проверка существования access токена"""
     def __call__(self, credentials: HTTPAuthorizationCredentials = Depends(security)) -> JWTAccessToken:
         token = credentials.credentials
         try:
@@ -24,6 +25,7 @@ class AuthChecker:
 
 
 class RoleChecker:
+    """Проверка ролей в токене"""
     def __init__(self, allowed_roles: list[RoleEnum]):
         self.allowed_roles = allowed_roles
 

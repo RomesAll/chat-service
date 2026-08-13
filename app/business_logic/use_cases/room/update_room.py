@@ -5,6 +5,7 @@ from repositories import RoomRepository
 
 
 class UpdateRoom(IUseCase):
+    """Use case для обновления комнаты"""
     def __init__(
             self,
             uow: UnitOfWork

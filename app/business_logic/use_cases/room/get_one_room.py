@@ -1,5 +1,4 @@
 from uuid import UUID
-
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.interface.iuse_case import IUseCase
 from repositories import RoomRepository
@@ -7,6 +6,7 @@ from app.shared.dtos import RoomDtoGetResponse
 
 
 class GetOneRoom(IUseCase):
+    """Use case для получения комнаты"""
     def __init__(
             self,
             uow: UnitOfWork

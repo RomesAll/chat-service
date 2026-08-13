@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from copy import copy
 from datetime import timedelta, datetime, timezone
 from typing import TypeVar, Generic
-from uuid import uuid4
+from uuid import UUID
 from app.shared.dtos import JWTAccessToken, JWTRefreshToken, JWTBaseToken, JWTRefreshTokenResponse
 import jwt
 from models.user import RoleEnum
@@ -11,7 +11,6 @@ T = TypeVar('T', bound=JWTBaseToken)
 
 class JWTBaseManager(ABC, Generic[T]):
     """Базовый класс менеджер для выпуска и декодирования токенов доступа, обновления"""
-
     SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     EXPIRES_DELTA: timedelta = timedelta(minutes=15)
@@ -38,7 +37,6 @@ class JWTBaseManager(ABC, Generic[T]):
 
 class JWTAccessManager(JWTBaseManager[JWTAccessToken]):
     """Менеджер для выпуска и декодирования токенов доступа"""
-
     SECRET_KEY: str = "access_secret_key_12345678901234567890"
     EXPIRES_DELTA: timedelta = timedelta(minutes=15)
 
@@ -50,7 +48,6 @@ class JWTAccessManager(JWTBaseManager[JWTAccessToken]):
 
 class JWTRefreshManager(JWTBaseManager[JWTRefreshToken]):
     """Менеджер для выпуска и декодирования токенов обновления"""
-
     SECRET_KEY: str = "refresh_secret_key_12345678901234567890"
     EXPIRES_DELTA: timedelta = timedelta(days=7)
 
@@ -66,7 +63,7 @@ class JWTFacade:
     jwt_refresh_manager = JWTRefreshManager
 
     @classmethod
-    def create_tokens(cls, user_id: str, sub: str, role: RoleEnum) -> JWTRefreshTokenResponse:
+    def create_tokens(cls, user_id: str, sub: str, role: RoleEnum, refresh_id: UUID) -> JWTRefreshTokenResponse:
         """Создания пары access и refresh токенов"""
         access_token: str = JWTAccessManager.create_token(
             JWTAccessToken(
@@ -79,7 +76,7 @@ class JWTFacade:
             JWTRefreshToken(
                 user_id=user_id,
                 sub=sub,
-                refresh_id=uuid4(),
+                refresh_id=refresh_id,
                 role=role
             )
         )

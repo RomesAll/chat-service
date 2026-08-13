@@ -1,10 +1,11 @@
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.interface.iuse_case import IUseCase
-from app.shared.dtos import UserDtoGetResponse, UserDtoDeleteRequest
+from app.shared.dtos import UserDtoGetResponse
 from repositories import UserRepository
 
 
 class RecoveryUser(IUseCase):
+    """Use case для восстановления пользователей"""
     def __init__(
             self,
             uow: UnitOfWork

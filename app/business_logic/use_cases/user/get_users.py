@@ -5,6 +5,7 @@ from app.shared.dtos import BaseDtoGetListRequest, UserDtoGetResponse
 
 
 class GetUsers(IUseCase):
+    """Use case для получения всех пользователей"""
     def __init__(
             self,
             uow: UnitOfWork

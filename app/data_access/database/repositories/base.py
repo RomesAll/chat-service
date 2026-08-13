@@ -32,7 +32,6 @@ class BaseRepository(
     IRepository[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest]
 ):
     """Базовый репозиторий для работы с данными"""
-
     def __init__(
             self,
             session: Session

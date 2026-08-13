@@ -12,8 +12,7 @@ from app.shared.dtos import (
 class RoomRepository(
     BaseRepository[BaseDtoClientRequest, RoomDtoGetResponse, RoomDtoPostRequest]
 ):
-    """Репозиторий для работы с данными групп"""
-
+    """Репозиторий для работы с данными комнат"""
     def __init__(self, session: Session):
         super().__init__(session=session)
         self.dto_response = RoomDtoGetResponse
@@ -23,6 +22,7 @@ class RoomRepository(
 class UserInRoomRepository(
     BaseRepository[BaseDtoClientRequest, RoomDtoGetResponse, RoomDtoPostRequest]
 ):
+    """Репозиторий для работы с данными пользователей в комнате"""
     def __init__(self, session: Session):
         super().__init__(session=session)
         self.dto_response = UserInRoomDtoGetResponse

@@ -6,6 +6,7 @@ from database import db
 
 
 class UpdateUser(IUseCase):
+    """Use case для обновления пользователей"""
     def __init__(
             self,
             uow: UnitOfWork

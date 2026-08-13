@@ -6,11 +6,13 @@ from models.user import RoleEnum
 
 
 class TokenType(str, Enum):
+    """Перечисления типов токенов"""
     ACCESS_TOKEN = 'access_token'
     REFRESH_TOKEN = 'refresh_token'
 
 
 class JWTBaseToken(BaseModel):
+    """Base DTO для хранения информации о access и refresh токенах"""
     user_id: str
     sub: str
     type: TokenType
@@ -24,14 +26,17 @@ class JWTBaseToken(BaseModel):
 
 
 class JWTAccessToken(JWTBaseToken):
+    """DTO для хранения информации о access токенах"""
     type: TokenType = Field(default=TokenType.ACCESS_TOKEN)
 
 
 class JWTRefreshToken(JWTBaseToken):
+    """DTO для хранения информации о refresh токенах"""
     refresh_id: UUID
     type: TokenType = Field(default=TokenType.REFRESH_TOKEN)
 
 
 class JWTRefreshTokenResponse(BaseModel):
+    """DTO для хранения сгенерированных access и refresh токенах"""
     access_token: str
     refresh_token: str

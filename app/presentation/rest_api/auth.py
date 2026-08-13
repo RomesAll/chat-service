@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Response, status
 from business_logic.auth.jwt_manager import JWTFacade
 from business_logic.auth.password_manager import PasswordManager
+from business_logic.cache.jwt_white_list import jwt_white_list
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.auth.login_use_case import LoginUseCase
 from app.shared.dtos import UserDtoPostRequest
@@ -24,7 +25,8 @@ def login_user(credentials: LoginDtoRequest):
     result: LoginOrRegisterDtoResponse = LoginUseCase(
         uow=UnitOfWork(db),
         jwt_manager=JWTFacade,
-        psw_manager=PasswordManager
+        psw_manager=PasswordManager,
+        jwt_white_list=jwt_white_list
     ).execute(credentials)
     return Response(
         status_code=status.HTTP_201_CREATED,
@@ -44,7 +46,8 @@ def register_user(new_user: UserDtoPostRequest, return_record: bool = True):
     result: LoginOrRegisterDtoResponse = RegisterUser(
         uow=UnitOfWork(db),
         jwt_manager=JWTFacade,
-        psw_manager=PasswordManager
+        psw_manager=PasswordManager,
+        jwt_white_list=jwt_white_list
     ).execute(new_user)
     if not return_record:
         return Response(
@@ -66,7 +69,8 @@ def register_user(new_user: UserDtoPostRequest, return_record: bool = True):
 )
 def refresh_tokens(refresh_token: str):
     result: JWTRefreshTokenResponse = RefreshTokenUseCase(
-        jwt_manager=JWTFacade
+        jwt_manager=JWTFacade,
+        jwt_white_list=jwt_white_list
     ).execute(refresh_token)
     return Response(
         status_code=status.HTTP_201_CREATED,

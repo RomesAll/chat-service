@@ -16,7 +16,6 @@ TDtoPostPutDeleteRequest = TypeVar('TDtoPostPutDeleteRequest', bound=BaseDtoClie
 
 class IRepository(Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest], ABC):
     """Класс интерфейса репозитория для доступа к данным"""
-
     @abstractmethod
     def check_exist(
             self,

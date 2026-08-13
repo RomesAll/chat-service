@@ -33,5 +33,6 @@ class InvitationUserInRoomDtoRequest(BaseModelWithPrint):
     user_id: str
 
 class UserInRoomDtoGetResponse(InvitationUserInRoomDtoRequest, BaseDtoGetResponse):
+    """DTO для хранения информации о пользователях в комнате"""
     pass
 

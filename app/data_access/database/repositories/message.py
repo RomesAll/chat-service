@@ -14,7 +14,6 @@ class PrivateMessageRepository(
     BaseRepository[BaseDtoClientRequest, PrivateMessageDtoGetResponse, PrivateMessageDtoPostRequest]
 ):
     """Репозиторий для работы с данными приватных сообщений"""
-
     def __init__(self, session: Session):
         super().__init__(session=session)
         self.dto_response = PrivateMessageDtoGetResponse
@@ -25,7 +24,6 @@ class GroupMessageRepository(
     BaseRepository[BaseDtoClientRequest, GroupMessageDtoGetResponse, GroupMessageDtoPostRequest]
 ):
     """Репозиторий для работы с данными групповых сообщений"""
-
     def __init__(self, session: Session):
         super().__init__(session=session)
         self.dto_response = GroupMessageDtoGetResponse

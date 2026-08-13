@@ -6,6 +6,7 @@ from app.shared.dtos import PrivateMessageDtoPostRequest, PrivateMessageDtoGetRe
 
 
 class SendPrivateMsgAndSave(IUseCase):
+    """Use case для отправки сообщений другому пользователю"""
     def __init__(
             self,
             uow: UnitOfWork,

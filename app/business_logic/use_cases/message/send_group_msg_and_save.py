@@ -6,6 +6,7 @@ from app.shared.dtos import GroupMessageDtoPostRequest, GroupMessageDtoGetRespon
 
 
 class SendGroupMsgAndSave(IUseCase):
+    """Use case для отправки сообщений в комнату"""
     def __init__(
             self,
             uow: UnitOfWork,

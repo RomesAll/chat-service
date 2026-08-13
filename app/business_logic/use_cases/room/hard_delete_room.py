@@ -5,6 +5,7 @@ from repositories import RoomRepository
 
 
 class HardDeleteRoom(IUseCase):
+    """Use case для удаления комнаты"""
     def __init__(
             self,
             uow: UnitOfWork

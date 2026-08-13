@@ -7,6 +7,7 @@ from app.shared.dtos import RoomDtoGetResponse
 
 
 class GetRooms(IUseCase):
+    """Use case для получения комнат"""
     def __init__(
             self,
             uow: UnitOfWork
