@@ -1,23 +1,20 @@
-from business_logic.active_session.active_session_manager import ActiveSessionManager
 from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase, check_request_data_exist
+from business_logic.use_cases.interface.iuse_case import IUseCase
 from database import db
+from dtos import BaseDtoGetListRequest
 from repositories import UserRepository
-from app.shared.dtos import BaseDtoGetListRequest, ActionType, RoomDtoGetResponse
+from app.shared.dtos import RoomDtoGetResponse
 
 
 class GetRooms(IUseCase):
     def __init__(
             self,
-            dto_request_data: BaseDtoGetListRequest,
-            action_type: ActionType,
-            active_session_manager: ActiveSessionManager
+            uow: UnitOfWork
     ):
-        super().__init__(dto_request_data, action_type, active_session_manager)
+        self.uow = uow
 
-    @check_request_data_exist
-    async def execute(self) -> list[RoomDtoGetResponse]:
+    async def execute(self, dto_room: BaseDtoGetListRequest) -> list[RoomDtoGetResponse]:
         with UnitOfWork(db) as uow:
             repo = uow.get_repository(UserRepository)
-            dto_response = repo.get(self.dto_request_data)
+            dto_response = repo.get(dto_room)
             return dto_response

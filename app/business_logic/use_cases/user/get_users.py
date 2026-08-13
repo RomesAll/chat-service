@@ -1,23 +1,18 @@
-from business_logic.active_session.active_session_manager import ActiveSessionManager
 from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase, check_request_data_exist
-from database import db
+from business_logic.use_cases.interface.iuse_case import IUseCase
 from repositories import UserRepository
-from app.shared.dtos import BaseDtoGetListRequest, ActionType, UserDtoGetResponse
+from app.shared.dtos import BaseDtoGetListRequest, UserDtoGetResponse
 
 
 class GetUsers(IUseCase):
     def __init__(
             self,
-            dto_request_data: BaseDtoGetListRequest,
-            action_type: ActionType,
-            active_session_manager: ActiveSessionManager
+            uow: UnitOfWork
     ):
-        super().__init__(dto_request_data, action_type, active_session_manager)
+        self.uow = uow
 
-    @check_request_data_exist
-    async def execute(self) -> list[UserDtoGetResponse]:
-        with UnitOfWork(db) as uow:
+    def execute(self, dto_user: BaseDtoGetListRequest) -> list[UserDtoGetResponse]:
+        with self.uow as uow:
             group_msg_repo = uow.get_repository(UserRepository)
-            dto_response = group_msg_repo.get(self.dto_request_data)
+            dto_response = group_msg_repo.get(dto_user)
             return dto_response

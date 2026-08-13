@@ -1,22 +1,18 @@
-from business_logic.active_session.active_session_manager import ActiveSessionManager
 from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase, check_request_data_exist
-from app.shared.dtos import UserDtoGetResponse, UserDtoUpdateRequest, ActionType
-from database import db
+from business_logic.use_cases.interface.iuse_case import IUseCase
+from app.shared.dtos import UserDtoGetResponse, UserDtoUpdateRequest
 from repositories import UserRepository
+from database import db
 
 
 class UpdateUser(IUseCase):
     def __init__(
             self,
-            dto_request_data: UserDtoUpdateRequest,
-            action_type: ActionType,
-            active_session_manager: ActiveSessionManager
+            uow: UnitOfWork
     ):
-        super().__init__(dto_request_data, action_type, active_session_manager)
+        self.uow = uow
 
-    @check_request_data_exist
-    def execute(self) -> UserDtoGetResponse:
+    def execute(self, dto_user: UserDtoUpdateRequest) -> UserDtoGetResponse:
         with UnitOfWork(db) as uow:
             repo = uow.get_repository(UserRepository)
-            return repo.update(self.dto_request_data)
+            return repo.update(dto_user)

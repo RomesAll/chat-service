@@ -1,22 +1,17 @@
-from business_logic.active_session.active_session_manager import ActiveSessionManager
+from uuid import UUID
 from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase, check_request_data_exist
-from app.shared.dtos import ActionType, RoomDtoGetResponse, RoomDtoDeleteRequest
-from database import db
+from business_logic.use_cases.interface.iuse_case import IUseCase
 from repositories import RoomRepository
 
 
 class HardDeleteRoom(IUseCase):
     def __init__(
             self,
-            dto_request_data: RoomDtoDeleteRequest,
-            action_type: ActionType,
-            active_session_manager: ActiveSessionManager
+            uow: UnitOfWork
     ):
-        super().__init__(dto_request_data, action_type, active_session_manager)
+        self.uow = uow
 
-    @check_request_data_exist
-    def execute(self) -> RoomDtoGetResponse:
-        with UnitOfWork(db) as uow:
+    def execute(self, record_id: UUID) -> UUID:
+        with self.uow as uow:
             repo = uow.get_repository(RoomRepository)
-            return repo.hard_delete(self.dto_request_data)
+            return repo.hard_delete(record_id)
