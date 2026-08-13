@@ -15,6 +15,7 @@ class JWTBaseToken(BaseModel):
     sub: str
     type: TokenType
     exp: int | None = None
+    role: RoleEnum
 
     def get_exp_human(self, tz=timezone.utc):
         if not self.exp:
@@ -23,7 +24,6 @@ class JWTBaseToken(BaseModel):
 
 
 class JWTAccessToken(JWTBaseToken):
-    role: RoleEnum
     type: TokenType = Field(default=TokenType.ACCESS_TOKEN)
 
 
