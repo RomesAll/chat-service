@@ -41,11 +41,10 @@ class BaseRepository(
         self.model: type[BaseOrm] = BaseOrm
         self.session: Session = session
 
-    def check_exist(self, dto_record_id: TDtoId | UUID) -> bool:
+    def check_exist(self, record_id: UUID | str | int) -> bool:
         """Проверка существования записи"""
-        object_id: UUID = dto_record_id if isinstance(dto_record_id, UUID) else dto_record_id.id
         exists_query = select(
-            exists().where(self.model.id == object_id)
+            exists().where(self.model.id == record_id)
         )
         exists_result: bool | None = self.session.execute(exists_query).scalar()
         if not exists_result:
@@ -70,10 +69,9 @@ class BaseRepository(
         dtos_response = [self.dto_response(**orm_object.to_dict()) for orm_object in orm_objects]
         return dtos_response
 
-    def get_by_id(self, dto_record_id: TDtoId | UUID) -> TDtoGetResponse:
+    def get_by_id(self, record_id: UUID | str | int) -> TDtoGetResponse:
         """Получение записи по id"""
-        object_id: UUID = dto_record_id if isinstance(dto_record_id, UUID) else dto_record_id.id
-        orm_object = self._find_orm_object(object_id)
+        orm_object = self._find_orm_object(record_id)
         dto_response = self.dto_response(**orm_object.to_dict())
         return dto_response
 
@@ -93,32 +91,26 @@ class BaseRepository(
         self.session.flush()
         return self._get_dto(orm_object)
 
-    def soft_delete(self, dto_delete_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+    def soft_delete(self, record_id: UUID | str | int) -> UUID | str | int:
         """Мягкое удаление из бд (с возможностью восстановления)"""
-        orm_object = self._find_orm_object(dto_delete_request.id)
+        orm_object = self._find_orm_object(record_id)
         orm_object.soft_delete()
-        dto_response = self._get_dto(orm_object)
-        return dto_response
+        return record_id
 
-    def hard_delete(self, dto_delete_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+    def hard_delete(self, record_id: UUID | str | int) -> UUID | str | int:
         """Удаление из бд"""
-        stmt = delete(self.model).where(self.model.id == dto_delete_request.id).returning(self.model)
-        result = self.session.execute(stmt)
-        deleted_models: BaseOrm | None = result.scalars().first()
-        if not deleted_models:
-            raise Exception
-        dto_response = self._get_dto(deleted_models)
-        dto_response.is_deleted = True
-        return dto_response
+        stmt = delete(self.model).where(self.model.id == record_id)
+        self.session.execute(stmt)
+        return record_id
 
-    def recovery(self, dto_delete_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+    def recovery(self, record_id: UUID | str | int) -> TDtoGetResponse:
         """Восстановление удаленной записи"""
-        orm_object = self._find_orm_object(dto_delete_request.id)
+        orm_object = self._find_orm_object(record_id)
         orm_object.soft_recovery()
         dto_response = self._get_dto(orm_object)
         return dto_response
 
-    def _find_orm_object(self, orm_object_id: UUID) -> BaseOrm:
+    def _find_orm_object(self, orm_object_id: UUID | str | int) -> BaseOrm:
         """Поиск записи в бд по id"""
         stmt = select(self.model).where(
             self.model.id == orm_object_id
