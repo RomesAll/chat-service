@@ -16,14 +16,14 @@ class MessageType(str, Enum):
 
 class BaseMessageDtoGetResponse(BaseDtoGetResponse):
     """Базовый Message DTO для операции получения (Get) информации о сообщении"""
-    sender_id: UUID
+    sender_id: str
     message: str
     type: MessageType
 
 
 class PrivateMessageDtoGetResponse(BaseMessageDtoGetResponse):
     """Private message_sender DTO для операции получения (Get) информации о приватных сообщениях"""
-    recipient_id: UUID
+    recipient_id: str
     type: MessageType = Field(MessageType.PRIVATE)
 
 
@@ -35,14 +35,14 @@ class GroupMessageDtoGetResponse(BaseMessageDtoGetResponse):
 
 class BaseMessageDtoPostRequest(BaseDtoPostDeleteRequest):
     """Базовый Message DTO для операции добавления (Post) информации о сообщении"""
-    sender_id: UUID
+    sender_id: str
     message: str
     type: MessageType
 
 
 class PrivateMessageDtoPostRequest(BaseMessageDtoPostRequest):
     """Private message_sender DTO для операции добавления (Post) информации о приватных сообщениях"""
-    recipient_id: UUID
+    recipient_id: str
     type: MessageType = Field(MessageType.PRIVATE)
 
 

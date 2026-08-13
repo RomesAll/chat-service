@@ -1,8 +1,5 @@
-from typing import Self
-from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator
+from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr
 from fastapi.websockets import WebSocket
-
 from models.user import RoleEnum
 from .base import (
     BaseDtoGetResponse,

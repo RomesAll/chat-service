@@ -10,8 +10,8 @@ from .mixins import IdMixin
 class PrivateMessageOrm(BaseOrm, IdMixin):
     """Orm модель для приватных сообщений"""
     __tablename__ = 'private_message'
-    sender_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))
-    recipient_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))
+    sender_id: Mapped[str] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
+    recipient_id: Mapped[str] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
     message: Mapped[str] = mapped_column(Text)
     type: Mapped[MessageType] = mapped_column(default=MessageType.PRIVATE)
 
@@ -24,7 +24,7 @@ class PrivateMessageOrm(BaseOrm, IdMixin):
 class GroupMessageOrm(BaseOrm, IdMixin):
     """Orm модель для публичных сообщений"""
     __tablename__ = 'group_message'
-    sender_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("user.id", ondelete="CASCADE"))
+    sender_id: Mapped[str] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
     chat_id: Mapped[UUID] = mapped_column(PUUID, ForeignKey("room.id", ondelete="CASCADE"))
     message: Mapped[str] = mapped_column(Text)
     type: Mapped[MessageType] = mapped_column(default=MessageType.GROUP)
