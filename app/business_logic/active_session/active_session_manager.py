@@ -12,7 +12,7 @@ class ActiveSessionManager:
 
     def __init__(self):
         # Список активных подключений
-        self.active_sessions: dict[UUID, ActiveSession] = {}
+        self.active_sessions: dict[str, ActiveSession] = {}
         # Коллекции для хранения id комнаты -> множества подключений
         self.room_connections: dict[UUID, WeakSet[WebSocket]] = {}
         # Коллекции для хранения подключения -> множества id комнат
@@ -24,7 +24,7 @@ class ActiveSessionManager:
     def get_or_create_session(
             self,
             *,
-            user_id: UUID,
+            user_id: str,
             user_info: UserDtoBriefInfo | None = None,
             create_if_not_exist: bool = False
     ) -> ActiveSession:
@@ -67,7 +67,7 @@ class ActiveSessionManager:
 
     def disconnect(
             self,
-            user_id: UUID
+            user_id: str
     ):
         """Отключение пользователя"""
         try:
@@ -77,7 +77,7 @@ class ActiveSessionManager:
 
     def remove_user_active_session(
             self,
-            user_id: UUID,
+            user_id: str,
             connection: WebSocket
     ):
         """Удалить конкретное подключение"""
@@ -122,7 +122,7 @@ class ActiveSessionManager:
 
     def add_user_connections_in_room(
             self,
-            user_id: UUID,
+            user_id: str,
             room_id: UUID
     ):
         """Добавление всех подключений пользователя в комнату"""
