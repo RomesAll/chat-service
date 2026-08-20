@@ -18,7 +18,7 @@ class JWTWhiteListCache:
         return bool(self.client.set(f'session:{user_id}:{token_id}', 'active', ex=ex))
 
     def check_exist(self, user_id: str, token_id: UUID) -> bool:
-        """Провекра существования refresh токена"""
+        """Проверка существования refresh токена"""
         return bool(self.client.exists(f'session:{user_id}:{token_id}'))
 
     def delete_refresh_token(self, user_id: str, token_id: UUID) -> bool:
