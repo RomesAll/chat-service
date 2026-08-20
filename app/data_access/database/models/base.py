@@ -2,15 +2,14 @@ from typing import Iterable
 from uuid import UUID
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from .metaclasses import OrmManagerMeta, DynamicFields, AutoCreateTable
-from app.data_access.database.database import db
+from .metaclasses import OrmManagerMeta, DynamicFields
 from .mixins import TimeStampMixin
 
-AutoCreateTable.set_engine(engine=db.engine)
 
 class BaseOrm(DeclarativeBase, TimeStampMixin, metaclass=OrmManagerMeta):
     """Базовый абстрактный класс для orm моделей"""
     __abstract__ = True
+    __table_args__ = {"extend_existing": True}
     Fields: DynamicFields
     is_deleted: Mapped[bool] = mapped_column(default=False)
 
