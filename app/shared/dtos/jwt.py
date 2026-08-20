@@ -17,6 +17,7 @@ class JWTBaseToken(BaseModel):
     sub: str
     type: TokenType
     exp: int | None = None
+    session_id: UUID
     role: RoleEnum
 
     def get_exp_human(self, tz=timezone.utc):
@@ -36,7 +37,25 @@ class JWTRefreshToken(JWTBaseToken):
     type: TokenType = Field(default=TokenType.REFRESH_TOKEN)
 
 
-class JWTRefreshTokenResponse(BaseModel):
+class JWTBaseResponse(JWTBaseToken):
+    """Базовый DTO ответ для отправки jwt токенов"""
+    pass
+
+
+class JWTAccessTokenResponse(JWTBaseResponse):
+    """DTO для хранения access jwt токена"""
+    type: TokenType = Field(default=TokenType.ACCESS_TOKEN)
+    access_token: str
+
+
+class JWTRefreshTokenResponse(JWTBaseResponse):
+    """DTO для хранения refresh jwt токена"""
+    refresh_id: UUID
+    type: TokenType = Field(default=TokenType.REFRESH_TOKEN)
+    refresh_token: str
+
+
+class JWTTokenResponse(BaseModel):
     """DTO для хранения сгенерированных access и refresh токенах"""
     access_token: str
     refresh_token: str
