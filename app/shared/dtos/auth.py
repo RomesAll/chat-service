@@ -1,6 +1,6 @@
 from pydantic import BaseModel, SecretStr
 from app.shared.dtos import UserDtoGetResponse
-from dtos.jwt import JWTRefreshTokenResponse
+from dtos.jwt import JWTTokenResponse
 
 
 class LoginDtoRequest(BaseModel):
@@ -9,6 +9,6 @@ class LoginDtoRequest(BaseModel):
     password: SecretStr
 
 
-class LoginOrRegisterDtoResponse(JWTRefreshTokenResponse):
+class LoginOrRegisterDtoResponse(JWTTokenResponse):
     """DTO для получения информации о пользователе после входа или регистрации"""
     user_info: UserDtoGetResponse
