@@ -1,25 +1,23 @@
 from sqlalchemy import select
 
-from sqlalchemy.orm import Session
+from exceptions import RecordNotFound
 from models.user import UserOrm
-from .exception_handler import HandleSqlAlchemyException
-from .base import BaseRepository
+from .base import BaseRepositoryGet, BaseRepositorySave, BaseRepositoryDelete, BaseRepositoryUpdate
 from app.shared.dtos import (
     UserDtoGetResponse,
     UserDtoPostRequest,
-    BaseDtoClientRequest
 )
 
 
-@HandleSqlAlchemyException()
 class UserRepository(
-    BaseRepository[BaseDtoClientRequest, UserDtoGetResponse, UserDtoPostRequest]
+    BaseRepositoryGet[UserDtoGetResponse, UserOrm],
+    BaseRepositorySave[UserDtoGetResponse, UserDtoPostRequest, UserOrm],
+    BaseRepositoryUpdate[UserDtoGetResponse, UserDtoPostRequest, UserOrm],
+    BaseRepositoryDelete[UserDtoGetResponse, UserOrm]
 ):
     """Репозиторий для работы с данными пользователей"""
-    def __init__(self, session: Session):
-        super().__init__(session=session)
-        self.dto_response = UserDtoGetResponse
-        self.model: type[UserOrm] = UserOrm
+    model: type[UserOrm] = UserOrm
+    dto_response: type[UserDtoGetResponse] = UserDtoGetResponse
 
     def get_by_email(self, email: str) -> UserDtoGetResponse:
         """Получение пользователя по email"""
@@ -40,5 +38,5 @@ class UserRepository(
         stmt = select(self.model.password).where(self.model.id == user_id)
         password = self.session.execute(stmt).scalar_one_or_none()
         if not password:
-            raise Exception
+            raise RecordNotFound(user_id)
         return password

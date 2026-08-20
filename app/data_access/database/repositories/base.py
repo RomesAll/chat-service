@@ -1,17 +1,23 @@
-from typing import Generic
+from typing import Generic, TypeVar
 from uuid import UUID
 from app.data_access.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_, delete, Select, exists
 from sqlalchemy.orm import Session
 from app.data_access.exceptions import RecordNotFound
-from dtos import BaseDtoGetResponse
-from interfaces.repository import IRepository, TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest
-from repositories.exception_handler import HandleSqlAlchemyException
+from interfaces.repository import (
+    TDtoGetResponse,
+    TDtoPostPutDeleteRequest,
+    IRepositoryGet,
+    IRepositorySave,
+    IRepositoryUpdate,
+    IRepositoryDeleteRecovery
+)
 from app.shared.dtos import (
     BaseDtoGetListRequest,
     SortEnum,
     OperatorEnum,
 )
+from repositories.metaclasses import ExceptionHandlingMeta
 
 OPERATOR_MAP = {
     OperatorEnum.EQ: lambda f, v: f == v,
@@ -25,21 +31,42 @@ OPERATOR_MAP = {
     OperatorEnum.BETWEEN: lambda f, v: between(f, v[0], v[1])
 }
 
+TOrmModel = TypeVar('TOrmModel', bound=BaseOrm)
 
-@HandleSqlAlchemyException()
+
 class BaseRepository(
-    Generic[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest],
-    IRepository[TDtoId, TDtoGetResponse, TDtoPostPutDeleteRequest]
+    Generic[TDtoGetResponse, TOrmModel],
+    metaclass=ExceptionHandlingMeta
 ):
-    """Базовый репозиторий для работы с данными"""
-    def __init__(
-            self,
-            session: Session
-    ):
-        self.dto_response: type[TDtoGetResponse] = BaseDtoGetResponse
-        self.model: type[BaseOrm] = BaseOrm
-        self.session: Session = session
+    """Базовый репозиторий"""
+    model: type[TOrmModel]
+    dto_response: type[TDtoGetResponse]
 
+    def __init__(self, session: Session):
+        self.session = session
+
+    def _find_orm_object(self, orm_object_id: UUID | str | int) -> BaseOrm:
+        """Поиск записи в бд по id"""
+        stmt = select(self.model).where(
+            self.model.id == orm_object_id
+        )
+        orm_object: BaseOrm | None = self.session.execute(stmt).scalar_one_or_none()
+        if not orm_object:
+            raise RecordNotFound(orm_object_id)
+        return orm_object
+
+    def _get_dto(self, orm_object: BaseOrm) -> TDtoGetResponse:
+        """Получение dto модели для ответа или none"""
+        dto_response = self.dto_response(**orm_object.to_dict())
+        return dto_response
+
+
+class BaseRepositoryGet(
+    Generic[TDtoGetResponse, TOrmModel],
+    BaseRepository[TDtoGetResponse, TOrmModel],
+    IRepositoryGet[TDtoGetResponse],
+):
+    """Базовый репозиторий для получения записей"""
     def check_exist(self, record_id: UUID | str | int) -> bool:
         """Проверка существования записи"""
         exists_query = select(
@@ -74,56 +101,6 @@ class BaseRepository(
         dto_response = self.dto_response(**orm_object.to_dict())
         return dto_response
 
-    def save(self, dto_post_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
-        """Сохранение записи в бд"""
-        orm_object = self.model(**dto_post_request.model_dump())
-        self.session.add(orm_object)
-        self.session.flush()
-        return self._get_dto(orm_object)
-
-    def update(self, dto_update_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
-        """Обновление записи в бд"""
-        orm_object = self._find_orm_object(dto_update_request.id)
-        raw_data: dict = dto_update_request.model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
-        for field, value in raw_data.items():
-            setattr(orm_object, field, value)
-        self.session.flush()
-        return self._get_dto(orm_object)
-
-    def soft_delete(self, record_id: UUID | str | int) -> UUID | str | int:
-        """Мягкое удаление из бд (с возможностью восстановления)"""
-        orm_object = self._find_orm_object(record_id)
-        orm_object.soft_delete()
-        return record_id
-
-    def hard_delete(self, record_id: UUID | str | int) -> UUID | str | int:
-        """Удаление из бд"""
-        stmt = delete(self.model).where(self.model.id == record_id)
-        self.session.execute(stmt)
-        return record_id
-
-    def recovery(self, record_id: UUID | str | int) -> TDtoGetResponse:
-        """Восстановление удаленной записи"""
-        orm_object = self._find_orm_object(record_id)
-        orm_object.soft_recovery()
-        dto_response = self._get_dto(orm_object)
-        return dto_response
-
-    def _find_orm_object(self, orm_object_id: UUID | str | int) -> BaseOrm:
-        """Поиск записи в бд по id"""
-        stmt = select(self.model).where(
-            self.model.id == orm_object_id
-        )
-        orm_object: BaseOrm | None = self.session.execute(stmt).scalar_one_or_none()
-        if not orm_object:
-            raise RecordNotFound(orm_object_id)
-        return orm_object
-
-    def _get_dto(self, orm_object: BaseOrm) -> TDtoGetResponse:
-        """Получение dto модели для ответа или none"""
-        dto_response = self.dto_response(**orm_object.to_dict())
-        return dto_response
-
     def _accept_filters(self, stmt, dto_get_request: BaseDtoGetListRequest) -> Select:
         """Добавление фильтров к запросу"""
         filters = []
@@ -150,3 +127,59 @@ class BaseRepository(
         if orders:
             stmt = stmt.order_by(*orders)
         return stmt
+
+
+class BaseRepositorySave(
+    Generic[TDtoGetResponse, TDtoPostPutDeleteRequest, TOrmModel],
+    BaseRepository[TDtoGetResponse, TOrmModel],
+    IRepositorySave[TDtoGetResponse, TDtoPostPutDeleteRequest]
+):
+    """Базовый репозиторий для сохранения записей"""
+    def save(self, dto_post_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+        """Сохранение записи в бд"""
+        orm_object = self.model(**dto_post_request.model_dump())
+        self.session.add(orm_object)
+        self.session.flush()
+        return self._get_dto(orm_object)
+
+
+class BaseRepositoryUpdate(
+    Generic[TDtoGetResponse, TDtoPostPutDeleteRequest, TOrmModel],
+    BaseRepository[TDtoGetResponse, TOrmModel],
+    IRepositoryUpdate[TDtoGetResponse, TDtoPostPutDeleteRequest]
+):
+    """Базовый репозиторий для обновления записей"""
+    def update(self, dto_update_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+        """Обновление записи в бд"""
+        orm_object = self._find_orm_object(dto_update_request.id)
+        raw_data: dict = dto_update_request.model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
+        for field, value in raw_data.items():
+            setattr(orm_object, field, value)
+        self.session.flush()
+        return self._get_dto(orm_object)
+
+
+class BaseRepositoryDelete(
+    Generic[TDtoGetResponse, TOrmModel],
+    BaseRepository[TDtoGetResponse, TOrmModel],
+    IRepositoryDeleteRecovery[TDtoGetResponse]
+):
+    """Базовый репозиторий для удаления записей"""
+    def soft_delete(self, record_id: UUID | str | int) -> UUID | str | int:
+        """Мягкое удаление из бд (с возможностью восстановления)"""
+        orm_object = self._find_orm_object(record_id)
+        orm_object.soft_delete()
+        return record_id
+
+    def hard_delete(self, record_id: UUID | str | int) -> UUID | str | int:
+        """Удаление из бд"""
+        stmt = delete(self.model).where(self.model.id == record_id)
+        self.session.execute(stmt)
+        return record_id
+
+    def recovery(self, record_id: UUID | str | int) -> TDtoGetResponse:
+        """Восстановление удаленной записи"""
+        orm_object = self._find_orm_object(record_id)
+        orm_object.soft_recovery()
+        dto_response = self._get_dto(orm_object)
+        return dto_response
