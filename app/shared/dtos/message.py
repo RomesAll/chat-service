@@ -1,63 +1,66 @@
 from enum import Enum
 from uuid import UUID
-from pydantic import Field
+from pydantic import Field, BaseModel, ConfigDict
 from .base import (
     BaseDtoGetResponse,
     BaseDtoPostDeleteRequest,
-    BaseDtoPutPathRequest,
 )
 
 
 class MessageType(str, Enum):
     """Перечисление для типов сообщений"""
-    PRIVATE = 'private'
-    GROUP = 'group'
+    TEXT = 'text'
+    VIDEO = 'video'
 
 
-class BaseMessageDtoGetResponse(BaseDtoGetResponse):
-    """Базовый Message DTO для операции получения (Get) информации о сообщении"""
+class BaseMessageDto(BaseModel):
+    """Базовый DTO для сообщений"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class BaseMessageDtoWithSenderInfo(BaseMessageDto):
+    """Базовый DTO для сообщений с информацией об отправителе"""
     sender_id: str
-    message: str
-    type: MessageType
+    message_for_sender: str | None = None
+    sender_key_version: str
 
 
-class PrivateMessageDtoGetResponse(BaseMessageDtoGetResponse):
-    """Private message_sender DTO для операции получения (Get) информации о приватных сообщениях"""
+class BaseMessageDtoWithRecipientInfo(BaseMessageDto):
+    """Базовый DTO для сообщений с информацией о получателе"""
     recipient_id: str
-    type: MessageType = Field(MessageType.PRIVATE)
+    message_for_recipient: str | None = None
+    recipient_key_version: str
 
 
-class GroupMessageDtoGetResponse(BaseMessageDtoGetResponse):
-    """Group message_sender DTO для операции получения (Get) информации о групповых сообщениях"""
-    chat_id: UUID
-    type: MessageType = Field(MessageType.GROUP)
+class PrivateMessageDtoGetResponse(
+    BaseMessageDtoWithSenderInfo, BaseMessageDtoWithRecipientInfo, BaseDtoGetResponse
+):
+    """DTO для операции получения (Get) информации о приватных сообщениях"""
+    file_id: list[UUID] = Field(default_factory=list)
 
 
-class BaseMessageDtoPostRequest(BaseDtoPostDeleteRequest):
-    """Базовый Message DTO для операции добавления (Post) информации о сообщении"""
-    sender_id: str
-    message: str
-    type: MessageType
-
-
-class PrivateMessageDtoPostRequest(BaseMessageDtoPostRequest):
-    """Private message_sender DTO для операции добавления (Post) информации о приватных сообщениях"""
-    recipient_id: str
-    type: MessageType = Field(MessageType.PRIVATE)
-
-
-class GroupMessageDtoPostRequest(BaseMessageDtoPostRequest):
-    """Group message_sender DTO для операции добавления (Post) информации о групповых сообщениях"""
-    chat_id: UUID
-    type: MessageType = Field(MessageType.GROUP)
-
-
-class MessageDtoUpdateRequest(BaseDtoPutPathRequest):
-    """Message DTO для операции обновления (Put) информации о сообщении"""
-    message: str
-    is_deleted: bool
-
-
-class MessageDtoDeleteRequest(BaseDtoPostDeleteRequest):
-    """Message DTO для операции удаления (Delete) информации о сообщении"""
+class PrivateMessageDtoPostRequest(
+    BaseMessageDtoWithSenderInfo, BaseMessageDtoWithRecipientInfo, BaseDtoPostDeleteRequest
+):
+    """DTO для операции добавления (Post) информации о приватных сообщениях"""
     pass
+
+
+# class PrivateMsgDtoPhotoRequest(PrivateMessageDtoPostRequest):
+#     pass
+#
+#
+# class PrivateMsgDtoPostRequest(PrivateMsgDtoPhotoRequest):
+#     pass
+#
+#
+# class MessageDtoUpdateRequest(BaseDtoPutPathRequest):
+#     """Message DTO для операции обновления (Put) информации о сообщении"""
+#     message: str
+#     is_deleted: bool
+#     user_keys_version: datetime
+#
+#
+# class MessageDtoDeleteRequest(BaseDtoPostDeleteRequest):
+#     """Message DTO для операции удаления (Delete) информации о сообщении"""
+#     pass
