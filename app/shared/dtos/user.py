@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr
+from typing import Self
+from uuid import UUID
+from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator, ValidationError
 from fastapi.websockets import WebSocket
 from models.user import RoleEnum
 from .base import (
     BaseDtoGetResponse,
-    BaseDtoClientRequest,
     BaseDtoPostDeleteRequest,
     BaseDtoPutPathRequest
 )
@@ -29,6 +30,12 @@ class UserDtoPostRequest(BaseDtoPostDeleteRequest):
     password: SecretStr = Field(..., exclude=True)
     repeat_password: SecretStr = Field(..., exclude=True)
 
+    @model_validator(mode='after')
+    def validate_psw(self) -> Self:
+        if self.repeat_password != self.password:
+            raise ValidationError('Пароли не совпадают')
+        return self
+
 
 class UserDtoUpdateRequest(BaseDtoPutPathRequest):
     """User DTO для операции обновления (Put) информации о пользователе"""
@@ -36,8 +43,6 @@ class UserDtoUpdateRequest(BaseDtoPutPathRequest):
     user_name: str | None = Field(default=None, examples=[None])
     bio: str | None = Field(default=None, examples=[None])
     years_old: int | None = Field(default=None, examples=[None])
-    phone: str | None = Field(default=None, examples=[None])
-    is_deleted: bool | None = Field(default=None, examples=[None])
 
 
 class UserDtoDeleteRequest(BaseDtoPostDeleteRequest):
@@ -54,8 +59,9 @@ class UserDtoBriefInfo(BaseModel):
     phone: str
 
 
-class UserDtoChangePsw(BaseDtoClientRequest):
+class UserDtoChangePsw(BaseModel):
     """User DTO для смены старого пароля на новый"""
+    id: str
     old_password: SecretStr
     new_password: SecretStr
     repeat_password: SecretStr
@@ -64,5 +70,5 @@ class UserDtoChangePsw(BaseDtoClientRequest):
 class ActiveSession(BaseModel):
     """User DTO для хранения активных подключений (websocket соединений) пользователя"""
     info: UserDtoBriefInfo
-    websockets: set[WebSocket] = Field(default_factory=set)
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    user_sessions: dict[UUID, WebSocket]
+    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes = True)
