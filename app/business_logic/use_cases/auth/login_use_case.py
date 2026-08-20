@@ -3,6 +3,7 @@ from uuid import uuid4
 from business_logic.auth.jwt_manager import JWTFacade
 from business_logic.auth.password_manager import PasswordManager
 from business_logic.cache.jwt_white_list import JWTWhiteListCache
+from business_logic.exceptions import CheckPswError
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import UserDtoGetResponse
@@ -33,7 +34,7 @@ class LoginUseCase(IUseCase):
                     dto_request_data.password,
                     user_password
             ):
-                raise Exception
+                raise CheckPswError(dto_request_data.user_id)
             refresh_token_id = uuid4()
             jwt_tokens = self.jwt_manager.create_tokens(
                 user_info.id, user_info.user_name, user_info.role, refresh_token_id
