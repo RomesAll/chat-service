@@ -9,9 +9,11 @@ class IdMixin:
     """Миксин для id с uuid типом"""
     id: Mapped[UUID] = mapped_column(PUUID, primary_key=True, unique=True)
 
+
 class StringIdMixin:
     """Миксин для id с str типом"""
     id: Mapped[str] = mapped_column(String(40), primary_key=True, unique=True)
+
 
 class TimeStampMixin:
     """Миксин для временных меток"""

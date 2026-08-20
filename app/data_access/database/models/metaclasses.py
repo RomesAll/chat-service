@@ -38,33 +38,33 @@ class RegistryMeta(SqlAlchemyOrmBaseMeta):
         return list(cls._registry.values())
 
 
-class AutoCreateTable(RegistryMeta):
-    """
-    Метакласс для автоматического создания таблиц в базе данных
-    с проверкой существования
-    """
-    __engine = None
+# class AutoCreateTable(RegistryMeta):
+#     """
+#     Метакласс для автоматического создания таблиц в базе данных
+#     с проверкой существования
+#     """
+#     __engine = None
+#
+#     @classmethod
+#     def set_engine(cls, engine):
+#         """Метод для установки engine"""
+#         cls.__engine = engine
+#
+#     def __new__(cls, name, bases, attrs):
+#         new_class = super().__new__(cls, name, bases, attrs)
+#         if not issubclass(new_class, DeclarativeBase):
+#             raise TypeError(f"{new_class} класс должен быть подклассом DeclarativeBase")
+#         class_obj: Type[DeclarativeBase] = new_class
+#         try:
+#             if cls.__engine and '__tablename__' in attrs:
+#                 table = cast(Table, class_obj.__table__)
+#                 table.create(cls.__engine, checkfirst=True)
+#         except SQLAlchemyError as e:
+#             raise
+#         return new_class
 
-    @classmethod
-    def set_engine(cls, engine):
-        """Метод для установки engine"""
-        cls.__engine = engine
 
-    def __new__(cls, name, bases, attrs):
-        new_class = super().__new__(cls, name, bases, attrs)
-        if not issubclass(new_class, DeclarativeBase):
-            raise TypeError(f"{new_class} класс должен быть подклассом DeclarativeBase")
-        class_obj: Type[DeclarativeBase] = new_class
-        try:
-            if cls.__engine and '__tablename__' in attrs:
-                table = cast(Table, class_obj.__table__)
-                table.create(cls.__engine, checkfirst=True)
-        except SQLAlchemyError as e:
-            raise 
-        return new_class
-
-
-class ValidationOrmMeta(AutoCreateTable):
+class ValidationOrmMeta(RegistryMeta):
     """
     Метакласс для валидации orm моделей, с проверкой обязательной
     документации к коду и названием таблицы

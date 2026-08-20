@@ -36,5 +36,5 @@ class UserOrm(BaseOrm, StringIdMixin):
 
     def __repr__(self):
         base_repr = super().__repr__()
-        result = base_repr.replace(')>', f', user_name={self.user_name}, years_old={self.years_old})>')
+        result = base_repr.replace(')>', f', id={self.id}, user_name={self.user_name}, years_old={self.years_old}), role={self.role}>')
         return result
