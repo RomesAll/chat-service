@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from app.shared.dtos import BaseMessageDtoPostRequest
+from uuid import UUID
+
+from dtos import MessageAttachmentsDtoPostRequest
+from dtos.message import BaseMessageDto
 
 
 class IMessageRoute(ABC):
@@ -8,6 +11,6 @@ class IMessageRoute(ABC):
     """
 
     @abstractmethod
-    async def send_message(self, message_send_request: BaseMessageDtoPostRequest):
+    async def send_message(self, session_id: UUID, message_send_request: BaseMessageDto):
         """Отправка сообщения"""
         pass

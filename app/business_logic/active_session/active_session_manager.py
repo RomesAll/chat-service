@@ -4,7 +4,7 @@ from uuid import UUID
 from weakref import WeakKeyDictionary
 from starlette.websockets import WebSocket
 from app.shared.dtos import ActiveSession, UserDtoBriefInfo
-from business_logic.exceptions import UserConnectionNotFound
+from business_logic.exceptions import UserConnectionNotFound, UserNotFoundError
 
 
 class ActiveSessionManager:
@@ -43,18 +43,20 @@ class ActiveSessionManager:
         :return:
         """
         if (active_session := self.active_sessions.get(user_id)) is None:
-            if create_if_not_exist:
-                if not user_info:
-                    raise Exception
-                active_session = ActiveSession(info=user_info, websockets=set())
+            if create_if_not_exist and user_info:
+                active_session = ActiveSession(
+                    info=user_info.model_dump(),
+                    user_sessions={}
+                )
                 self.active_sessions[user_info.id] = active_session
             else:
-                raise Exception
+                raise UserNotFoundError(user_id)
         return active_session
 
     def add_connection(
             self,
             user_info: UserDtoBriefInfo,
+            session_id: UUID,
             connection: WebSocket
     ):
         """Добавить новое подключение для пользователя"""
@@ -63,7 +65,7 @@ class ActiveSessionManager:
             user_info=user_info,
             create_if_not_exist=True
         )
-        active_session.websockets.add(connection)
+        active_session.user_sessions[session_id] = connection
 
     def disconnect(
             self,
@@ -78,76 +80,76 @@ class ActiveSessionManager:
     def remove_user_active_session(
             self,
             user_id: str,
-            connection: WebSocket
+            session_id: UUID
     ):
         """Удалить конкретное подключение"""
         active_session: ActiveSession = self.get_or_create_session(
             user_id=user_id,
         )
-        active_session.websockets.discard(connection)
-        if not active_session.websockets:
+        active_session.user_sessions.pop(session_id)
+        if not active_session.user_sessions:
             self.disconnect(user_id)
 
     # Методы для управления подключениями в комнате room_sockets, socket_rooms
     # поскольку в room_sockets, socket_rooms хранятся слабые ссылки, удалять их
     # напрямую из коллекции не нужно!
+    #
+    # def get_or_create_room_connections(
+    #         self,
+    #         *,
+    #         room_id: UUID,
+    #         create_if_not_exist: bool = False
+    # ) -> WeakSet[WebSocket]:
+    #     """
+    #     Метод для получения подключений в комнате или ее создания с пустыми подключениями.
+    #     Управление происходит с помощью флага "create_if_not_exist".
+    #
+    #     Мод "create_if_not_exist = False" предназначен для случаев когда пользователь хочет просто получить
+    #     множество подключений в комнате, тогда если ее не будет, то сгенерируется исключение (ошибка).
+    #
+    #     Мод "create_if_not_exist = True" предназначен для случаев когда пользователь хочет получить множество подключений в комнате
+    #     (и создать если нет), а потом добавить новое подключение Websocket.
+    #     :param room_id:
+    #     :param create_if_not_exist:
+    #     :return:
+    #     """
+    #     if (current_room_connections := self.room_connections.get(room_id)) is None:
+    #         if create_if_not_exist:
+    #             current_room_connections = WeakSet()
+    #             self.room_connections[room_id] = current_room_connections
+    #         else:
+    #             raise Exception
+    #     return current_room_connections
 
-    def get_or_create_room_connections(
-            self,
-            *,
-            room_id: UUID,
-            create_if_not_exist: bool = False
-    ) -> WeakSet[WebSocket]:
-        """
-        Метод для получения подключений в комнате или ее создания с пустыми подключениями.
-        Управление происходит с помощью флага "create_if_not_exist".
 
-        Мод "create_if_not_exist = False" предназначен для случаев когда пользователь хочет просто получить
-        множество подключений в комнате, тогда если ее не будет, то сгенерируется исключение (ошибка).
-
-        Мод "create_if_not_exist = True" предназначен для случаев когда пользователь хочет получить множество подключений в комнате
-        (и создать если нет), а потом добавить новое подключение Websocket.
-        :param room_id:
-        :param create_if_not_exist:
-        :return:
-        """
-        if (current_room_connections := self.room_connections.get(room_id)) is None:
-            if create_if_not_exist:
-                current_room_connections = WeakSet()
-                self.room_connections[room_id] = current_room_connections
-            else:
-                raise Exception
-        return current_room_connections
-
-
-    def add_user_connections_in_room(
-            self,
-            user_id: str,
-            room_id: UUID
-    ):
-        """Добавление всех подключений пользователя в комнату"""
-        user_active_session: ActiveSession = self.get_or_create_session(
-            user_id=user_id,
-            create_if_not_exist=False
-        )
-        for user_connection in user_active_session.websockets:
-            self.add_connection_in_room(room_id, user_connection)
-
-    def add_connection_in_room(
-            self,
-            room_id: UUID,
-            connection: WebSocket
-    ):
-        """Добавление конкретных подключений в комнату"""
-        room_connections: WeakSet[WebSocket] = self.get_or_create_room_connections(
-            room_id=room_id,
-            create_if_not_exist=True
-        )
-        room_connections.add(connection)
-        if (current_connection_rooms := self.connection_rooms.get(connection, None)) is None:
-            current_connection_rooms = set()
-            self.connection_rooms[connection] = current_connection_rooms
-        current_connection_rooms.add(room_id)
+    # def add_user_connections_in_room(
+    #         self,
+    #         user_id: str,
+    #         room_id: UUID
+    # ):
+    #     """Добавление всех подключений пользователя в комнату"""
+    #     user_active_session: ActiveSession = self.get_or_create_session(
+    #         user_id=user_id,
+    #         create_if_not_exist=False
+    #     )
+    #     for user_connection in user_active_session.websockets:
+    #         self.add_connection_in_room(room_id, user_connection)
+    #
+    # def add_connection_in_room(
+    #         self,
+    #         room_id: UUID,
+    #         connection: WebSocket
+    # ):
+    #     """Добавление конкретных подключений в комнату"""
+    #     room_connections: WeakSet[WebSocket] = self.get_or_create_room_connections(
+    #         room_id=room_id,
+    #         create_if_not_exist=True
+    #     )
+    #     room_connections.add(connection)
+    #     if (current_connection_rooms := self.connection_rooms.get(connection, None)) is None:
+    #         current_connection_rooms = set()
+    #         self.connection_rooms[connection] = current_connection_rooms
+    #     current_connection_rooms.add(room_id)
 
 
 _manager_instance = None
