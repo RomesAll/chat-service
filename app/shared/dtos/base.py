@@ -110,28 +110,14 @@ class BaseModelWithPrint(BaseModel):
 
 
 @unique
-class ActionType(Enum):
-    SEND_PRIVATE_MSG_AUTO_DELETE = 100
-    SEND_PRIVATE_MSG_AND_SAVE = 101
-    SEND_GROUP_MSG_AUTO_DELETE = 102
-    SEND_GROUP_MSG_AND_SAVE = 103
-
-    REGISTER_USER = 104
-    UPDATE_USER = 105
-    SOFT_DELETE_USER = 106
-    HARD_DELETE_USER = 107
-    RECOVERY_USER = 108
-    GET_USERS = 109
-    GET_ONE_USER = 110
-
-    INVITATION_USER_IN_ROOM = 111
-    CREATE_ROOM = 112
-    UPDATE_ROOM = 113
-    SOFT_DELETE_ROOM = 114
-    HARD_DELETE_ROOM = 115
-    RECOVERY_ROOM = 116
-    GET_ROOM = 117
-    GET_ONE_ROOM = 118
+class WebsocketActionType(str, Enum):
+    """Список действий для вебсокетов"""
+    GET_SERVER_PUBLIC_KEY = 'get_server_public_key'
+    GET_SESSION_ID = 'get_session_id'
+    GET_USER_PUBLIC_KEY = 'get_user_public_key'
+    GET_USER_PRIVATE_KEYS = 'get_user_private_keys'
+    SEND_PRIVATE_MESSAGE = 'send_private_message'
+    SEND_GROUP_MESSAGE = 'send_group_message'
 
 
 class BaseDtoClientRequest(BaseModelWithPrint):
@@ -168,3 +154,8 @@ class BaseDtoPutPathRequest(BaseDtoPostDeleteRequest):
     def get_updates(self) -> dict:
         """Возвращает только установленные поля"""
         return self.model_dump(exclude_unset=True)
+
+
+class WebsocketPackage(BaseModel):
+    action_type: str
+    payload: Any
