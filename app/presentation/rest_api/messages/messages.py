@@ -10,7 +10,7 @@ from business_logic.encryption.symmetric import SymmetricEncode
 from business_logic.file_manager.file_manager import FileManager
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.message.download_file_use_case import DownloadFileUseCase
-from business_logic.use_cases.message.send_private_msg_and_save import SendPrivateMsgAndSave
+from business_logic.use_cases.message.send_private_msg_and_save_use_case import SendPrivateMsgAndSave
 from database import db
 from dtos import (
     PrivateMessageDtoPostRequest,
