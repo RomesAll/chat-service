@@ -6,7 +6,6 @@ from .base import (
     SortDto,
     BaseDtoGetListRequest,
     BaseModelWithPrint,
-    ActionType,
     BaseDtoClientRequest,
     BaseDtoGetResponse,
     BaseDtoPostDeleteRequest,
@@ -14,14 +13,11 @@ from .base import (
 )
 from .message import (
     MessageType,
-    BaseMessageDtoGetResponse,
     PrivateMessageDtoGetResponse,
-    GroupMessageDtoGetResponse,
-    BaseMessageDtoPostRequest,
     PrivateMessageDtoPostRequest,
-    GroupMessageDtoPostRequest,
-    MessageDtoUpdateRequest,
-    MessageDtoDeleteRequest,
+    BaseMessageDto
+    # MessageDtoUpdateRequest,
+    # MessageDtoDeleteRequest,
 )
 from .room import (
     RoomDtoGetResponse,
@@ -43,7 +39,15 @@ from .jwt import (
     JWTBaseToken,
     JWTAccessToken,
     JWTRefreshToken,
-    JWTRefreshTokenResponse
+    JWTTokenResponse,
+    JWTAccessTokenResponse,
+    JWTRefreshTokenResponse,
+    JWTBaseResponse
+)
+from .message_attachments import (
+    MessageAttachmentsDtoGetResponse,
+    MessageAttachmentsDtoPostRequest,
+    MessageAttachmentsDeleteRequest
 )
 
 __all__ = [
@@ -54,17 +58,12 @@ __all__ = [
     'SortDto',
     'BaseDtoGetListRequest',
     'BaseModelWithPrint',
-    'ActionType',
     'BaseDtoClientRequest',
     'BaseDtoGetResponse',
     'MessageType',
-    'BaseMessageDtoGetResponse',
     'PrivateMessageDtoGetResponse',
-    'GroupMessageDtoGetResponse',
-    'BaseMessageDtoPostRequest',
     'PrivateMessageDtoPostRequest',
-    'GroupMessageDtoPostRequest',
-    'MessageDtoUpdateRequest',
+    #'MessageDtoUpdateRequest',
     'RoomDtoGetResponse',
     'RoomDtoPostRequest',
     'RoomDtoUpdateRequest',
@@ -76,12 +75,19 @@ __all__ = [
     'ActiveSession',
     'BaseDtoPostDeleteRequest',
     'BaseDtoPutPathRequest',
-    'MessageDtoDeleteRequest',
+    #'MessageDtoDeleteRequest',
     'RoomDtoDeleteRequest',
     'UserDtoDeleteRequest',
     'InvitationUserInRoomDtoRequest',
     'JWTBaseToken',
     'JWTAccessToken',
     'JWTRefreshToken',
-    'JWTRefreshTokenResponse'
+    'JWTTokenResponse',
+    'JWTAccessTokenResponse',
+    'JWTRefreshTokenResponse',
+    'JWTBaseResponse',
+    'BaseMessageDto',
+    'MessageAttachmentsDtoGetResponse',
+    'MessageAttachmentsDtoPostRequest',
+    'MessageAttachmentsDeleteRequest'
 ]

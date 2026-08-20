@@ -1,5 +1,5 @@
-from .repository import IRepository
-
-__all__ = [
-    'IRepository'
-]
+# from .repository import IRepositoryGet,
+#
+# __all__ = [
+#     'IRepository'
+# ]

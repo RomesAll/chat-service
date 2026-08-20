@@ -1,11 +1,14 @@
-from .metaclasses import AutoCreateTable
+# from .metaclasses import AutoCreateTable
 from .user import UserOrm
-from .room import RoomOrm
-from .message import PrivateMessageOrm, GroupMessageOrm
+from .message import PrivateMessageOrm
+from .user_public_key import UserPublicKey
+from .user_private_key import UserPrivateKey
+from .message_attachments import MessageAttachments
 
 __all__ = [
     'UserOrm',
-    'RoomOrm',
     'PrivateMessageOrm',
-    'GroupMessageOrm'
+    'UserPrivateKey',
+    'UserPublicKey',
+    'MessageAttachments'
 ]
