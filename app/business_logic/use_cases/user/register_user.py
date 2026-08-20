@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from uuid import uuid4
-
 from pydantic import SecretStr
 from business_logic.auth.jwt_manager import JWTFacade
 from business_logic.auth.password_manager import PasswordManager

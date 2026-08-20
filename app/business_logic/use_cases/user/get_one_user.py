@@ -1,7 +1,8 @@
+from typing import Self
 from business_logic.unit_of_work import UnitOfWork
 from business_logic.use_cases.interface.iuse_case import IUseCase
+from dtos import UserDtoBriefInfo
 from repositories import UserRepository
-from app.shared.dtos import UserDtoGetResponse
 
 
 class GetOneUsers(IUseCase):
@@ -11,9 +12,21 @@ class GetOneUsers(IUseCase):
             uow: UnitOfWork
     ):
         self.uow = uow
+        self.dto_response = None
 
-    def execute(self, user_id: str) -> UserDtoGetResponse:
+    def execute(self, user_id: str) -> Self:
         with self.uow as uow:
             group_msg_repo = uow.get_repository(UserRepository)
-            dto_response = group_msg_repo.get_by_id(user_id)
-            return dto_response
+            self.dto_response = group_msg_repo.get_by_id(user_id)
+            return self
+
+    def get_brief_info(self) -> UserDtoBriefInfo | None:
+        if self.dto_response:
+            return UserDtoBriefInfo(
+                id=self.dto_response.id,
+                user_name=self.dto_response.user_name,
+                years_old=self.dto_response.years_old,
+                email=self.dto_response.email,
+                phone=self.dto_response.phone
+            )
+        return None
