@@ -3,7 +3,6 @@ from .base import (
     BaseDtoGetResponse,
     BaseDtoPostDeleteRequest,
     BaseDtoPutPathRequest,
-    BaseModelWithPrint,
 )
 
 
@@ -27,12 +26,21 @@ class RoomDtoDeleteRequest(BaseDtoPostDeleteRequest):
     pass
 
 
-class InvitationUserInRoomDtoRequest(BaseModelWithPrint):
-    """DTO для добавления пользователя в комнату"""
-    room_id: UUID
+class UserInRoomResponse(BaseDtoGetResponse):
+    """Dto для получения информации о составе группы"""
+    id: int
     user_id: str
+    room_id: UUID
 
-class UserInRoomDtoGetResponse(InvitationUserInRoomDtoRequest, BaseDtoGetResponse):
-    """DTO для хранения информации о пользователях в комнате"""
-    pass
+
+class UserInRoomPostRequest(BaseDtoPostDeleteRequest):
+    """User in Room DTO для операции добавления (Post) информации о комнате"""
+    id: int | None = None
+    user_id: str
+    room_id: UUID
+
+
+class UserInRoomDtoDeleteRequest(BaseDtoPostDeleteRequest):
+    """User in Room DTO для операции удаления (Delete) информации о комнате"""
+    id: int
 
