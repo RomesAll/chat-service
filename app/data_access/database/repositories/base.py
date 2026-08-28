@@ -4,7 +4,7 @@ from app.data_access.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_, delete, Select, exists
 from sqlalchemy.orm import Session
 from app.data_access.exceptions import RecordNotFound
-from interfaces.repository import (
+from app.data_access.database.interfaces.repository import (
     TDtoGetResponse,
     TDtoPostPutDeleteRequest,
     IRepositoryGet,
@@ -17,7 +17,7 @@ from app.shared.dtos import (
     SortEnum,
     OperatorEnum,
 )
-from repositories.metaclasses import ExceptionHandlingMeta
+from app.data_access.database.repositories.metaclasses import ExceptionHandlingMeta
 
 OPERATOR_MAP = {
     OperatorEnum.EQ: lambda f, v: f == v,
@@ -137,7 +137,7 @@ class BaseRepositorySave(
     """Базовый репозиторий для сохранения записей"""
     def save(self, dto_post_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
         """Сохранение записи в бд"""
-        orm_object = self.model(**dto_post_request.model_dump())
+        orm_object = self.model(**dto_post_request.model_dump(exclude_none=True, exclude_unset=True))
         self.session.add(orm_object)
         self.session.flush()
         return self._get_dto(orm_object)
