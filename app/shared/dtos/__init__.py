@@ -13,18 +13,18 @@ from .base import (
 )
 from .message import (
     MessageType,
-    PrivateMessageDtoGetResponse,
+    MessageDtoGetResponse,
     PrivateMessageDtoPostRequest,
     BaseMessageDto
-    # MessageDtoUpdateRequest,
-    # MessageDtoDeleteRequest,
 )
 from .room import (
     RoomDtoGetResponse,
     RoomDtoPostRequest,
     RoomDtoUpdateRequest,
     RoomDtoDeleteRequest,
-    InvitationUserInRoomDtoRequest
+    UserInRoomResponse,
+    UserInRoomPostRequest,
+    UserInRoomDtoDeleteRequest,
 )
 from .user import (
     UserDtoGetResponse,
@@ -49,8 +49,19 @@ from .message_attachments import (
     MessageAttachmentsDtoPostRequest,
     MessageAttachmentsDeleteRequest
 )
+from .group_message import (
+    GroupMessageDtoResponse,
+    GroupMessageDtoDeleteRequest,
+    GroupMessageDtoPostRequest,
+)
 
 __all__ = [
+    'GroupMessageDtoResponse',
+    'GroupMessageDtoDeleteRequest',
+    'GroupMessageDtoPostRequest',
+    'UserInRoomResponse',
+    'UserInRoomPostRequest',
+    'UserInRoomDtoDeleteRequest',
     'OperatorEnum',
     'SortEnum',
     'PaginationDto',
@@ -61,9 +72,8 @@ __all__ = [
     'BaseDtoClientRequest',
     'BaseDtoGetResponse',
     'MessageType',
-    'PrivateMessageDtoGetResponse',
+    'MessageDtoGetResponse',
     'PrivateMessageDtoPostRequest',
-    #'MessageDtoUpdateRequest',
     'RoomDtoGetResponse',
     'RoomDtoPostRequest',
     'RoomDtoUpdateRequest',
@@ -75,10 +85,8 @@ __all__ = [
     'ActiveSession',
     'BaseDtoPostDeleteRequest',
     'BaseDtoPutPathRequest',
-    #'MessageDtoDeleteRequest',
     'RoomDtoDeleteRequest',
     'UserDtoDeleteRequest',
-    'InvitationUserInRoomDtoRequest',
     'JWTBaseToken',
     'JWTAccessToken',
     'JWTRefreshToken',
