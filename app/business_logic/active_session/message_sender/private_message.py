@@ -1,18 +1,13 @@
 import base64
 from uuid import UUID
-
-from sqlalchemy.testing import exclude
 from starlette.websockets import WebSocket
-from websockets import WebSocketException
-
-from business_logic.active_session.active_session_manager import ActiveSessionManager
-from business_logic.active_session.message_sender.interface import IMessageRoute
-from business_logic.cache.session_key_storage import SessionKeyStorage
-from business_logic.encryption.symmetric import SymmetricEncode
-from business_logic.exceptions import SendMessageError
-from app.shared.dtos import PrivateMessageDtoPostRequest
-from dtos import MessageAttachmentsDtoPostRequest, PrivateMessageDtoGetResponse
-from dtos.base import WebsocketPackage, WebsocketActionType
+from app.business_logic.active_session.active_session_manager import ActiveSessionManager
+from app.business_logic.active_session.message_sender.interface import IMessageRoute
+from app.business_logic.cache.session_key_storage import SessionKeyStorage
+from app.business_logic.encryption.symmetric import SymmetricEncode
+from app.business_logic.exceptions import SendMessageError
+from app.shared.dtos import MessageDtoGetResponse
+from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
 
 
 class PrivateMessageRoute(IMessageRoute):
@@ -32,26 +27,22 @@ class PrivateMessageRoute(IMessageRoute):
     async def send_message(
             self,
             session_id: UUID,
-            message_send_response: PrivateMessageDtoGetResponse,
+            message_send_response: MessageDtoGetResponse,
     ):
         """Отправка сообщения пользователю"""
         try:
-            sender_active_session = self.active_session.get_or_create_session(
-                user_id=message_send_response.sender_id
-            )
-            target_active_session = self.active_session.get_or_create_session(
-                user_id=message_send_response.recipient_id
-            )
-            await self._send_message(
-                user_id=message_send_response.sender_id,
-                connections=sender_active_session.user_sessions,
-                message_send_response=message_send_response,
-                exclude_session={session_id, })
-            await self._send_message(
-                user_id=message_send_response.recipient_id,
-                connections=target_active_session.user_sessions,
-                message_send_response=message_send_response,
-            )
+            sender_collection = {}
+            for user_id in [message_send_response.sender_id, message_send_response.recipient_id]:
+                sender_collection[user_id] = self.active_session.get_or_create_session(
+                    user_id=user_id
+                )
+            for user_id, active_session in sender_collection.items():
+                await self._send_message(
+                    user_id=user_id,
+                    connections=active_session.user_sessions,
+                    message_send_response=message_send_response,
+                    exclude_session={session_id,}
+                )
         except Exception as e:
             raise SendMessageError(
                 message_send_response.sender_id,
@@ -63,10 +54,10 @@ class PrivateMessageRoute(IMessageRoute):
             self,
             user_id: str,
             connections: dict[UUID, WebSocket],
-            message_send_response: PrivateMessageDtoGetResponse,
+            message_send_response: MessageDtoGetResponse,
             exclude_session: set[UUID] | None = None
     ):
-        for session_id, connection in connections:
+        for session_id, connection in connections.items():
             if exclude_session and session_id in exclude_session:
                 continue
             session_key = self.session_key_storage.get(user_id, session_id)
