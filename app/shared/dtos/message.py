@@ -9,8 +9,8 @@ from .base import (
 
 class MessageType(str, Enum):
     """Перечисление для типов сообщений"""
-    TEXT = 'text'
-    VIDEO = 'video'
+    PRIVATE_MSG = 'private_msg'
+    GROUP_MSG = 'group_msg'
 
 
 class BaseMessageDto(BaseModel):
@@ -32,7 +32,7 @@ class BaseMessageDtoWithRecipientInfo(BaseMessageDto):
     recipient_key_version: str
 
 
-class PrivateMessageDtoGetResponse(
+class MessageDtoGetResponse(
     BaseMessageDtoWithSenderInfo, BaseMessageDtoWithRecipientInfo, BaseDtoGetResponse
 ):
     """DTO для операции получения (Get) информации о приватных сообщениях"""
@@ -44,23 +44,3 @@ class PrivateMessageDtoPostRequest(
 ):
     """DTO для операции добавления (Post) информации о приватных сообщениях"""
     pass
-
-
-# class PrivateMsgDtoPhotoRequest(PrivateMessageDtoPostRequest):
-#     pass
-#
-#
-# class PrivateMsgDtoPostRequest(PrivateMsgDtoPhotoRequest):
-#     pass
-#
-#
-# class MessageDtoUpdateRequest(BaseDtoPutPathRequest):
-#     """Message DTO для операции обновления (Put) информации о сообщении"""
-#     message: str
-#     is_deleted: bool
-#     user_keys_version: datetime
-#
-#
-# class MessageDtoDeleteRequest(BaseDtoPostDeleteRequest):
-#     """Message DTO для операции удаления (Delete) информации о сообщении"""
-#     pass
