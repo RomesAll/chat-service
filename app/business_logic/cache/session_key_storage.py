@@ -27,8 +27,3 @@ class SessionKeyStorage:
     def delete(self, user_id: str, session_id: UUID) -> bool:
         """Удаление сессионного ключа"""
         return bool(self.client.delete(f'session:{user_id}:{session_id}'))
-
-
-session_key_storage: SessionKeyStorage = SessionKeyStorage(
-    redis.Redis(host='127.0.0.1', port=6380, db=0, password='qwerty')
-)
