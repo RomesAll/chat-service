@@ -1,4 +1,5 @@
-from dtos import BaseDtoGetResponse, BaseDtoPostDeleteRequest
+from pydantic import ConfigDict, BaseModel
+from .base import BaseDtoGetResponse, BaseDtoPostDeleteRequest
 
 
 class PublicKeyDtoGet(BaseDtoGetResponse):
@@ -6,6 +7,7 @@ class PublicKeyDtoGet(BaseDtoGetResponse):
     id: int
     version: str
     public_key: str
+    model_config = ConfigDict(extra='ignore')
 
 
 class PublicKeyDtoCreate(BaseDtoPostDeleteRequest):
@@ -20,12 +22,24 @@ class PublicKeyDtoCreate(BaseDtoPostDeleteRequest):
 class PrivateKeyDtoGet(BaseDtoGetResponse):
     """DTO для хранения зашифрованной коллекции приватных ключей"""
     id: int
-    user_id: str
-    encrypted_private_keys: str
+    version: str
+    private_key: str
+    model_config = ConfigDict(extra='ignore')
 
 
 class PrivateKeyDtoCreate(BaseDtoPostDeleteRequest):
     """DTO для создания зашифрованной коллекции приватных ключей"""
     id: int | None = None
     user_id: str
-    encrypted_private_keys: str
+    version: str
+    private_key: str
+
+
+class PublicKeyRequest(BaseModel):
+    version: str
+    public_key: str
+
+
+class PrivateKeyRequest(BaseModel):
+    version: str
+    private_key: str
