@@ -118,6 +118,7 @@ class WebsocketActionType(str, Enum):
     GET_USER_PRIVATE_KEYS = 'get_user_private_keys'
     SEND_PRIVATE_MESSAGE = 'send_private_message'
     SEND_GROUP_MESSAGE = 'send_group_message'
+    DELETE_MSG = 'delete_msg'
 
 
 class BaseDtoClientRequest(BaseModelWithPrint):
