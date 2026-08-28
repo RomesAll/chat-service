@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Response, status, Depends
 from starlette.responses import JSONResponse
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.user.hard_delete_user import HardDeleteUser
-from business_logic.use_cases.user.recovery_user import RecoveryUser
-from business_logic.use_cases.user.soft_delete_user import SoftDeleteUser
-from database import db
-from dtos import (
+from bootstrap import get_bootstrap
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.user.hard_delete_user_use_case import HardDeleteUser
+from app.business_logic.use_cases.user.recovery_user_use_case import RecoveryUser
+from app.business_logic.use_cases.user.soft_delete_user_use_case import SoftDeleteUser
+from app.shared.dtos import (
     UserDtoGetResponse,
     JWTRefreshTokenResponse
 )
-from models.user import RoleEnum
-from presentation.dependencies.auth import RoleChecker
+from app.data_access.database.models.user import RoleEnum
+from app.presentation.dependencies.auth import RoleChecker
 
 route = APIRouter()
-
+bootstrap = get_bootstrap()
 
 @route.patch(
     path='/users/{user_id}/soft-delete',
@@ -29,7 +29,7 @@ def soft_delete_user(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: str = SoftDeleteUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(user_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -50,7 +50,7 @@ def soft_delete_me(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: str = SoftDeleteUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(access_token.user_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -70,7 +70,7 @@ def hard_delete_user(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: str = HardDeleteUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(user_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -89,7 +89,7 @@ def hard_delete_me(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: str = HardDeleteUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(access_token.user_id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -110,7 +110,7 @@ def recovery_user(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = RecoveryUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(user_id)
     if not return_record:
         return Response(
@@ -135,7 +135,7 @@ def recovery_me(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = RecoveryUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(access_token.user_id)
     if not return_record:
         return Response(
