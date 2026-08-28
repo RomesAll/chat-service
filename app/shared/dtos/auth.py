@@ -1,6 +1,6 @@
 from pydantic import BaseModel, SecretStr
-from app.shared.dtos import UserDtoGetResponse
-from dtos.jwt import JWTTokenResponse
+from .user import UserDtoGetResponse
+from .jwt import JWTTokenResponse
 
 
 class LoginDtoRequest(BaseModel):
