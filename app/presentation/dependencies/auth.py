@@ -1,11 +1,11 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette import status
-from business_logic.auth.jwt_manager import JWTAccessManager, JWTRefreshManager
-from dtos import JWTBaseToken
+from app.business_logic.auth.jwt_manager import JWTAccessManager, JWTRefreshManager
+from app.shared.dtos import JWTBaseToken
 import jwt
-from dtos.jwt import TokenType, JWTAccessTokenResponse, JWTRefreshTokenResponse
-from models.user import RoleEnum
+from app.shared.dtos.jwt import TokenType, JWTAccessTokenResponse, JWTRefreshTokenResponse
+from app.data_access.database.models.user import RoleEnum
 
 security = HTTPBearer()
 
