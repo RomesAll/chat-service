@@ -10,9 +10,9 @@ class UserConnectionNotFound(Exception):
 
 class SendMessageError(Exception):
     """Ошибка отправки сообщения"""
-    def __init__(self, sender_id: str, target_id: str, cause: str):
+    def __init__(self, sender_id: str, target_id: str | UUID, cause: str):
         message = (f'Не удалось отправить сообщение '
-                        f'пользователю: {target_id} от {sender_id} '
+                        f'пользователю(комнату: {target_id} от {sender_id} '
                         f'по причине: {cause}')
         super().__init__(message)
 
