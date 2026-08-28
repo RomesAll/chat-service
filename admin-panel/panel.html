@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>E2E Чат - Полная версия</title>
+    <style>
+        body { font-family: sans-serif; max-width: 1000px; margin: 30px auto; background: #f4f6f9; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, button, textarea { padding: 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
+        input { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            resize: vertical;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+        }
+        button { background: #007bff; color: white; border: none; cursor: pointer; transition: 0.2s; padding: 10px 20px; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #b02a37; }
+        button.success { background: #28a745; }
+        button.success:hover { background: #1e7e34; }
+        button.warning { background: #ffc107; color: #333; }
+        button.warning:hover { background: #e0a800; }
+        button.primary { background: #007bff; }
+        button.primary:hover { background: #0056b3; }
+        button.secondary { background: #6c757d; }
+        button.secondary:hover { background: #5a6268; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .chat-box { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fafafa; border-radius: 8px; }
+        .message { padding: 6px 10px; margin: 4px 0; border-radius: 6px; background: #e9ecef; }
+        .message.own { background: #d1ecf1; }
+        .message.system { background: #fff3cd; }
+        .message.private { background: #d4edda; }
+        .message.group { background: #fce4ec; border-left: 3px solid #e91e63; }
+        .message.group.own { background: #f8bbd0; border-left-color: #c2185b; }
+        .message.handshake { background: #e8d5f5; }
+        .message.history { background: #e3f2fd; border-left: 3px solid #2196f3; }
+        .message.history.own { background: #b3d4fc; border-left-color: #0d47a1; }
+        .message.history.private { background: #c8e6c9; border-left-color: #2e7d32; }
+        .status-online { color: #28a745; font-weight: bold; }
+        .status-offline { color: #dc3545; font-weight: bold; }
+        .status-auth { color: #28a745; font-weight: bold; }
+        .status-noauth { color: #dc3545; font-weight: bold; }
+        .json-view { background: #f8f9fa; padding: 10px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre-wrap; border: 1px solid #ddd; margin-top: 5px; max-height: 300px; overflow-y: auto; }
+        .key-section { background: #f0f4ff; padding: 15px; border-radius: 8px; border: 2px solid #007bff; margin-bottom: 15px; }
+        .key-section textarea { height: 120px; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-success { background: #28a745; color: white; }
+        .badge-danger { background: #dc3545; color: white; }
+        .badge-warning { background: #ffc107; color: #333; }
+        .badge-info { background: #17a2b8; color: white; }
+        .key-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+        .key-actions button { flex: 1; min-width: 100px; }
+        .key-info { font-size: 11px; color: #666; margin-top: 5px; }
+        .keys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .keys-grid { grid-template-columns: 1fr; } }
+        .test-section { background: #e8f5e9; padding: 15px; border-radius: 8px; border: 2px solid #4caf50; margin-top: 15px; }
+        .test-result { padding: 10px; border-radius: 6px; margin-top: 10px; display: none; }
+        .test-result.success { background: #d4edda; border-left: 4px solid #28a745; display: block; }
+        .test-result.error { background: #f8d7da; border-left: 4px solid #dc3545; display: block; }
+        .test-result.info { background: #d1ecf1; border-left: 4px solid #17a2b8; display: block; }
+        .mode-toggle { display: flex; gap: 10px; margin: 10px 0; }
+        .mode-toggle button { flex: 1; }
+        .mode-toggle button.active { background: #28a745; color: white; }
+        .generate-section { background: #fff3cd; padding: 15px; border-radius: 8px; border: 2px solid #ffc107; margin-bottom: 15px; }
+        .generate-section button { font-size: 16px; padding: 15px 30px; }
+        .loader { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; vertical-align: middle; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .auth-section { background: #e3f2fd; padding: 15px; border-radius: 8px; border: 2px solid #2196f3; margin-bottom: 15px; }
+        .auth-section input { margin-bottom: 8px; }
+        .token-display { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; word-break: break-all; max-height: 150px; overflow-y: auto; margin-top: 5px; }
+        .token-display .label { color: #9cdcfe; }
+        .token-display .value { color: #ce9178; word-break: break-all; }
+        .keys-collection { background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin-top: 10px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; white-space: pre-wrap; }
+        .keys-collection .key-item { border-bottom: 1px solid #eee; padding: 5px 0; }
+        .keys-collection .key-item:last-child { border-bottom: none; }
+        .keys-collection .version { color: #007bff; font-weight: bold; }
+        .keys-collection .key-preview { color: #6c757d; font-size: 10px; }
+        .keys-collection .key-decrypted { color: #28a745; font-size: 10px; }
+        .decrypted-keys-section { background: #e8f5e9; padding: 10px; border-radius: 6px; border: 1px solid #28a745; margin-top: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; white-space: pre-wrap; display: none; }
+        .decrypted-keys-section .key-item { border-bottom: 1px solid #c3e6cb; padding: 8px 0; }
+        .decrypted-keys-section .key-item:last-child { border-bottom: none; }
+        .decrypted-keys-section .version { color: #155724; font-weight: bold; }
+        .decrypted-keys-section .key-full { color: #28a745; font-size: 10px; word-break: break-all; }
+        .version-select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; min-width: 200px; }
+        .password-section { background: #e8f5e9; padding: 15px; border-radius: 8px; border: 2px solid #4caf50; margin-bottom: 15px; }
+        .password-section input { margin-bottom: 8px; }
+        .message-time { font-size: 10px; color: #999; margin-left: 10px; }
+        .file-attachment {
+            display: inline-block;
+            background: #007bff;
+            color: white !important;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 5px;
+            text-decoration: none !important;
+        }
+        .file-attachment:hover {
+            background: #0056b3;
+        }
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .file-input-wrapper input[type="file"] {
+            flex: 1;
+            min-width: 150px;
+            padding: 8px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .file-list {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .file-list .file-item {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 2px 4px 2px 0;
+        }
+        .file-list .file-item .remove-file {
+            cursor: pointer;
+            color: #dc3545;
+            margin-left: 4px;
+            font-weight: bold;
+        }
+
+        /* ===== МОДАЛЬНОЕ ОКНО ДЛЯ ИСТОРИИ ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 95%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .modal-header h3 span {
+            font-weight: normal;
+            color: #666;
+            font-size: 14px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0 8px;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+            max-height: calc(90vh - 140px);
+        }
+        .modal-body .message {
+            padding: 8px 12px;
+            margin: 6px 0;
+            border-radius: 6px;
+            background: #f8f9fa;
+        }
+        .modal-body .message.history {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+        .modal-body .message.history.own {
+            background: #b3d4fc;
+            border-left-color: #0d47a1;
+        }
+        .modal-body .message.history.private {
+            background: #c8e6c9;
+            border-left-color: #2e7d32;
+        }
+        .modal-body .message .message-time {
+            font-size: 10px;
+            color: #999;
+            margin-right: 10px;
+        }
+        .modal-body .message strong {
+            color: #333;
+        }
+        .modal-body .message .file-attachment {
+            font-size: 12px;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .modal-footer .info {
+            font-size: 12px;
+            color: #666;
+        }
+        .modal-footer .info span {
+            font-weight: bold;
+            color: #333;
+        }
+        .modal-footer .info .decrypted-count { color: #28a745; }
+        .modal-footer .info .error-count { color: #dc3545; }
+        .modal-footer .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .modal-footer .actions button {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+        .history-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .history-empty .icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 12px;
+        }
+        .history-error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #dc3545;
+        }
+        .load-key-result {
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 13px;
+            display: none;
+        }
+        .load-key-result.success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            display: block;
+        }
+        .load-key-result.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            display: block;
+        }
+        .file-download-link {
+            display: inline-block;
+            background: #28a745;
+            color: white !important;
+            padding: 2px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 5px;
+            text-decoration: none !important;
+        }
+        .file-download-link:hover {
+            background: #1e7e34;
+        }
+        .message-html {
+            word-break: break-word;
+        }
+        .message-html .file-download-link {
+            display: inline-block;
+            background: #28a745;
+            color: white !important;
+            padding: 2px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 5px;
+            text-decoration: none !important;
+        }
+        .message-html .file-download-link:hover {
+            background: #1e7e34;
+        }
+        .chat-mode-toggle {
+            display: flex;
+            gap: 5px;
+            background: #e9ecef;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .chat-mode-toggle button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            background: transparent;
+            color: #666;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        .chat-mode-toggle button.active {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .chat-mode-toggle button.private-mode.active {
+            color: #007bff;
+        }
+        .chat-mode-toggle button.group-mode.active {
+            color: #e91e63;
+        }
+        .room-id-input {
+            display: none;
+        }
+        .room-id-input.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>💬 Чат</h2>
+        <div class="flex" style="justify-content:space-between;">
+            <span><strong>Пользователь:</strong> <span id="currentUser">-</span></span>
+            <span id="authStatus" class="status-noauth">⛔ Не авторизован</span>
+            <span id="wsStatus" class="status-offline">⚪ Отключено</span>
+        </div>
+    </div>
+
+    <!-- ===== АВТОРИЗАЦИЯ ===== -->
+    <div class="card">
+        <div class="auth-section">
+            <h3>🔐 Авторизация</h3>
+            <div class="flex">
+                <input type="text" id="loginUserId" placeholder="user_id" value="alice" style="flex:1;">
+                <input type="password" id="loginPassword" placeholder="Пароль" value="123456" style="flex:1;">
+                <button onclick="login()" class="success">🔑 Войти</button>
+                <button onclick="logout()" class="danger">🚪 Выйти</button>
+            </div>
+            <div id="authError" style="color:red; font-size:14px; margin-top:5px;"></div>
+
+            <div style="margin-top:10px;">
+                <button onclick="showTokens()" class="secondary" style="width:100%;">👁️ Показать токены</button>
+                <div id="tokenDisplay" style="display:none; margin-top:10px;">
+                    <div class="token-display">
+                        <div><span class="label">🔑 Access Token:</span> <span class="value" id="accessTokenDisplay">—</span></div>
+                        <div><span class="label">🔄 Refresh Token:</span> <span class="value" id="refreshTokenDisplay">—</span></div>
+                        <div style="margin-top:5px; border-top:1px solid #333; padding-top:5px;">
+                            <span class="label">👤 User ID:</span> <span class="value" id="userIdDisplay">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ПАРОЛЬ ДЛЯ КЛЮЧЕЙ ===== -->
+    <div class="card">
+        <div class="password-section">
+            <h3>🔑 Пароль для ключей</h3>
+            <p style="font-size:12px; color:#666;">Введите пароль один раз при авторизации. Он будет использоваться для расшифровки всех ключей.</p>
+            <div class="flex">
+                <input type="password" id="encryptionPassword" placeholder="Пароль для ключей" value="qwerty" style="flex:2;">
+                <button onclick="setEncryptionPassword()" class="success">💾 Сохранить пароль</button>
+            </div>
+            <div id="passwordStatus" style="font-size:12px; color:#28a745; margin-top:5px; display:none;">✅ Пароль сохранен</div>
+        </div>
+    </div>
+
+    <!-- ===== ГЕНЕРАЦИЯ И ЗАГРУЗКА КЛЮЧЕЙ ===== -->
+    <div class="card">
+        <div class="generate-section">
+            <h3>🚀 Управление ключами</h3>
+            <p style="font-size:12px; color:#666;">Сгенерируйте новую пару ключей или загрузите свой текущий публичный ключ с сервера</p>
+            <div class="flex">
+                <button onclick="generateAndSaveKeys()" class="success" id="genKeysBtn" style="font-size:16px; padding:15px 30px;">
+                    🔑 Сгенерировать и сохранить ключи
+                </button>
+                <button onclick="loadMyPublicKey()" class="primary" id="loadPubKeyBtn" style="font-size:16px; padding:15px 30px;">
+                    📥 Загрузить мой публичный ключ
+                </button>
+                <button onclick="loadAllPrivateKeys()" class="warning" style="font-size:14px; padding:15px 20px;">
+                    📥 Загрузить приватные ключи
+                </button>
+            </div>
+            <div id="genProgress" style="display:none; margin-top:10px;">
+                <span class="loader"></span> Генерация и сохранение ключей... Подождите...
+            </div>
+            <div id="loadKeyResult" class="load-key-result"></div>
+            <div id="genResult" style="margin-top:10px; display:none;" class="test-result success"></div>
+        </div>
+
+        <div class="keys-grid">
+            <div class="key-section">
+                <div class="flex" style="justify-content:space-between;">
+                    <label style="font-weight:bold;">🔑 Публичный ключ (текущий):</label>
+                    <span id="pubKeyStatus" class="badge badge-warning">Не загружен</span>
+                </div>
+                <textarea id="publicKeyInput" readonly></textarea>
+                <div class="key-actions">
+                    <button onclick="loadPublicKey()" class="success">📥 Загрузить</button>
+                    <button onclick="copyKey('public')" class="warning">📋 Копировать</button>
+                    <button onclick="clearKey('public')" class="danger">🗑️ Очистить</button>
+                </div>
+                <div class="key-info" id="publicKeyInfo">Строк: 0 | Символов: 0 | Версия: —</div>
+            </div>
+
+            <div class="key-section">
+                <div class="flex" style="justify-content:space-between;">
+                    <label style="font-weight:bold;">🔐 Приватные ключи (коллекция):</label>
+                    <span id="privKeyStatus" class="badge badge-warning">Не загружены</span>
+                </div>
+                <div id="privateKeysCollection" class="keys-collection" style="min-height:100px;">
+                    <div style="color:#6c757d; text-align:center; padding:20px;">Нет загруженных ключей</div>
+                </div>
+                <div class="key-actions">
+                    <button onclick="loadAllPrivateKeys()" class="primary">📥 Загрузить все</button>
+                    <button onclick="showDecryptedKeys()" class="success">🔓 Показать расшифрованные</button>
+                    <button onclick="clearAllPrivateKeys()" class="danger">🗑️ Очистить все</button>
+                </div>
+                <div id="decryptedKeysContainer" class="decrypted-keys-section"></div>
+                <div class="key-info" id="privateKeyInfo">Ключей: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ЧАТ ===== -->
+    <div class="card">
+        <div class="flex" style="justify-content:space-between; margin-bottom:10px;">
+            <span><strong>WebSocket:</strong></span>
+            <button onclick="connectWebSocket()" id="connectBtn">🔌 Подключиться</button>
+            <button onclick="disconnectWebSocket()" id="disconnectBtn" class="danger" disabled>Отключиться</button>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:#888;">
+            <span id="handshakeStatus">⚪ Handshake: не выполнен</span>
+            <span style="margin-left:15px;" id="sessionInfo">🔑 Сессия: не установлена</span>
+        </div>
+        <div style="margin-top:10px;">
+            <!-- Режимы чата -->
+            <div class="flex" style="margin-bottom:10px; justify-content:space-between;">
+                <div class="chat-mode-toggle">
+                    <button id="privateModeBtn" class="private-mode active" onclick="setChatMode('private')">💬 Приватный</button>
+                    <button id="groupModeBtn" class="group-mode" onclick="setChatMode('group')">👥 Групповой</button>
+                </div>
+                <span id="modeStatus" style="font-size:12px; color:#666;">Режим: приватный</span>
+            </div>
+
+            <!-- Поля для ввода -->
+            <div id="privateInputs">
+                <input type="text" id="targetUserId" placeholder="Введите user_id получателя" style="width:100%;">
+            </div>
+            <div id="groupInputs" class="room-id-input" style="display:none;">
+                <input type="text" id="roomIdInput" placeholder="Введите room_id" style="width:100%;">
+                <button onclick="loadRoomUsers()" class="primary" style="width:100%; margin-top:5px;">📥 Загрузить участников комнаты</button>
+                <div id="roomUsersList" style="font-size:12px; color:#666; margin-top:5px; max-height:100px; overflow-y:auto;"></div>
+            </div>
+
+            <div class="flex" style="margin-top:5px; align-items:flex-start;">
+                <input type="text" id="messageInput" placeholder="Сообщение..." style="flex:2;">
+                <div class="file-input-wrapper" style="flex:1;">
+                    <input type="file" id="fileInput" multiple>
+                </div>
+                <button onclick="sendMessage()" class="success">📤 Отправить</button>
+            </div>
+            <div id="fileList" class="file-list" style="display:none;"></div>
+        </div>
+        <div class="chat-box" id="messageContainer">
+            <div class="message system">Авторизуйтесь, сгенерируйте ключи и подключитесь к WebSocket</div>
+        </div>
+    </div>
+
+    <div class="card" id="decryptedDataCard">
+        <h3>📦 Расшифрованные данные</h3>
+        <div id="decryptedData" class="json-view">Ожидание данных...</div>
+    </div>
+
+    <script>
+        // ====== КОНФИГ ======
+        const API_BASE = 'http://localhost:8000/api/v1';
+        const WS_BASE = 'ws://localhost:8000';
+
+        // ====== ТОКЕНЫ ======
+        let accessToken = localStorage.getItem('access_token') || null;
+        let refreshToken = localStorage.getItem('refresh_token') || null;
+        let currentUser = localStorage.getItem('user_id') || null;
+
+        // ====== ПАРОЛЬ ======
+        let encryptionPassword = localStorage.getItem('encryption_password') || null;
+
+        // ====== WEBSOCKET ======
+        let ws = null;
+        let isWsConnected = false;
+        let isHandshakeDone = false;
+        let isHandshakeSent = false;
+
+        let serverPublicKey = null;
+        let sessionKey = null;
+        let sessionKeyBase64 = null;
+        let sessionId = null;
+
+        // ====== КЛЮЧИ ======
+        let publicKeyPem = null;
+        let publicKeyVersion = null;
+        let privateKeyPem = null;
+        let publicKeyCrypto = null;
+        let privateKeyCrypto = null;
+        let testMode = 'text';
+        let privateKeysCollection = {};
+        let decryptedPrivateKeys = {};
+
+        // ====== РЕЖИМ ЧАТА ======
+        let chatMode = 'private'; // 'private' или 'group'
+        let roomUsers = {}; // { user_id: { public_key, version } }
+        let selectedFiles = [];
+
+        // ====== ГЕНЕРАЦИЯ ВЕРСИИ КЛЮЧА ======
+        function generateKeyVersion(userId) {
+            const now = new Date();
+            const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            return `${userId}_${dateStr}`;
+        }
+
+        // ====== ФУНКЦИИ ДЛЯ РАБОТЫ С РЕЖИМАМИ ======
+        function setChatMode(mode) {
+            chatMode = mode;
+            document.getElementById('privateModeBtn').className = mode === 'private' ? 'private-mode active' : 'private-mode';
+            document.getElementById('groupModeBtn').className = mode === 'group' ? 'group-mode active' : 'group-mode';
+            document.getElementById('privateInputs').style.display = mode === 'private' ? 'block' : 'none';
+            document.getElementById('groupInputs').style.display = mode === 'group' ? 'block' : 'none';
+            document.getElementById('modeStatus').textContent = `Режим: ${mode === 'private' ? 'приватный' : 'групповой'}`;
+        }
+
+        async function loadRoomUsers() {
+            const roomId = document.getElementById('roomIdInput').value.trim();
+            if (!roomId) {
+                alert('Введите room_id');
+                return;
+            }
+
+            if (!accessToken) {
+                alert('Сначала авторизуйтесь');
+                return;
+            }
+
+            try {
+                addMessage(`📥 Загрузка участников комнаты ${roomId}...`, 'system');
+                const response = await apiRequest('GET', `/room/${roomId}/user-public-key`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('📦 Участники комнаты:', data);
+
+                roomUsers = data;
+                const userList = document.getElementById('roomUsersList');
+                const count = Object.keys(roomUsers).length;
+
+                let html = `<strong>👥 Участники (${count}):</strong> `;
+                for (const [userId, keyData] of Object.entries(roomUsers)) {
+                    html += `<span style="background:#e9ecef; padding:2px 8px; border-radius:4px; margin:2px;">${userId}</span> `;
+                }
+                userList.innerHTML = html;
+
+                addMessage(`✅ Загружено ${count} участников комнаты`, 'system');
+
+            } catch (error) {
+                console.error('❌ Ошибка загрузки участников:', error);
+                addMessage(`❌ Ошибка загрузки участников: ${error.message}`, 'system');
+            }
+        }
+
+        // ====== ОТПРАВКА ГРУППОВОГО СООБЩЕНИЯ ======
+        async function sendGroupMessage(msg, roomId) {
+            if (!roomUsers || Object.keys(roomUsers).length === 0) {
+                throw new Error('Нет участников комнаты. Сначала загрузите участников.');
+            }
+
+            // 1. Генерируем сессионный ключ для группового сообщения
+            const groupSessionKey = await generateSessionKey();
+            const groupSessionKeyBase64 = await exportSessionKey(groupSessionKey);
+            console.log('🔑 Групповой сессионный ключ:', groupSessionKeyBase64);
+
+            // 2. Шифруем сообщение групповым ключом (AES-GCM)
+            const encoder = new TextEncoder();
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encryptedMsg = await crypto.subtle.encrypt(
+                {
+                    name: "AES-GCM",
+                    iv: iv
+                },
+                groupSessionKey,
+                encoder.encode(msg)
+            );
+            const combined = new Uint8Array(iv.length + encryptedMsg.byteLength);
+            combined.set(iv, 0);
+            combined.set(new Uint8Array(encryptedMsg), iv.length);
+            const encryptedMsgBase64 = btoa(String.fromCharCode(...combined));
+            console.log('🔒 Сообщение зашифровано групповым ключом');
+
+            // 3. Для каждого пользователя шифруем групповой ключ его публичным ключом
+            const keysInfo = [];
+            const myUserId = currentUser;
+
+            for (const [userId, keyData] of Object.entries(roomUsers)) {
+                try {
+                    let userPublicKeyPem;
+                    let userKeyVersion;
+
+                    if (userId === myUserId) {
+                        userPublicKeyPem = publicKeyPem;
+                        userKeyVersion = publicKeyVersion || generateKeyVersion(myUserId);
+                    } else {
+                        userPublicKeyPem = keyData.public_key;
+                        userKeyVersion = keyData.version || generateKeyVersion(userId);
+                    }
+
+                    const userKey = await importPublicKeyFromPem(userPublicKeyPem);
+                    const encryptedKey = await encryptRsa(groupSessionKeyBase64, userKey);
+
+                    keysInfo.push({
+                        user_id: userId,
+                        key_version: userKeyVersion,
+                        key: encryptedKey
+                    });
+                } catch (err) {
+                    console.error(`❌ Ошибка шифрования для пользователя ${userId}:`, err);
+                }
+            }
+
+            if (keysInfo.length === 0) {
+                throw new Error('Не удалось зашифровать ключ ни для одного пользователя');
+            }
+
+            // 4. Формируем payload
+            const payload = {
+                message: encryptedMsgBase64,
+                keys: keysInfo
+            };
+
+            // 5. Отправляем на сервер как FormData
+            const formData = new FormData();
+            const messageId = crypto.randomUUID();
+            formData.append('message_id', messageId);
+            formData.append('room_id', roomId);
+            formData.append('sender_id', myUserId);
+            formData.append('payload', JSON.stringify(payload));
+            formData.append('time_send', new Date().toISOString());
+
+            const files = document.getElementById('fileInput').files;
+            for (const file of files) {
+                formData.append('files', file);
+            }
+
+            console.log('📤 Отправка группового сообщения:', {
+                room_id: roomId,
+                sender_id: myUserId,
+                payload: payload
+            });
+
+            // НОВЫЙ ПУТЬ: /rooms/{room_id}/message/send
+            const response = await apiRequest('POST', `/rooms/${roomId}/message/send`, formData, true);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Групповое сообщение отправлено:', result);
+
+            const fileCount = files.length;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileList').style.display = 'none';
+            document.getElementById('fileList').innerHTML = '';
+            selectedFiles = [];
+
+            return result;
+        }
+
+        // ====== РАСШИФРОВКА ГРУППОВОГО СООБЩЕНИЯ ======
+        async function decryptGroupMessage(packetData) {
+            try {
+                console.log('🔓 Расшифровка группового сообщения');
+                console.log('📦 packetData:', packetData);
+
+                const payload = packetData.payload;
+                const encryptedMsg = payload.message;
+                const keys = payload.keys;
+
+                console.log('📨 Зашифрованное сообщение:', encryptedMsg);
+                console.log('🔑 Ключи:', keys);
+
+                let myKeyData = null;
+                for (const keyInfo of keys) {
+                    if (keyInfo.user_id === currentUser) {
+                        myKeyData = keyInfo;
+                        break;
+                    }
+                }
+
+                if (!myKeyData) {
+                    throw new Error(`Ключ для пользователя ${currentUser} не найден. Доступные: ${keys.map(k => k.user_id).join(', ')}`);
+                }
+
+                console.log(`🔑 Найден ключ для ${currentUser}:`, myKeyData);
+
+                const privateKeyPem = await getPrivateKeyByVersion(myKeyData.key_version);
+                if (!privateKeyPem) {
+                    throw new Error('Не удалось получить приватный ключ');
+                }
+
+                const groupSessionKeyBase64 = await decryptRsaWithKey(myKeyData.key, privateKeyPem);
+                console.log('🔑 Групповой ключ расшифрован');
+
+                const groupSessionKey = await importSessionKey(groupSessionKeyBase64);
+
+                const combined = Uint8Array.from(atob(encryptedMsg), c => c.charCodeAt(0));
+                const iv = combined.slice(0, 12);
+                const ciphertext = combined.slice(12);
+
+                const decrypted = await crypto.subtle.decrypt(
+                    {
+                        name: "AES-GCM",
+                        iv: iv
+                    },
+                    groupSessionKey,
+                    ciphertext
+                );
+                const decryptedText = new TextDecoder().decode(decrypted);
+                console.log('📨 Сообщение расшифровано:', decryptedText);
+
+                return decryptedText;
+
+            } catch (error) {
+                console.error('❌ Ошибка расшифровки группового сообщения:', error);
+                throw new Error('Ошибка расшифровки группового сообщения: ' + error.message);
+            }
+        }
+
+        // ====== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ======
+        async function importSessionKey(sessionKeyBase64) {
+            const binary = str2ab(sessionKeyBase64);
+            return await crypto.subtle.importKey(
+                "raw",
+                binary,
+                { name: "AES-GCM", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        // ====== ФУНКЦИИ ДЛЯ РАБОТЫ С ФАЙЛАМИ ======
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = e.target.files;
+            const fileList = document.getElementById('fileList');
+            selectedFiles = [];
+
+            if (files.length === 0) {
+                fileList.style.display = 'none';
+                fileList.innerHTML = '';
+                return;
+            }
+
+            let html = '<strong>📎 Выбраны файлы:</strong> ';
+            for (let i = 0; i < files.length; i++) {
+                selectedFiles.push(files[i]);
+                const size = (files[i].size / 1024).toFixed(1);
+                html += `<span class="file-item">${files[i].name} (${size}KB) <span class="remove-file" onclick="removeFile(${i})">×</span></span>`;
+            }
+            fileList.innerHTML = html;
+            fileList.style.display = 'block';
+        });
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            document.getElementById('fileInput').files = dt.files;
+            const event = new Event('change');
+            document.getElementById('fileInput').dispatchEvent(event);
+        }
+
+        // ====== ФУНКЦИИ ДЛЯ РАБОТЫ С ПАРОЛЕМ ======
+        function setEncryptionPassword() {
+            const password = document.getElementById('encryptionPassword').value.trim();
+            if (!password) {
+                alert('Введите пароль');
+                return;
+            }
+            encryptionPassword = password;
+            localStorage.setItem('encryption_password', password);
+            document.getElementById('passwordStatus').style.display = 'block';
+            document.getElementById('passwordStatus').textContent = '✅ Пароль сохранен';
+            addMessage('✅ Пароль для ключей сохранен', 'system');
+        }
+
+        // ====== ФУНКЦИИ ДЛЯ ХРАНЕНИЯ КЛЮЧЕЙ ======
+        function savePublicKeyToStorage(userId, version, key) {
+            if (!userId) return;
+            const keyData = {};
+            keyData[version] = key;
+            localStorage.setItem(`public_key_${userId}`, JSON.stringify(keyData));
+            publicKeyPem = key;
+            publicKeyVersion = version;
+        }
+
+        function loadPublicKeyFromStorage() {
+            if (!currentUser) return;
+            const keyDataStr = localStorage.getItem(`public_key_${currentUser}`);
+            if (keyDataStr) {
+                try {
+                    const keyData = JSON.parse(keyDataStr);
+                    const versions = Object.keys(keyData);
+                    if (versions.length > 0) {
+                        const version = versions[0];
+                        publicKeyPem = keyData[version];
+                        publicKeyVersion = version;
+                        document.getElementById('publicKeyInput').value = keyData[version];
+                        document.getElementById('pubKeyStatus').className = 'badge badge-success';
+                        document.getElementById('pubKeyStatus').textContent = '✅ Загружен';
+                        updateKeyInfo('public');
+
+                        importPublicKeyFromPem(keyData[version]).then(key => {
+                            publicKeyCrypto = key;
+                        }).catch(err => {
+                            console.warn('Не удалось импортировать ключ:', err);
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Ошибка парсинга публичного ключа:', e);
+                }
+            }
+        }
+
+        function saveRecipientPublicKey(userId, version, key) {
+            if (!userId || !version || !key) return;
+            const keyData = {};
+            keyData[version] = key;
+            localStorage.setItem(`public_key_${userId}`, JSON.stringify(keyData));
+            console.log(`💾 Сохранен публичный ключ для ${userId} (версия: ${version})`);
+        }
+
+        function getRecipientPublicKey(userId) {
+            if (!userId) return null;
+            const keyDataStr = localStorage.getItem(`public_key_${userId}`);
+            if (keyDataStr) {
+                try {
+                    const keyData = JSON.parse(keyDataStr);
+                    const versions = Object.keys(keyData);
+                    if (versions.length > 0) {
+                        const version = versions[0];
+                        return {
+                            version: version,
+                            key: keyData[version]
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Ошибка парсинга публичного ключа:', e);
+                }
+            }
+            return null;
+        }
+
+        // ====== АВТОРИЗАЦИЯ ======
+        function updateAuthUI() {
+            const statusEl = document.getElementById('authStatus');
+            const userEl = document.getElementById('currentUser');
+
+            if (accessToken && currentUser) {
+                statusEl.className = 'status-auth';
+                statusEl.textContent = `✅ Авторизован (${currentUser})`;
+                userEl.textContent = currentUser;
+                document.getElementById('loginUserId').value = currentUser;
+            } else {
+                statusEl.className = 'status-noauth';
+                statusEl.textContent = '⛔ Не авторизован';
+                userEl.textContent = '-';
+            }
+        }
+
+        async function login() {
+            const user_id = document.getElementById('loginUserId').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = '';
+
+            if (!user_id || !password) {
+                errorEl.textContent = '❌ Введите user_id и пароль';
+                return;
+            }
+
+            try {
+                console.log(`🔐 Логин: ${user_id}`);
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id, password })
+                });
+
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(err || 'Ошибка входа');
+                }
+
+                const data = await response.json();
+                console.log('✅ Токены получены:', data);
+
+                accessToken = data.access_token;
+                refreshToken = data.refresh_token;
+                currentUser = data.user_info?.id || user_id;
+
+                localStorage.setItem('access_token', accessToken);
+                localStorage.setItem('refresh_token', refreshToken);
+                localStorage.setItem('user_id', currentUser);
+
+                const savedPassword = localStorage.getItem('encryption_password');
+                if (savedPassword) {
+                    encryptionPassword = savedPassword;
+                    document.getElementById('encryptionPassword').value = savedPassword;
+                    document.getElementById('passwordStatus').style.display = 'block';
+                    document.getElementById('passwordStatus').textContent = '✅ Пароль восстановлен';
+                }
+
+                loadPublicKeyFromStorage();
+
+                updateAuthUI();
+                addMessage(`✅ Вход выполнен как ${currentUser}`, 'system');
+                document.getElementById('tokenDisplay').style.display = 'none';
+
+                await loadAllPrivateKeys();
+
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    addMessage('🔄 Переподключение WebSocket...', 'system');
+                    disconnectWebSocket();
+                    setTimeout(connectWebSocket, 500);
+                }
+
+            } catch (err) {
+                errorEl.textContent = `❌ ${err.message}`;
+                addMessage(`❌ Ошибка входа: ${err.message}`, 'system');
+            }
+        }
+
+        async function logout() {
+            try {
+                if (refreshToken) {
+                    await fetch(`${API_BASE}/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${refreshToken}`,
+                            'X-Token-Type': 'refresh_token'
+                        },
+                        body: JSON.stringify({
+                            refresh_token: refreshToken,
+                            token_type: 'refresh_token'
+                        })
+                    });
+                }
+            } catch (e) {
+                console.warn('Ошибка при выходе:', e);
+            }
+
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_id');
+            localStorage.removeItem(`private_keys_${currentUser}`);
+            accessToken = null;
+            refreshToken = null;
+            currentUser = null;
+            privateKeysCollection = {};
+            decryptedPrivateKeys = {};
+            selectedFiles = [];
+
+            if (ws) {
+                ws.close();
+                ws = null;
+                isWsConnected = false;
+                isHandshakeDone = false;
+                isHandshakeSent = false;
+                updateWsStatus(false);
+                updateHandshakeStatus(false);
+            }
+
+            updateAuthUI();
+            addMessage('🔒 Выход выполнен', 'system');
+            document.getElementById('tokenDisplay').style.display = 'none';
+            updatePrivateKeysDisplay();
+            document.getElementById('decryptedKeysContainer').style.display = 'none';
+            refreshKeyVersions();
+            clearChat();
+            document.getElementById('fileList').style.display = 'none';
+            document.getElementById('fileList').innerHTML = '';
+            selectedFiles = [];
+        }
+
+        function showTokens() {
+            const display = document.getElementById('tokenDisplay');
+            if (display.style.display === 'block') {
+                display.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('accessTokenDisplay').textContent = accessToken || '—';
+            document.getElementById('refreshTokenDisplay').textContent = refreshToken || '—';
+            document.getElementById('userIdDisplay').textContent = currentUser || '—';
+            display.style.display = 'block';
+        }
+
+        // ====== API ЗАПРОСЫ ======
+        async function apiRequest(method, url, body = null, isFormData = false) {
+            const headers = {};
+            if (!isFormData) {
+                headers['Content-Type'] = 'application/json';
+            }
+            if (accessToken) {
+                headers['Authorization'] = `Bearer ${accessToken}`;
+                if (!url.includes('/logout') && !url.includes('/tokens/refresh')) {
+                    headers['X-Token-Type'] = 'access_token';
+                }
+            }
+
+            const options = { method, headers };
+            if (body) {
+                options.body = isFormData ? body : JSON.stringify(body);
+            }
+
+            let response = await fetch(`${API_BASE}${url}`, options);
+
+            if (response.status === 401) {
+                console.log('⏳ Access token протух, обновляем...');
+                if (refreshToken) {
+                    try {
+                        const refreshResponse = await fetch(`${API_BASE}/auth/tokens/refresh`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${refreshToken}`,
+                                'X-Token-Type': 'refresh_token'
+                            },
+                            body: JSON.stringify({
+                                refresh_token: refreshToken,
+                                token_type: 'refresh_token'
+                            })
+                        });
+                        if (refreshResponse.ok) {
+                            const data = await refreshResponse.json();
+                            accessToken = data.access_token;
+                            refreshToken = data.refresh_token;
+                            localStorage.setItem('access_token', accessToken);
+                            localStorage.setItem('refresh_token', refreshToken);
+                            console.log('✅ Токен обновлён, повторяем запрос...');
+                            headers['Authorization'] = `Bearer ${accessToken}`;
+                            headers['X-Token-Type'] = 'access_token';
+                            options.headers = headers;
+                            response = await fetch(`${API_BASE}${url}`, options);
+                        } else {
+                            throw new Error('Не удалось обновить токен');
+                        }
+                    } catch (e) {
+                        throw new Error('Сессия истекла, войдите заново');
+                    }
+                } else {
+                    throw new Error('Сессия истекла, войдите заново');
+                }
+            }
+            return response;
+        }
+
+        // ====== ЗАГРУЗКА МОЕГО ПУБЛИЧНОГО КЛЮЧА ======
+        async function loadMyPublicKey() {
+            if (!accessToken || !currentUser) {
+                showLoadKeyResult('❌ Сначала авторизуйтесь!', 'error');
+                return;
+            }
+
+            const resultDiv = document.getElementById('loadKeyResult');
+            const btn = document.getElementById('loadPubKeyBtn');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Загрузка...';
+            resultDiv.style.display = 'none';
+
+            try {
+                addMessage('📥 Загрузка моего публичного ключа с сервера...', 'system');
+                const response = await apiRequest('GET', '/users/me/keys/public-key');
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('📦 Получен публичный ключ:', data);
+
+                const publicKey = data.public_key;
+                const version = data.version;
+
+                if (!publicKey) {
+                    throw new Error('Публичный ключ не найден');
+                }
+
+                savePublicKeyToStorage(currentUser, version, publicKey);
+                document.getElementById('publicKeyInput').value = publicKey;
+                document.getElementById('publicKeyInput').readOnly = false;
+                document.getElementById('pubKeyStatus').className = 'badge badge-success';
+                document.getElementById('pubKeyStatus').textContent = '✅ Загружен с сервера';
+                updateKeyInfo('public');
+
+                publicKeyCrypto = await importPublicKeyFromPem(publicKey);
+
+                showLoadKeyResult(`✅ Публичный ключ успешно загружен!<br>Версия: <strong>${version}</strong>`, 'success');
+                addMessage(`✅ Публичный ключ загружен (версия: ${version})`, 'system');
+
+            } catch (err) {
+                console.error('❌ Ошибка загрузки публичного ключа:', err);
+                showLoadKeyResult(`❌ Ошибка: ${err.message}`, 'error');
+                addMessage(`❌ Ошибка загрузки публичного ключа: ${err.message}`, 'system');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📥 Загрузить мой публичный ключ';
+            }
+        }
+
+        function showLoadKeyResult(message, type) {
+            const resultDiv = document.getElementById('loadKeyResult');
+            resultDiv.className = `load-key-result ${type}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+
+        // ====== ГЕНЕРАЦИЯ КЛЮЧЕЙ ======
+        async function generateAndSaveKeys() {
+            if (!accessToken || !currentUser) {
+                alert('❌ Сначала авторизуйтесь!');
+                return;
+            }
+
+            if (!encryptionPassword) {
+                alert('❌ Сначала установите пароль для ключей в разделе "Пароль для ключей"');
+                return;
+            }
+
+            const btn = document.getElementById('genKeysBtn');
+            const progress = document.getElementById('genProgress');
+            const resultDiv = document.getElementById('genResult');
+
+            btn.disabled = true;
+            progress.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            try {
+                const keyPair = await crypto.subtle.generateKey(
+                    {
+                        name: "RSA-OAEP",
+                        modulusLength: 2048,
+                        publicExponent: new Uint8Array([1, 0, 1]),
+                        hash: "SHA-256",
+                    },
+                    true,
+                    ["encrypt", "decrypt"]
+                );
+
+                const publicKeyBuffer = await crypto.subtle.exportKey("spki", keyPair.publicKey);
+                const privateKeyBuffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+                const publicBase64 = ab2str(publicKeyBuffer);
+                const privateBase64 = ab2str(privateKeyBuffer);
+
+                const publicPem = formatPem(publicBase64, 'PUBLIC KEY');
+                const privatePem = formatPem(privateBase64, 'PRIVATE KEY');
+
+                const version = generateKeyVersion(currentUser);
+                console.log('🔑 Версия ключа:', version);
+
+                const encryptedPrivateKey = await encryptPrivateKey(privatePem, encryptionPassword);
+                console.log('🔒 Приватный ключ зашифрован');
+
+                addMessage('📤 Сохранение приватного ключа...', 'system');
+                const privResponse = await apiRequest('POST', '/users/me/keys/save/private-key', {
+                    private_key: encryptedPrivateKey,
+                    version: version
+                });
+
+                if (!privResponse.ok) {
+                    const errorText = await privResponse.text();
+                    throw new Error(`Ошибка сохранения приватного ключа: ${errorText}`);
+                }
+
+                const privData = await privResponse.json();
+                console.log('✅ Приватный ключ сохранен:', privData);
+
+                privateKeysCollection = {};
+                if (Array.isArray(privData)) {
+                    for (const item of privData) {
+                        if (item.version && item.private_key) {
+                            privateKeysCollection[item.version] = item.private_key;
+                        }
+                    }
+                }
+                localStorage.setItem(`private_keys_${currentUser}`, JSON.stringify(privateKeysCollection));
+                updatePrivateKeysDisplay();
+
+                savePublicKeyToStorage(currentUser, version, publicPem);
+                document.getElementById('publicKeyInput').value = publicPem;
+
+                addMessage('📤 Сохранение публичного ключа...', 'system');
+                const pubResponse = await apiRequest('POST', '/users/me/keys/save/public-key', {
+                    public_key: publicPem,
+                    version: version
+                });
+
+                if (!pubResponse.ok) {
+                    const errorText = await pubResponse.text();
+                    throw new Error(`Ошибка сохранения публичного ключа: ${errorText}`);
+                }
+
+                const pubData = await pubResponse.text();
+                console.log('✅ Публичный ключ сохранен:', pubData);
+
+                document.getElementById('publicKeyInput').readOnly = false;
+                publicKeyCrypto = keyPair.publicKey;
+
+                document.getElementById('pubKeyStatus').className = 'badge badge-success';
+                document.getElementById('pubKeyStatus').textContent = '✅ Сохранен';
+
+                updateKeyInfo('public');
+                refreshKeyVersions();
+
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = `
+                    ✅ Ключи успешно сгенерированы и сохранены!<br>
+                    <strong>Версия:</strong> ${version}<br>
+                    <strong>Публичный ключ:</strong> сохранен в localStorage и на сервере<br>
+                    <strong>Приватных ключей в коллекции:</strong> ${Object.keys(privateKeysCollection).length}
+                `;
+
+                addMessage(`✅ Ключи сохранены (версия: ${version})`, 'system');
+
+            } catch (err) {
+                console.error('❌ Ошибка:', err);
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                addMessage(`❌ Ошибка: ${err.message}`, 'system');
+            } finally {
+                btn.disabled = false;
+                progress.style.display = 'none';
+            }
+        }
+
+        // ====== ЗАГРУЗКА ПРИВАТНЫХ КЛЮЧЕЙ ======
+        async function loadAllPrivateKeys() {
+            if (!accessToken || !currentUser) {
+                alert('❌ Сначала авторизуйтесь!');
+                return;
+            }
+
+            try {
+                addMessage('📥 Загрузка всех приватных ключей...', 'system');
+
+                const response = await apiRequest('GET', '/users/me/keys/encrypt-private-key');
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        addMessage('ℹ️ Нет сохраненных приватных ключей', 'system');
+                        privateKeysCollection = {};
+                        localStorage.setItem(`private_keys_${currentUser}`, JSON.stringify(privateKeysCollection));
+                        updatePrivateKeysDisplay();
+                        refreshKeyVersions();
+                        return;
+                    }
+                    const errorText = await response.text();
+                    throw new Error(`Ошибка загрузки ключей: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('📦 Получены ключи:', data);
+
+                privateKeysCollection = {};
+                if (Array.isArray(data)) {
+                    for (const item of data) {
+                        if (item.version && item.private_key) {
+                            privateKeysCollection[item.version] = item.private_key;
+                        }
+                    }
+                }
+
+                localStorage.setItem(`private_keys_${currentUser}`, JSON.stringify(privateKeysCollection));
+                updatePrivateKeysDisplay();
+                refreshKeyVersions();
+
+                const count = Object.keys(privateKeysCollection).length;
+                addMessage(`✅ Загружено ${count} приватных ключей`, 'system');
+
+            } catch (err) {
+                console.error('❌ Ошибка загрузки ключей:', err);
+                addMessage(`❌ Ошибка загрузки ключей: ${err.message}`, 'system');
+            }
+        }
+
+        function updatePrivateKeysDisplay() {
+            const container = document.getElementById('privateKeysCollection');
+            const info = document.getElementById('privateKeyInfo');
+            const status = document.getElementById('privKeyStatus');
+
+            const keys = JSON.parse(localStorage.getItem(`private_keys_${currentUser}`) || '{}');
+            privateKeysCollection = keys;
+
+            const count = Object.keys(keys).length;
+
+            if (count === 0) {
+                container.innerHTML = `<div style="color:#6c757d; text-align:center; padding:20px;">Нет загруженных ключей</div>`;
+                status.className = 'badge badge-warning';
+                status.textContent = 'Не загружены';
+            } else {
+                let html = '';
+                for (const [version, key] of Object.entries(keys)) {
+                    const preview = key.substring(0, 50) + '...';
+                    html += `
+                        <div class="key-item">
+                            <div class="version">📌 ${version}</div>
+                            <div class="key-preview">🔒 ${preview}</div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+                status.className = 'badge badge-success';
+                status.textContent = `✅ ${count} ключей`;
+            }
+
+            info.textContent = `Ключей: ${count}`;
+            document.getElementById('decryptedKeysContainer').style.display = 'none';
+        }
+
+        async function showDecryptedKeys() {
+            const container = document.getElementById('decryptedKeysContainer');
+            const keys = JSON.parse(localStorage.getItem(`private_keys_${currentUser}`) || '{}');
+
+            if (Object.keys(keys).length === 0) {
+                alert('Нет загруженных ключей для расшифровки');
+                return;
+            }
+
+            if (!encryptionPassword) {
+                alert('Сначала установите пароль для ключей в разделе "Пароль для ключей"');
+                return;
+            }
+
+            try {
+                container.style.display = 'block';
+                let html = '<div style="padding:5px; font-weight:bold; color:#155724;">🔓 Расшифрованные приватные ключи:</div>';
+
+                let successCount = 0;
+                decryptedPrivateKeys = {};
+                for (const [version, encryptedKey] of Object.entries(keys)) {
+                    try {
+                        const decrypted = await decryptPrivateKey(encryptedKey, encryptionPassword);
+                        decryptedPrivateKeys[version] = decrypted;
+                        html += `
+                            <div class="key-item">
+                                <div class="version">📌 ${version}</div>
+                                <div class="key-full">${decrypted}</div>
+                            </div>
+                        `;
+                        successCount++;
+                    } catch (e) {
+                        html += `
+                            <div class="key-item" style="border-left: 3px solid #dc3545; padding-left: 10px;">
+                                <div class="version" style="color:#dc3545;">❌ ${version}</div>
+                                <div class="key-full" style="color:#dc3545;">Ошибка: ${e.message}</div>
+                            </div>
+                        `;
+                    }
+                }
+
+                html += `<div style="padding:5px; color:#155724;">✅ Успешно расшифровано: ${successCount}/${Object.keys(keys).length}</div>`;
+                container.innerHTML = html;
+                addMessage(`🔓 Показано ${successCount} расшифрованных ключей`, 'system');
+                refreshKeyVersions();
+
+            } catch (err) {
+                alert('Ошибка расшифровки: ' + err.message);
+            }
+        }
+
+        function clearAllPrivateKeys() {
+            if (!confirm('Очистить все приватные ключи из локального хранилища?')) return;
+            privateKeysCollection = {};
+            localStorage.setItem(`private_keys_${currentUser}`, JSON.stringify(privateKeysCollection));
+            updatePrivateKeysDisplay();
+            document.getElementById('decryptedKeysContainer').style.display = 'none';
+            refreshKeyVersions();
+            addMessage('🗑️ Все приватные ключи очищены', 'system');
+        }
+
+        function refreshKeyVersions() {
+            const select = document.getElementById('keyVersionSelect');
+            const keys = JSON.parse(localStorage.getItem(`private_keys_${currentUser}`) || '{}');
+
+            select.innerHTML = '<option value="">— выберите версию —</option>';
+
+            for (const version of Object.keys(keys)) {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                select.appendChild(option);
+            }
+
+            const publicKeyData = localStorage.getItem(`public_key_${currentUser}`);
+            if (publicKeyData) {
+                try {
+                    const data = JSON.parse(publicKeyData);
+                    const versions = Object.keys(data);
+                    for (const version of versions) {
+                        const option = document.createElement('option');
+                        option.value = version;
+                        option.textContent = `${version} (публичный)`;
+                        option.dataset.isPublic = 'true';
+                        select.appendChild(option);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        // ====== КРИПТОГРАФИЧЕСКИЕ ФУНКЦИИ ======
+        function ab2str(buf) {
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function str2ab(str) {
+            const clean = str.trim().replace(/[\s\n\r\t]/g, '');
+            const binaryString = atob(clean);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function cleanBase64(str) {
+            if (!str) return '';
+            return str.trim().replace(/[\s\n\r\t]/g, '');
+        }
+
+        function isBase64(str) {
+            if (!str || typeof str !== 'string') return false;
+            return /^[A-Za-z0-9+/=]+$/.test(str);
+        }
+
+        function formatPem(base64Str, label) {
+            let pem = `-----BEGIN ${label}-----\n`;
+            for (let i = 0; i < base64Str.length; i += 64) {
+                pem += base64Str.substring(i, i + 64) + '\n';
+            }
+            pem += `-----END ${label}-----`;
+            return pem;
+        }
+
+        // ====== ИМПОРТ КЛЮЧЕЙ ======
+        async function importPublicKeyFromPem(pem) {
+            if (!pem) {
+                throw new Error('Публичный ключ не предоставлен');
+            }
+            const match = pem.match(/-----BEGIN PUBLIC KEY-----([\s\S]*?)-----END PUBLIC KEY-----/);
+            if (!match) throw new Error('Неверный формат публичного ключа');
+
+            const content = match[1].replace(/[\s\n\r\t]/g, '');
+            if (!content) throw new Error('Пустое содержимое ключа');
+
+            const binary = str2ab(content);
+            return await crypto.subtle.importKey(
+                "spki",
+                binary,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                false,
+                ["encrypt"]
+            );
+        }
+
+        async function importPrivateKeyFromPem(pem) {
+            if (!pem) {
+                throw new Error('Приватный ключ не предоставлен');
+            }
+            const match = pem.match(/-----BEGIN PRIVATE KEY-----([\s\S]*?)-----END PRIVATE KEY-----/);
+            if (!match) {
+                const match2 = pem.match(/-----BEGIN RSA PRIVATE KEY-----([\s\S]*?)-----END RSA PRIVATE KEY-----/);
+                if (!match2) throw new Error('Неверный формат приватного ключа');
+                const content = match2[1].replace(/[\s\n\r\t]/g, '');
+                if (!content) throw new Error('Пустое содержимое ключа');
+                const binary = str2ab(content);
+                return await crypto.subtle.importKey(
+                    "pkcs8",
+                    binary,
+                    { name: "RSA-OAEP", hash: "SHA-256" },
+                    false,
+                    ["decrypt"]
+                );
+            }
+
+            const content = match[1].replace(/[\s\n\r\t]/g, '');
+            if (!content) throw new Error('Пустое содержимое ключа');
+
+            const binary = str2ab(content);
+            return await crypto.subtle.importKey(
+                "pkcs8",
+                binary,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                false,
+                ["decrypt"]
+            );
+        }
+
+        // ====== СЕССИОННЫЕ КЛЮЧИ ======
+        async function generateSessionKey() {
+            return await crypto.subtle.generateKey(
+                {
+                    name: "AES-GCM",
+                    length: 256,
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        async function exportSessionKey(key) {
+            const exported = await crypto.subtle.exportKey("raw", key);
+            return ab2str(exported);
+        }
+
+        // ====== ШИФРОВАНИЕ/РАСШИФРОВКА ======
+        async function encryptRsa(data, publicKey) {
+            const encoder = new TextEncoder();
+            const encrypted = await crypto.subtle.encrypt(
+                { name: "RSA-OAEP" },
+                publicKey,
+                encoder.encode(data)
+            );
+            return ab2str(encrypted);
+        }
+
+        async function decryptRsa(encryptedBase64, privateKey) {
+            const clean = cleanBase64(encryptedBase64);
+            if (!isBase64(clean)) {
+                throw new Error('Невалидный Base64');
+            }
+            const encryptedBytes = new Uint8Array(str2ab(clean));
+            const decrypted = await crypto.subtle.decrypt(
+                { name: "RSA-OAEP" },
+                privateKey,
+                encryptedBytes
+            );
+            return new TextDecoder().decode(decrypted);
+        }
+
+        // ====== РАСШИФРОВКА RSA С КЛЮЧОМ ======
+        async function decryptRsaWithKey(encryptedBase64, privateKeyPem) {
+            try {
+                if (!encryptedBase64 || typeof encryptedBase64 !== 'string') {
+                    throw new Error('Нет данных для расшифровки');
+                }
+
+                if (!privateKeyPem) {
+                    throw new Error('Приватный ключ не загружен');
+                }
+
+                if (typeof privateKeyPem !== 'string') {
+                    throw new Error('Приватный ключ имеет неверный формат');
+                }
+
+                if (!privateKeyPem.includes('BEGIN')) {
+                    throw new Error('Приватный ключ не является корректным PEM');
+                }
+
+                const clean = cleanBase64(encryptedBase64);
+                if (!isBase64(clean)) {
+                    throw new Error('Невалидный Base64');
+                }
+
+                if (privateKeyCrypto) {
+                    console.log('🔑 Используем загруженный приватный ключ');
+                    const encryptedBytes = new Uint8Array(str2ab(clean));
+                    const decrypted = await crypto.subtle.decrypt(
+                        { name: "RSA-OAEP" },
+                        privateKeyCrypto,
+                        encryptedBytes
+                    );
+                    return new TextDecoder().decode(decrypted);
+                }
+
+                console.log('🔑 Импортируем приватный ключ из PEM');
+                const privateKey = await importPrivateKeyFromPem(privateKeyPem);
+                const encryptedBytes = new Uint8Array(str2ab(clean));
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: "RSA-OAEP" },
+                    privateKey,
+                    encryptedBytes
+                );
+                return new TextDecoder().decode(decrypted);
+
+            } catch (error) {
+                console.error('❌ Ошибка расшифровки RSA:', error);
+                throw new Error('Ошибка расшифровки RSA: ' + error.message);
+            }
+        }
+
+        // ====== ПОЛУЧЕНИЕ ПРИВАТНОГО КЛЮЧА ПО ВЕРСИИ ======
+        async function getPrivateKeyByVersion(version) {
+            if (!version) {
+                console.error('❌ Версия ключа не указана');
+                throw new Error('Версия ключа не указана');
+            }
+
+            if (!encryptionPassword) {
+                throw new Error('Пароль для ключей не установлен. Введите пароль в разделе "Пароль для ключей"');
+            }
+
+            if (privateKeyCrypto && privateKeyPem) {
+                console.log('✅ Используем загруженный приватный ключ');
+                return privateKeyPem;
+            }
+
+            const keys = JSON.parse(localStorage.getItem(`private_keys_${currentUser}`) || '{}');
+            const encryptedKey = keys[version];
+
+            if (!encryptedKey) {
+                console.error(`❌ Ключ версии ${version} не найден в коллекции`);
+                const availableVersions = Object.keys(keys);
+                console.log('📋 Доступные версии:', availableVersions);
+                throw new Error(`Ключ версии ${version} не найден. Доступные версии: ${availableVersions.join(', ')}`);
+            }
+
+            try {
+                console.log(`🔓 Расшифровка ключа версии ${version}...`);
+                const decryptedKey = await decryptPrivateKey(encryptedKey, encryptionPassword);
+                console.log('✅ Ключ расшифрован');
+                return decryptedKey;
+            } catch (err) {
+                console.error('❌ Ошибка расшифровки ключа:', err);
+                throw new Error(`Не удалось расшифровать ключ: ${err.message}. Проверьте пароль.`);
+            }
+        }
+
+        // ====== ШИФРОВАНИЕ ПРИВАТНОГО КЛЮЧА ======
+        async function encryptPrivateKey(privateKey, password) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const key = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encrypted = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                enc.encode(privateKey)
+            );
+            const result = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+            result.set(salt, 0);
+            result.set(iv, salt.length);
+            result.set(new Uint8Array(encrypted), salt.length + iv.length);
+            return btoa(String.fromCharCode(...result));
+        }
+
+        // ====== РАСШИФРОВКА ПРИВАТНОГО КЛЮЧА ======
+        async function decryptPrivateKey(encryptedBase64, password) {
+            try {
+                const clean = encryptedBase64.trim().replace(/\s/g, '');
+                const data = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+                const salt = data.slice(0, 16);
+                const iv = data.slice(16, 28);
+                const ciphertext = data.slice(28);
+
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    "raw",
+                    enc.encode(password),
+                    { name: "PBKDF2" },
+                    false,
+                    ["deriveKey"]
+                );
+
+                const key = await crypto.subtle.deriveKey(
+                    {
+                        name: "PBKDF2",
+                        salt: salt,
+                        iterations: 100000,
+                        hash: "SHA-256"
+                    },
+                    keyMaterial,
+                    { name: "AES-GCM", length: 256 },
+                    false,
+                    ["decrypt"]
+                );
+
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    ciphertext
+                );
+                return new TextDecoder().decode(decrypted);
+            } catch (error) {
+                console.error('❌ Ошибка расшифровки:', error);
+                throw new Error('Ошибка расшифровки ключа: ' + error.message);
+            }
+        }
+
+        // ====== UI ФУНКЦИИ ======
+        function addMessage(text, type = 'system') {
+            const container = document.getElementById('messageContainer');
+            const div = document.createElement('div');
+            const typeMap = {
+                'system': 'message system',
+                'own': 'message own',
+                'private': 'message private',
+                'group': 'message group',
+                'group.own': 'message group own',
+                'handshake': 'message handshake',
+                'broadcast': 'message'
+            };
+            div.className = typeMap[type] || 'message';
+
+            if (text.includes('<span') || text.includes('<a') || text.includes('<div') || text.includes('class="file-download-link"')) {
+                div.innerHTML = text;
+                div.classList.add('message-html');
+            } else {
+                div.textContent = text;
+            }
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearChat() {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = '<div class="message system">Авторизуйтесь, сгенерируйте ключи и подключитесь к WebSocket</div>';
+        }
+
+        function showResult(div, html, type) {
+            div.className = 'test-result ' + type;
+            div.style.display = 'block';
+            div.innerHTML = html;
+        }
+
+        function setTestMode(mode) {
+            testMode = mode;
+            document.getElementById('modeText').className = mode === 'text' ? 'active' : '';
+            document.getElementById('modeEncrypted').className = mode === 'encrypted' ? 'active' : '';
+            document.getElementById('textMode').style.display = mode === 'text' ? 'block' : 'none';
+            document.getElementById('encryptedMode').style.display = mode === 'encrypted' ? 'block' : 'none';
+            document.getElementById('testResult').style.display = 'none';
+        }
+
+        function updateKeyInfo(type) {
+            const id = type === 'public' ? 'publicKeyInput' : 'privateKeyInput';
+            const infoId = type === 'public' ? 'publicKeyInfo' : 'privateKeyInfo';
+            const textarea = document.getElementById(id);
+            const info = document.getElementById(infoId);
+            const value = textarea.value;
+            const lines = value.split('\n').filter(l => l.trim() !== '');
+            const chars = value.replace(/\s/g, '').length;
+
+            if (type === 'public') {
+                const version = publicKeyVersion || '—';
+                info.textContent = `Строк: ${lines.length} | Символов: ${chars} | Версия: ${version}`;
+            } else {
+                info.textContent = `Строк: ${lines.length} | Символов: ${chars}`;
+            }
+        }
+
+        function updateWsStatus(connected) {
+            const el = document.getElementById('wsStatus');
+            const handshakeEl = document.getElementById('handshakeStatus');
+            if (connected) {
+                el.className = 'status-online';
+                el.textContent = '🟢 Подключено';
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                handshakeEl.textContent = '⏳ Handshake: ожидание...';
+                handshakeEl.style.color = '#ffc107';
+            } else {
+                el.className = 'status-offline';
+                el.textContent = '⚪ Отключено';
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                isHandshakeDone = false;
+                isHandshakeSent = false;
+                handshakeEl.textContent = '⚪ Handshake: не выполнен';
+                handshakeEl.style.color = '#888';
+            }
+        }
+
+        function updateHandshakeStatus(done) {
+            const el = document.getElementById('handshakeStatus');
+            if (done) {
+                el.textContent = '✅ Handshake: выполнен';
+                el.style.color = '#28a745';
+            } else {
+                el.textContent = '⏳ Handshake: ожидание...';
+                el.style.color = '#ffc107';
+            }
+        }
+
+        function updateSessionInfo() {
+            const el = document.getElementById('sessionInfo');
+            if (sessionId) {
+                el.textContent = `🔑 Сессия: ${sessionId}`;
+            } else {
+                el.textContent = '🔑 Сессия: не установлена';
+            }
+        }
+
+        function showDecryptedData(data, decryptedMessages = null) {
+            const container = document.getElementById('decryptedData');
+            let output = {
+                original: data,
+                decrypted: decryptedMessages
+            };
+            container.textContent = JSON.stringify(output, null, 2);
+        }
+
+        // ====== КОПИРОВАНИЕ И ОЧИСТКА ======
+        function copyKey(type) {
+            const id = type === 'public' ? 'publicKeyInput' : 'privateKeyInput';
+            const textarea = document.getElementById(id);
+            const text = textarea.value;
+
+            if (!text) {
+                alert('Нет ключа для копирования');
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Скопировано!';
+                setTimeout(() => { btn.textContent = originalText; }, 2000);
+            }).catch(() => {
+                textarea.select();
+                document.execCommand('copy');
+                alert('Ключ скопирован!');
+            });
+        }
+
+        function clearKey(type) {
+            const id = type === 'public' ? 'publicKeyInput' : 'privateKeyInput';
+            document.getElementById(id).value = '';
+            if (type === 'public') {
+                publicKeyPem = null;
+                publicKeyCrypto = null;
+                publicKeyVersion = null;
+                if (currentUser) {
+                    localStorage.removeItem(`public_key_${currentUser}`);
+                }
+                document.getElementById('pubKeyStatus').className = 'badge badge-warning';
+                document.getElementById('pubKeyStatus').textContent = 'Не загружен';
+            } else {
+                privateKeyPem = null;
+                privateKeyCrypto = null;
+                document.getElementById('privKeyStatus').className = 'badge badge-warning';
+                document.getElementById('privKeyStatus').textContent = 'Не загружен';
+            }
+            updateKeyInfo(type);
+            document.getElementById('testResult').style.display = 'none';
+            refreshKeyVersions();
+        }
+
+        async function loadPublicKey() {
+            const input = document.getElementById('publicKeyInput').value.trim();
+            if (!input) {
+                alert('Введите публичный ключ');
+                return;
+            }
+            try {
+                publicKeyCrypto = await importPublicKeyFromPem(input);
+                publicKeyPem = input;
+
+                const version = prompt('Введите версию ключа:', generateKeyVersion(currentUser || 'user'));
+                if (version) {
+                    publicKeyVersion = version;
+                    savePublicKeyToStorage(currentUser, version, input);
+                }
+
+                document.getElementById('pubKeyStatus').className = 'badge badge-success';
+                document.getElementById('pubKeyStatus').textContent = '✅ Загружен';
+                addMessage('✅ Публичный ключ загружен', 'system');
+                document.getElementById('testResult').style.display = 'none';
+                updateKeyInfo('public');
+                refreshKeyVersions();
+            } catch (err) {
+                alert('Ошибка загрузки ключа: ' + err.message);
+                document.getElementById('pubKeyStatus').className = 'badge badge-danger';
+                document.getElementById('pubKeyStatus').textContent = '❌ Ошибка';
+                console.error(err);
+            }
+        }
+
+        async function loadPrivateKey() {
+            const input = document.getElementById('privateKeyInput').value.trim();
+            if (!input) {
+                alert('Введите приватный ключ');
+                return;
+            }
+            try {
+                privateKeyCrypto = await importPrivateKeyFromPem(input);
+                privateKeyPem = input;
+                document.getElementById('privKeyStatus').className = 'badge badge-success';
+                document.getElementById('privKeyStatus').textContent = '✅ Загружен';
+                addMessage('✅ Приватный ключ загружен', 'system');
+                document.getElementById('testResult').style.display = 'none';
+            } catch (err) {
+                alert('Ошибка загрузки ключа: ' + err.message);
+                document.getElementById('privKeyStatus').className = 'badge badge-danger';
+                document.getElementById('privKeyStatus').textContent = '❌ Ошибка';
+                console.error(err);
+            }
+        }
+
+        // ====== ТЕСТЫ ======
+        async function testEncryptDecrypt() {
+            const resultDiv = document.getElementById('testResult');
+            const testText = document.getElementById('testMessage').value.trim() || 'Тестовое сообщение';
+            const selectedVersion = document.getElementById('keyVersionSelect').value;
+
+            if (!selectedVersion) {
+                showResult(resultDiv, '❌ Выберите версию ключа!', 'error');
+                return;
+            }
+
+            if (!encryptionPassword) {
+                showResult(resultDiv, '❌ Сначала установите пароль для ключей!', 'error');
+                return;
+            }
+
+            const select = document.getElementById('keyVersionSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const isPublicKey = selectedOption && selectedOption.dataset.isPublic === 'true';
+
+            if (isPublicKey) {
+                if (!publicKeyCrypto) {
+                    showResult(resultDiv, '❌ Публичный ключ не загружен!', 'error');
+                    return;
+                }
+                if (!privateKeyCrypto) {
+                    showResult(resultDiv, '❌ Приватный ключ не загружен!', 'error');
+                    return;
+                }
+
+                try {
+                    showResult(resultDiv, '⏳ Шифрование публичным ключом...', 'info');
+                    const encrypted = await encryptRsa(testText, publicKeyCrypto);
+
+                    showResult(resultDiv, `✅ Зашифровано: ${encrypted.substring(0, 80)}...<br>⏳ Расшифровка приватным ключом...`, 'info');
+                    const decrypted = await decryptRsa(encrypted, privateKeyCrypto);
+
+                    if (decrypted === testText) {
+                        showResult(resultDiv, `
+                            ✅✅✅ УСПЕШНО! ✅✅✅<br>
+                            <strong>Версия:</strong> ${selectedVersion} (публичный)<br>
+                            <strong>Исходный текст:</strong> "${testText}"<br>
+                            <strong>Расшифрованный текст:</strong> "${decrypted}"<br>
+                            <strong>Зашифровано (Base64):</strong><br>
+                            <code style="font-size:11px; word-break:break-all;">${encrypted}</code><br>
+                            <span style="color: #28a745; font-weight: bold;">🎉 Ключи работают корректно!</span>
+                        `, 'success');
+                    } else {
+                        showResult(resultDiv, `
+                            ❌ Ошибка: текст не совпадает!<br>
+                            <strong>Исходный:</strong> "${testText}"<br>
+                            <strong>Расшифрованный:</strong> "${decrypted}"
+                        `, 'error');
+                    }
+                } catch (err) {
+                    showResult(resultDiv, `❌ Ошибка: ${err.message}`, 'error');
+                    console.error(err);
+                }
+                return;
+            }
+
+            const keys = JSON.parse(localStorage.getItem(`private_keys_${currentUser}`) || '{}');
+            const encryptedKey = keys[selectedVersion];
+
+            if (!encryptedKey) {
+                showResult(resultDiv, `❌ Ключ версии ${selectedVersion} не найден в коллекции!`, 'error');
+                return;
+            }
+
+            try {
+                showResult(resultDiv, '⏳ Расшифровка приватного ключа...', 'info');
+                const decryptedKey = await decryptPrivateKey(encryptedKey, encryptionPassword);
+                const privateKey = await importPrivateKeyFromPem(decryptedKey);
+
+                if (!publicKeyCrypto) {
+                    showResult(resultDiv, '❌ Публичный ключ не загружен!', 'error');
+                    return;
+                }
+
+                showResult(resultDiv, '⏳ Шифрование публичным ключом...', 'info');
+                const encrypted = await encryptRsa(testText, publicKeyCrypto);
+
+                showResult(resultDiv, `✅ Зашифровано: ${encrypted.substring(0, 80)}...<br>⏳ Расшифровка приватным ключом...`, 'info');
+                const decrypted = await decryptRsa(encrypted, privateKey);
+
+                if (decrypted === testText) {
+                    showResult(resultDiv, `
+                        ✅✅✅ УСПЕШНО! ✅✅✅<br>
+                        <strong>Версия:</strong> ${selectedVersion}<br>
+                        <strong>Исходный текст:</strong> "${testText}"<br>
+                        <strong>Расшифрованный текст:</strong> "${decrypted}"<br>
+                        <strong>Зашифровано (Base64):</strong><br>
+                        <code style="font-size:11px; word-break:break-all;">${encrypted}</code><br>
+                        <span style="color: #28a745; font-weight: bold;">🎉 Ключи работают корректно!</span>
+                    `, 'success');
+                } else {
+                    showResult(resultDiv, `
+                        ❌ Ошибка: текст не совпадает!<br>
+                        <strong>Исходный:</strong> "${testText}"<br>
+                        <strong>Расшифрованный:</strong> "${decrypted}"
+                    `, 'error');
+                }
+            } catch (err) {
+                showResult(resultDiv, `❌ Ошибка: ${err.message}`, 'error');
+                console.error(err);
+            }
+        }
+
+        async function testDecryptOnly() {
+            const resultDiv = document.getElementById('testResult');
+            const encryptedInput = document.getElementById('testEncrypted').value.trim();
+            const selectedVersion = document.getElementById('keyVersionSelect').value;
+
+            if (!encryptedInput) {
+                showResult(resultDiv, '❌ Введите зашифрованное сообщение в формате Base64', 'error');
+                return;
+            }
+
+            if (!selectedVersion) {
+                showResult(resultDiv, '❌ Выберите версию ключа!', 'error');
+                return;
+            }
+
+            if (!encryptionPassword) {
+                showResult(resultDiv, '❌ Сначала установите пароль для ключей!', 'error');
+                return;
+            }
+
+            const select = document.getElementById('keyVersionSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const isPublicKey = selectedOption && selectedOption.dataset.isPublic === 'true';
+
+            if (isPublicKey) {
+                if (!privateKeyCrypto) {
+                    showResult(resultDiv, '❌ Приватный ключ не загружен!', 'error');
+                    return;
+                }
+
+                try {
+                    showResult(resultDiv, '⏳ Расшифровка приватным ключом...', 'info');
+                    const decrypted = await decryptRsa(encryptedInput, privateKeyCrypto);
+
+                    showResult(resultDiv, `
+                        ✅✅✅ РАСШИФРОВАНО! ✅✅✅<br>
+                        <strong>Версия:</strong> ${selectedVersion} (публичный)<br>
+                        <strong>Зашифрованное сообщение (Base64):</strong><br>
+                        <code style="font-size:11px; word-break:break-all;">${encryptedInput}</code><br>
+                        <strong>Расшифрованный текст:</strong><br>
+                        <span style="font-size:18px; font-weight:bold; color:#28a745;">"${decrypted}"</span><br>
+                        <span style="color: #28a745; font-weight: bold;">🎉 Расшифровка успешна!</span>
+                    `, 'success');
+                } catch (err) {
+                    showResult(resultDiv, `❌ Ошибка расшифровки: ${err.message}`, 'error');
+                    console.error(err);
+                }
+                return;
+            }
+
+            const keys = JSON.parse(localStorage.getItem(`private_keys_${currentUser}`) || '{}');
+            const encryptedKey = keys[selectedVersion];
+
+            if (!encryptedKey) {
+                showResult(resultDiv, `❌ Ключ версии ${selectedVersion} не найден в коллекции!`, 'error');
+                return;
+            }
+
+            try {
+                showResult(resultDiv, '⏳ Расшифровка приватного ключа...', 'info');
+                const decryptedKey = await decryptPrivateKey(encryptedKey, encryptionPassword);
+                const privateKey = await importPrivateKeyFromPem(decryptedKey);
+
+                showResult(resultDiv, '⏳ Расшифровка сообщения...', 'info');
+                const decrypted = await decryptRsa(encryptedInput, privateKey);
+
+                showResult(resultDiv, `
+                    ✅✅✅ РАСШИФРОВАНО! ✅✅✅<br>
+                    <strong>Версия:</strong> ${selectedVersion}<br>
+                    <strong>Зашифрованное сообщение (Base64):</strong><br>
+                    <code style="font-size:11px; word-break:break-all;">${encryptedInput}</code><br>
+                    <strong>Расшифрованный текст:</strong><br>
+                    <span style="font-size:18px; font-weight:bold; color:#28a745;">"${decrypted}"</span><br>
+                    <span style="color: #28a745; font-weight: bold;">🎉 Расшифровка успешна!</span>
+                `, 'success');
+            } catch (err) {
+                showResult(resultDiv, `
+                    ❌ Ошибка расшифровки: ${err.message}<br>
+                    <span style="font-size:12px; color:#666;">Проверьте пароль или версию ключа</span>
+                `, 'error');
+                console.error(err);
+            }
+        }
+
+        // ====== ОТПРАВКА СООБЩЕНИЯ ======
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const msg = input.value.trim();
+            const files = document.getElementById('fileInput').files;
+
+            if (!msg && files.length === 0) {
+                addMessage('⚠️ Введите сообщение или выберите файл', 'system');
+                return;
+            }
+
+            if (!isHandshakeDone) {
+                addMessage('⚠️ Handshake ещё не выполнен. Подождите...', 'system');
+                return;
+            }
+
+            if (!publicKeyPem) {
+                addMessage('⚠️ Нет публичного ключа отправителя', 'system');
+                return;
+            }
+
+            if (!encryptionPassword) {
+                addMessage('⚠️ Сначала установите пароль для ключей в разделе "Пароль для ключей"', 'system');
+                return;
+            }
+
+            try {
+                if (chatMode === 'group') {
+                    // ГРУППОВОЕ СООБЩЕНИЕ
+                    const roomId = document.getElementById('roomIdInput').value.trim();
+                    if (!roomId) {
+                        addMessage('⚠️ Введите room_id для группового сообщения', 'system');
+                        return;
+                    }
+
+                    if (Object.keys(roomUsers).length === 0) {
+                        addMessage('⚠️ Сначала загрузите участников комнаты (кнопка "Загрузить участников")', 'system');
+                        return;
+                    }
+
+                    await sendGroupMessage(msg, roomId);
+                    addMessage(`👥 Вы (в группу ${roomId}): ${msg}`, 'group.own');
+                    input.value = '';
+                    document.getElementById('fileInput').value = '';
+                    document.getElementById('fileList').style.display = 'none';
+                    document.getElementById('fileList').innerHTML = '';
+                    selectedFiles = [];
+
+                } else {
+                    // ПРИВАТНОЕ СООБЩЕНИЕ
+                    const to = document.getElementById('targetUserId').value.trim();
+                    if (!to) {
+                        addMessage('⚠️ Укажите получателя (user_id)', 'system');
+                        return;
+                    }
+
+                    let recipientPublicKeyPem;
+                    let recipientKeyVersion;
+
+                    const cachedKey = getRecipientPublicKey(to);
+                    if (cachedKey) {
+                        recipientPublicKeyPem = cachedKey.key;
+                        recipientKeyVersion = cachedKey.version;
+                    } else {
+                        addMessage(`📡 Запрос публичного ключа для ${to}...`, 'system');
+                        // НОВЫЙ ПУТЬ: /users/{user_id}/keys/public-key
+                        const recipientKeyData = await fetchRecipientPublicKey(to);
+                        if (!recipientKeyData) {
+                            throw new Error('Не удалось получить публичный ключ получателя');
+                        }
+                        recipientPublicKeyPem = recipientKeyData.public_key;
+                        recipientKeyVersion = recipientKeyData.version;
+                        saveRecipientPublicKey(to, recipientKeyVersion, recipientPublicKeyPem);
+                    }
+
+                    const recipientKey = await importPublicKeyFromPem(recipientPublicKeyPem);
+                    const encryptedForRecipient = msg ? await encryptRsa(msg, recipientKey) : '';
+
+                    const senderKey = await importPublicKeyFromPem(publicKeyPem);
+                    const encryptedForSender = msg ? await encryptRsa(msg, senderKey) : '';
+
+                    const formData = new FormData();
+                    const messageId = crypto.randomUUID();
+                    formData.append('message_id', messageId);
+                    formData.append('recipient_id', to);
+                    formData.append('recipient_key_version', recipientKeyVersion);
+                    formData.append('sender_id', currentUser);
+                    formData.append('sender_key_version', publicKeyVersion || 'v1');
+
+                    if (encryptedForRecipient) {
+                        formData.append('message_for_recipient', encryptedForRecipient);
+                    }
+                    if (encryptedForSender) {
+                        formData.append('message_for_sender', encryptedForSender);
+                    }
+
+                    for (const file of files) {
+                        formData.append('files', file);
+                    }
+
+                    // НОВЫЙ ПУТЬ: /users/{recipient_id}/message/send
+                    const sendResponse = await apiRequest('POST', `/users/${to}/message/send`, formData, true);
+
+                    if (!sendResponse.ok) {
+                        const errorText = await sendResponse.text();
+                        throw new Error(`HTTP ${sendResponse.status}: ${errorText}`);
+                    }
+
+                    const result = await sendResponse.json();
+                    console.log('✅ Сообщение отправлено:', result);
+
+                    const fileCount = files.length;
+                    addMessage(`📤 Вы (для ${to}): ${msg || '(файл)'} ${fileCount > 0 ? `+ ${fileCount} файл(ов)` : ''}`, 'own');
+                    input.value = '';
+                    document.getElementById('fileInput').value = '';
+                    document.getElementById('fileList').style.display = 'none';
+                    document.getElementById('fileList').innerHTML = '';
+                    selectedFiles = [];
+                }
+
+            } catch (error) {
+                addMessage(`❌ Ошибка отправки: ${error.message}`, 'system');
+                console.error(error);
+            }
+        }
+
+        // ====== ПОЛУЧЕНИЕ ПУБЛИЧНОГО КЛЮЧА ПОЛУЧАТЕЛЯ ======
+        async function fetchRecipientPublicKey(recipientId) {
+            try {
+                // НОВЫЙ ПУТЬ: /users/{user_id}/keys/public-key
+                const url = `/users/${recipientId}/keys/public-key`;
+                const response = await apiRequest('GET', url);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                return {
+                    public_key: data.public_key,
+                    version: data.version || 'v1'
+                };
+            } catch (error) {
+                console.error('❌ Ошибка получения публичного ключа:', error);
+                return null;
+            }
+        }
+
+        // ====== РАСШИФРОВКА AES ПАКЕТА ======
+        async function decryptAesPacket(encryptedBase64, sessionKey) {
+            if (!sessionKey) {
+                throw new Error('Нет сессионного ключа');
+            }
+
+            const clean = cleanBase64(encryptedBase64);
+            if (!isBase64(clean)) {
+                throw new Error('Невалидный Base64');
+            }
+
+            const encryptedBytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+            const nonce = encryptedBytes.slice(0, 12);
+            const ciphertext = encryptedBytes.slice(12);
+
+            const decrypted = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: nonce },
+                sessionKey,
+                ciphertext
+            );
+
+            const decryptedText = new TextDecoder().decode(decrypted);
+            return JSON.parse(decryptedText);
+        }
+
+        // ====== WEBSOCKET ======
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+
+            if (!accessToken || !currentUser) {
+                addMessage('❌ Сначала авторизуйтесь', 'system');
+                return;
+            }
+
+            if (!encryptionPassword) {
+                addMessage('⚠️ Сначала установите пароль для ключей в разделе "Пароль для ключей"', 'system');
+                return;
+            }
+
+            const userId = currentUser;
+
+            addMessage(`🔌 Подключение к WebSocket как ${userId}...`, 'system');
+            const wsUrl = `${WS_BASE}/ws/${userId}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                isWsConnected = true;
+                isHandshakeDone = false;
+                isHandshakeSent = false;
+                updateWsStatus(true);
+                addMessage('🔌 WebSocket подключён. Ожидание handshake...', 'system');
+            };
+
+            ws.onmessage = async (e) => {
+                try {
+                    const rawData = e.data;
+                    console.log('📩 Получен raw:', rawData);
+
+                    const data = JSON.parse(rawData);
+                    console.log('📩 Получен JSON:', data);
+                    console.log('📌 action_type:', data.action_type);
+
+                    // ====== HANDSHAKE ======
+                    if (data.action_type === 'get_server_public_key') {
+                        addMessage('🔑 Получен публичный ключ сервера. Выполняем handshake...', 'handshake');
+                        await handleServerPublicKey(data.payload);
+                        return;
+                    }
+
+                    if (data.action_type === 'get_session_id') {
+                        sessionId = data.payload;
+                        isHandshakeDone = true;
+                        updateHandshakeStatus(true);
+                        updateSessionInfo();
+                        addMessage(`🔐 Сессия установлена: ${data.payload}`, 'handshake');
+                        return;
+                    }
+
+                    // ====== ПРИВАТНОЕ СООБЩЕНИЕ ======
+                    if (data.action_type === 'send_private_message') {
+                        try {
+                            addMessage(`📩 Получен пакет send_private_message, расшифровываем...`, 'system');
+
+                            const packetData = await decryptAesPacket(data.payload, sessionKey);
+                            console.log('📦 Расшифрованный пакет:', packetData);
+
+                            let decryptedMessages = {};
+                            const myUserId = currentUser;
+                            const isRecipient = packetData.recipient_id === myUserId;
+
+                            const fieldToDecrypt = isRecipient ? 'message_for_recipient' : 'message_for_sender';
+                            const encryptedMessage = packetData[fieldToDecrypt];
+                            const keyVersion = isRecipient ? packetData.recipient_key_version : packetData.sender_key_version;
+
+                            let hasFiles = packetData.file_id && packetData.file_id.length > 0;
+
+                            if (encryptedMessage && encryptedMessage.trim() !== '' && encryptedMessage.length > 10) {
+                                try {
+                                    if (!encryptionPassword) {
+                                        throw new Error('Пароль для ключей не установлен');
+                                    }
+                                    const privateKeyPem = await getPrivateKeyByVersion(keyVersion);
+                                    if (!privateKeyPem) {
+                                        throw new Error('Не удалось получить приватный ключ');
+                                    }
+
+                                    const decrypted = await decryptRsaWithKey(encryptedMessage, privateKeyPem);
+                                    decryptedMessages[fieldToDecrypt] = decrypted;
+                                    decryptedMessages[isRecipient ? 'recipient' : 'sender'] = true;
+                                    addMessage(`🔓 Расшифровано: "${decrypted}"`, 'private');
+                                } catch (e) {
+                                    decryptedMessages[fieldToDecrypt] = `❌ Ошибка: ${e.message}`;
+                                    addMessage(`❌ Ошибка расшифровки: ${e.message}`, 'system');
+                                    console.error('Детали ошибки:', e);
+                                }
+                            } else {
+                                addMessage(`ℹ️ Пустое сообщение (только файлы)`, 'system');
+                            }
+
+                            if (hasFiles) {
+                                let fileHtml = '📎 Файлы: ';
+                                for (const fileId of packetData.file_id) {
+                                    fileHtml += `<span class="file-download-link" onclick="downloadFile('${fileId}')">📄 Скачать файл</span> `;
+                                }
+                                addMessage(fileHtml, 'system');
+                            }
+
+                            showDecryptedData(packetData, decryptedMessages);
+
+                            const sender = packetData.sender_id || 'Неизвестный';
+                            const recipient = packetData.recipient_id || 'Неизвестный';
+                            let msgText = decryptedMessages[fieldToDecrypt] || '(файл)';
+                            const isOwn = sender === currentUser;
+                            addMessage(isOwn ? `📤 Вы (для ${recipient}): ${msgText}` : `📨 [${sender}]: ${msgText}`, isOwn ? 'own' : 'private');
+
+                            return;
+                        } catch (err) {
+                            console.error('❌ Ошибка обработки приватного сообщения:', err);
+                            addMessage(`❌ Ошибка: ${err.message}`, 'system');
+                            showDecryptedData({ error: err.message, raw: data.payload });
+                            return;
+                        }
+                    }
+
+                    // ====== ГРУППОВОЕ СООБЩЕНИЕ ======
+                    if (data.action_type === 'send_group_message') {
+                        try {
+                            addMessage(`👥 Получено групповое сообщение, расшифровываем...`, 'system');
+
+                            console.log('📦 Групповое сообщение (все данные):', data);
+                            console.log('📦 payload:', data.payload);
+                            console.log('🔑 keys:', data.payload?.keys);
+
+                            const packetData = data;
+                            const decryptedText = await decryptGroupMessage(packetData);
+
+                            const sender = packetData.sender_id || 'Неизвестный';
+                            const roomId = packetData.room_id || 'неизвестная';
+
+                            const isOwn = sender === currentUser;
+                            addMessage(isOwn ? `👥 Вы (в группе ${roomId}): ${decryptedText}` : `👥 [${sender}] (группа ${roomId}): ${decryptedText}`, isOwn ? 'group.own' : 'group');
+
+                            return;
+                        } catch (err) {
+                            console.error('❌ Ошибка расшифровки группового сообщения:', err);
+                            addMessage(`❌ Ошибка расшифровки группового сообщения: ${err.message}`, 'system');
+                            showDecryptedData({ error: err.message, raw: data });
+                            return;
+                        }
+                    }
+
+                    // ====== НЕИЗВЕСТНЫЙ ТИП ======
+                    console.warn('⚠️ Неизвестный тип сообщения:', data);
+                    addMessage(`⚠️ Получено неизвестное сообщение: ${JSON.stringify(data).substring(0, 100)}...`, 'system');
+
+                } catch (err) {
+                    console.error('❌ Ошибка обработки WebSocket:', err);
+                    addMessage(`❌ Ошибка: ${err.message}`, 'system');
+                }
+            };
+
+            ws.onclose = () => {
+                isWsConnected = false;
+                isHandshakeDone = false;
+                isHandshakeSent = false;
+                sessionId = null;
+                updateWsStatus(false);
+                updateHandshakeStatus(false);
+                updateSessionInfo();
+                addMessage('🔌 WebSocket отключён', 'system');
+            };
+
+            ws.onerror = (err) => {
+                addMessage(`❌ Ошибка WebSocket: ${err}`, 'system');
+            };
+        }
+
+        // ====== HANDSHAKE ======
+        async function handleServerPublicKey(serverPublicKeyPem) {
+            if (isHandshakeSent) {
+                console.log('⚠️ Handshake уже отправлен, пропускаем');
+                return;
+            }
+
+            try {
+                const serverKey = await importPublicKeyFromPem(serverPublicKeyPem);
+                serverPublicKey = serverKey;
+                addMessage('✅ Публичный ключ сервера импортирован', 'handshake');
+
+                const key = await generateSessionKey();
+                sessionKey = key;
+                sessionKeyBase64 = await exportSessionKey(key);
+                updateSessionInfo();
+
+                const encryptedSessionKey = await encryptRsa(sessionKeyBase64, serverKey);
+
+                const payload = {
+                    action_type: 'get_server_public_key',
+                    payload: {
+                        user_encrypt_session_key: encryptedSessionKey
+                    }
+                };
+
+                console.log('📤 Отправка handshake:', payload);
+                ws.send(JSON.stringify(payload));
+
+                isHandshakeSent = true;
+                addMessage('📤 Handshake отправлен на сервер', 'handshake');
+
+            } catch (error) {
+                addMessage(`❌ Ошибка handshake: ${error.message}`, 'system');
+                console.error(error);
+            }
+        }
+
+        // ====== ОТКЛЮЧЕНИЕ ======
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close(1000, 'Пользователь отключился');
+                ws = null;
+            }
+            isWsConnected = false;
+            isHandshakeDone = false;
+            isHandshakeSent = false;
+            sessionId = null;
+            updateWsStatus(false);
+            updateHandshakeStatus(false);
+            updateSessionInfo();
+            addMessage('🔌 WebSocket отключён вручную', 'system');
+        }
+
+        // ====== СКАЧИВАНИЕ ФАЙЛА ======
+        async function downloadFile(fileId) {
+            if (!accessToken) {
+                alert('❌ Сначала авторизуйтесь');
+                return;
+            }
+
+            try {
+                addMessage(`📥 Загрузка файла...`, 'system');
+                const response = await apiRequest('GET', `/files/${fileId}/download`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = 'file';
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename=(.+)/);
+                    if (match) {
+                        filename = match[1].replace(/["']/g, '');
+                    }
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                addMessage(`✅ Файл ${filename} загружен`, 'system');
+
+            } catch (error) {
+                console.error('❌ Ошибка загрузки файла:', error);
+                addMessage(`❌ Ошибка загрузки файла: ${error.message}`, 'system');
+            }
+        }
+
+        // ====== ИНИЦИАЛИЗАЦИЯ ======
+        const savedPassword = localStorage.getItem('encryption_password');
+        if (savedPassword) {
+            encryptionPassword = savedPassword;
+            document.getElementById('encryptionPassword').value = savedPassword;
+            document.getElementById('passwordStatus').style.display = 'block';
+            document.getElementById('passwordStatus').textContent = '✅ Пароль восстановлен';
+        }
+
+        loadPublicKeyFromStorage();
+        updateAuthUI();
+        updateKeyInfo('public');
+        updateKeyInfo('private');
+        updateWsStatus(false);
+        updateHandshakeStatus(false);
+        updateSessionInfo();
+        updatePrivateKeysDisplay();
+        refreshKeyVersions();
+
+        document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') login();
+        });
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        document.getElementById('targetUserId').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (chatMode === 'private') {
+                    sendMessage();
+                }
+            }
+        });
+        document.getElementById('roomIdInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (chatMode === 'group') {
+                    loadRoomUsers();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
