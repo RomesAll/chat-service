@@ -1,0 +1,45 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6380:6379"
+    env_file:
+      - '.dev.env'
+    command: redis-server --requirepass "qwerty"
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    restart: always
+    env_file:
+      - '.dev.env'
+    ports:
+      - "5439:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin_panel
+    restart: always
+    env_file:
+      - '.dev.env'
+    ports:
+      - "5045:80"
+    depends_on:
+      - postgres
+
+  chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat
+    restart: always
+    environment:
+      - PYTHONPATH=/chat-service
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/chat-service
