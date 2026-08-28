@@ -1,26 +1,23 @@
 from fastapi import APIRouter, Response, status, Depends
 from starlette.responses import JSONResponse
-from business_logic.active_session.active_session_manager import active_session_manager
-from business_logic.auth.jwt_manager import JWTFacade
-from business_logic.auth.password_manager import PasswordManager
-from business_logic.cache.jwt_white_list import jwt_white_list
-from business_logic.cache.session_key_storage import session_key_storage
-from business_logic.exceptions import CheckPswError
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.auth.login_use_case import LoginUseCase
+from bootstrap import get_bootstrap
+from app.business_logic.auth.jwt_manager import JWTFacade
+from app.business_logic.auth.password_manager import PasswordManager
+from app.business_logic.exceptions import CheckPswError
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.auth.login_use_case import LoginUseCase
 from app.shared.dtos import UserDtoPostRequest
 from app.shared.dtos.auth import LoginDtoRequest
-from business_logic.use_cases.auth.logout_use_case import LogoutUseCase
-from business_logic.use_cases.auth.refresh_token_use_case import RefreshTokenUseCase
-from business_logic.use_cases.user.register_user import RegisterUser
-from database import db
-from dtos import JWTRefreshTokenResponse, JWTTokenResponse
-from dtos.auth import LoginOrRegisterDtoResponse
-from models.user import RoleEnum
-from presentation.dependencies.auth import RoleChecker
+from app.business_logic.use_cases.auth.logout_use_case import LogoutUseCase
+from app.business_logic.use_cases.auth.refresh_token_use_case import RefreshTokenUseCase
+from app.business_logic.use_cases.user.register_user_use_case import RegisterUser
+from app.shared.dtos import JWTRefreshTokenResponse, JWTTokenResponse
+from app.shared.dtos.auth import LoginOrRegisterDtoResponse
+from app.data_access.database.models.user import RoleEnum
+from app.presentation.dependencies.auth import RoleChecker
 
 route = APIRouter()
-
+bootstrap = get_bootstrap()
 
 @route.post(
     path='/auth/login',
@@ -31,13 +28,13 @@ route = APIRouter()
 def login_user(credentials: LoginDtoRequest):
     try:
         result: LoginOrRegisterDtoResponse = LoginUseCase(
-            uow=UnitOfWork(db),
+            uow=UnitOfWork(bootstrap.database),
             jwt_manager=JWTFacade,
             psw_manager=PasswordManager,
-            jwt_white_list=jwt_white_list
+            jwt_white_list=bootstrap.jwt_white_list
         ).execute(credentials)
         return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
+            status_code=status.HTTP_200_OK,
             content=result.model_dump(mode='json'),
             media_type="application/json"
         )
@@ -57,10 +54,10 @@ def login_user(credentials: LoginDtoRequest):
 )
 def register_user(new_user: UserDtoPostRequest, return_record: bool = True):
     result: LoginOrRegisterDtoResponse = RegisterUser(
-        uow=UnitOfWork(db),
+        uow=UnitOfWork(bootstrap.database),
         jwt_manager=JWTFacade,
         psw_manager=PasswordManager,
-        jwt_white_list=jwt_white_list
+        jwt_white_list=bootstrap.jwt_white_list
     ).execute(new_user)
     if not return_record:
         return Response(
@@ -85,7 +82,7 @@ def refresh_tokens(
 ):
     result: JWTTokenResponse = RefreshTokenUseCase(
         jwt_facade=JWTFacade,
-        jwt_white_list=jwt_white_list
+        jwt_white_list=bootstrap.jwt_white_list
     ).execute(refresh_token)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
@@ -105,9 +102,9 @@ def logout_user_operation(
     refresh_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     is_delete_refresh, is_delete_session_key = LogoutUseCase(
-        session_key_storage=session_key_storage,
-        active_session_manager=active_session_manager,
-        white_list=jwt_white_list
+        session_key_storage=bootstrap.session_key_storage,
+        active_session_manager=bootstrap.active_session_manager,
+        white_list=bootstrap.jwt_white_list
     ).execute(
         user_id=refresh_token.user_id,
         session_id=refresh_token.session_id,
