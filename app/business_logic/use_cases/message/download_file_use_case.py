@@ -1,12 +1,11 @@
 from uuid import UUID
 from starlette.responses import StreamingResponse
-
-from business_logic.exceptions import PermissionFileDownError
-from business_logic.file_manager.file_manager import FileManager
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase
-from repositories.message import PrivateMessageRepository
-from repositories.message_attachments import MessageAttachmentsRepository
+from app.business_logic.exceptions import PermissionFileDownError
+from app.business_logic.file_manager.file_manager import FileManager
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
+from app.data_access.database.repositories.message import PrivateMessageRepository
+from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 
 
 class DownloadFileUseCase(IUseCase):
