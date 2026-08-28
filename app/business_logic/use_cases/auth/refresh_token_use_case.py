@@ -1,9 +1,9 @@
 from uuid import uuid4
-from business_logic.auth.jwt_manager import JWTFacade
-from business_logic.cache.jwt_white_list import JWTWhiteListCache
-from business_logic.use_cases.interface.iuse_case import IUseCase
-from dtos import JWTRefreshTokenResponse
-from dtos.jwt import JWTTokenResponse
+from app.business_logic.auth.jwt_manager import JWTFacade
+from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
+from app.shared.dtos import JWTRefreshTokenResponse
+from app.shared.dtos.jwt import JWTTokenResponse
 
 
 class RefreshTokenUseCase(IUseCase):

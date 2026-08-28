@@ -1,15 +1,15 @@
 from uuid import UUID, uuid4
-import bcrypt
 from starlette.datastructures import UploadFile
-from business_logic.active_session.message_sender.private_message import PrivateMessageRoute
-from business_logic.file_manager.file_manager import FileManager
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase
-from dtos import MessageAttachmentsDtoPostRequest
-from models.message_attachments import MimeType
-from repositories.message import PrivateMessageRepository
-from app.shared.dtos import PrivateMessageDtoPostRequest, PrivateMessageDtoGetResponse
-from repositories.message_attachments import MessageAttachmentsRepository
+from app.business_logic.active_session.message_sender.private_message import PrivateMessageRoute
+from app.business_logic.file_manager.file_manager import FileManager
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
+from app.shared.dtos import MessageAttachmentsDtoPostRequest
+from app.data_access.database.models.message_attachments import MimeType
+from app.data_access.database.repositories.message import PrivateMessageRepository
+from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse
+from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
+from bootstrap import get_bootstrap
 
 
 class SendPrivateMsgAndSave(IUseCase):
@@ -30,7 +30,7 @@ class SendPrivateMsgAndSave(IUseCase):
             self,
             dto_private_msg: PrivateMessageDtoPostRequest,
             upload_file: list[UploadFile] | None = None
-    ) -> PrivateMessageDtoGetResponse:
+    ) -> MessageDtoGetResponse:
         with self.uow as uow:
             private_msg_repo = uow.get_repository(PrivateMessageRepository)
             file_msg_repo = uow.get_repository(MessageAttachmentsRepository)
@@ -40,7 +40,7 @@ class SendPrivateMsgAndSave(IUseCase):
                     if not file.filename or not file.size:
                         continue
                     file_id = uuid4()
-                    file_path=f'/home/roman/Downloads/{file_id}.dat'
+                    file_path=get_bootstrap().config.upload_file_path
                     dto_file = MessageAttachmentsDtoPostRequest(
                         id=file_id,
                         file_name=file.filename,

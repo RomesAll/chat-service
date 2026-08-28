@@ -1,8 +1,6 @@
 from enum import Enum
-from typing import Iterable, Any, Type, cast
-from sqlalchemy import Table
+from typing import Iterable, Any
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.exc import SQLAlchemyError
 from app.data_access.exceptions import (
     ValidationOrmNotDocError,
     ValidationOrmIncorrectDocError,

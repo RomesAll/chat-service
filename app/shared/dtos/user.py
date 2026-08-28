@@ -2,7 +2,7 @@ from typing import Self
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator, ValidationError
 from fastapi.websockets import WebSocket
-from models.user import RoleEnum
+from app.data_access.database.models.user import RoleEnum
 from .base import (
     BaseDtoGetResponse,
     BaseDtoPostDeleteRequest,

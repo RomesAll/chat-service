@@ -1,6 +1,6 @@
 from enum import Enum
 from uuid import UUID
-from sqlalchemy import ForeignKey, Enum as SAEnum
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import BaseOrm
 from .mixins import IdMixin
@@ -77,7 +77,7 @@ class MessageAttachments(BaseOrm, IdMixin):
     __tablename__ = 'message_attachments'
     message_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
-        ForeignKey("private_message.id", ondelete="CASCADE"),
+        # ForeignKey("private_message.id", ondelete="CASCADE"),
         nullable=False
     )
     file_name: Mapped[str]

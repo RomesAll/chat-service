@@ -1,11 +1,11 @@
 from typing import Type, TypeVar
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from database import Database
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from repositories.base import BaseRepository
+    from app.data_access.database.repositories.base import BaseRepository
+    from app.data_access.database.database import Database
 
 R = TypeVar('R', bound='BaseRepository')
 
@@ -13,7 +13,7 @@ class UnitOfWork:
     """
     Класс для реализации паттерна "Unit of Work"
     """
-    def __init__(self, db: Database):
+    def __init__(self, db: 'Database'):
         self.db = db
         self.session: Session | None = None
         self._repository: dict[type['BaseRepository'], 'BaseRepository'] = {}

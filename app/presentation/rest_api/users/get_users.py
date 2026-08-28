@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Query, status, Depends
 from starlette.responses import JSONResponse
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.user.get_one_user import GetOneUsers
-from business_logic.use_cases.user.get_users import GetUsers
-from database import db
-from dtos import (
+from bootstrap import get_bootstrap
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.user.get_one_user_use_case import GetOneUsers
+from app.business_logic.use_cases.user.get_users_use_case import GetUsers
+from app.shared.dtos import (
     UserDtoGetResponse,
     BaseDtoGetListRequest,
     PaginationDto,
@@ -12,11 +12,11 @@ from dtos import (
     SortEnum,
     JWTRefreshTokenResponse, UserDtoBriefInfo
 )
-from models.user import RoleEnum
-from presentation.dependencies.auth import RoleChecker
+from app.data_access.database.models.user import RoleEnum
+from app.presentation.dependencies.auth import RoleChecker
 
 route = APIRouter()
-
+bootstrap = get_bootstrap()
 
 @route.get(
     path='/users',
@@ -40,7 +40,7 @@ def get_users(
         ]
     )
     results: list[UserDtoGetResponse] = GetUsers(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(dto_request)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -60,7 +60,7 @@ def get_one_user(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = GetOneUsers(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(user_id).dto_response
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -80,7 +80,7 @@ def get_me_info(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = GetOneUsers(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(access_token.user_id).dto_response
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -103,7 +103,7 @@ def get_user_brief_info(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoBriefInfo | None = GetOneUsers(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(user_id).get_brief_info()
     if not result:
         return JSONResponse(

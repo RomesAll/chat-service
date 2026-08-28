@@ -1,14 +1,14 @@
 from datetime import datetime, timezone
 from uuid import uuid4
-from business_logic.auth.jwt_manager import JWTFacade
-from business_logic.auth.password_manager import PasswordManager
-from business_logic.cache.jwt_white_list import JWTWhiteListCache
-from business_logic.exceptions import CheckPswError
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase
+from app.business_logic.auth.jwt_manager import JWTFacade
+from app.business_logic.auth.password_manager import PasswordManager
+from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
+from app.business_logic.exceptions import CheckPswError
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import UserDtoGetResponse
-from dtos.auth import LoginDtoRequest, LoginOrRegisterDtoResponse
-from repositories import UserRepository
+from app.shared.dtos.auth import LoginDtoRequest, LoginOrRegisterDtoResponse
+from app.data_access.database.repositories import UserRepository
 
 
 class LoginUseCase(IUseCase):

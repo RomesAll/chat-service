@@ -1,8 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 import redis
-
-from business_logic.auth.jwt_manager import JWTFacade
+from app.business_logic.auth.jwt_manager import JWTFacade
 
 
 class JWTWhiteListCache:
@@ -45,8 +44,3 @@ class JWTWhiteListCache:
             token_id=new_refresh_id,
             ex=int((datetime.now(tz=timezone.utc) + JWTFacade.jwt_refresh_manager.EXPIRES_DELTA).timestamp())
         )
-
-
-jwt_white_list = JWTWhiteListCache(
-    redis.Redis(host='127.0.0.1', port=6380, db=0, password='qwerty')
-)

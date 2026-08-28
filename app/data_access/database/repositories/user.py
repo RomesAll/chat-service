@@ -1,7 +1,6 @@
 from sqlalchemy import select
-
-from exceptions import RecordNotFound
-from models.user import UserOrm
+from app.data_access.exceptions import RecordNotFound
+from app.data_access.database.models.user import UserOrm
 from .base import BaseRepositoryGet, BaseRepositorySave, BaseRepositoryDelete, BaseRepositoryUpdate
 from app.shared.dtos import (
     UserDtoGetResponse,

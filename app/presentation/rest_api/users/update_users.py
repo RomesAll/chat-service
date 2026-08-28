@@ -1,18 +1,18 @@
 from fastapi import APIRouter, Response, status, Depends
 from starlette.responses import JSONResponse
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.user.update_user import UpdateUser
-from database import db
-from dtos import (
+from bootstrap import get_bootstrap
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.user.update_user_use_case import UpdateUser
+from app.shared.dtos import (
     UserDtoGetResponse,
     UserDtoUpdateRequest,
     JWTRefreshTokenResponse
 )
-from models.user import RoleEnum
-from presentation.dependencies.auth import RoleChecker
+from app.data_access.database.models.user import RoleEnum
+from app.presentation.dependencies.auth import RoleChecker
 
 route = APIRouter()
-
+bootstrap = get_bootstrap()
 
 @route.put(
 path='/users',
@@ -27,7 +27,7 @@ def update_user(
         access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
 ):
     result: UserDtoGetResponse = UpdateUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(update_user_info)
     if not return_record:
         return Response(
@@ -58,7 +58,7 @@ def update_me(
             media_type="application/json"
         )
     result: UserDtoGetResponse = UpdateUser(
-        uow=UnitOfWork(db)
+        uow=UnitOfWork(bootstrap.database)
     ).execute(update_user_info)
     if not return_record:
         return Response(

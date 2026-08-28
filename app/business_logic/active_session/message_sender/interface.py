@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
-
-from dtos import MessageAttachmentsDtoPostRequest
-from dtos.message import BaseMessageDto
+from app.shared.dtos.message import BaseMessageDto
 
 
 class IMessageRoute(ABC):

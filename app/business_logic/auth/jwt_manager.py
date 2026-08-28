@@ -4,8 +4,8 @@ from datetime import timedelta, datetime, timezone
 from typing import TypeVar, Generic
 from uuid import UUID, uuid4
 from app.shared.dtos import JWTAccessToken, JWTRefreshToken, JWTBaseToken, JWTTokenResponse, JWTBaseResponse
-from dtos import JWTAccessTokenResponse, JWTRefreshTokenResponse
-from models.user import RoleEnum
+from app.shared.dtos import JWTAccessTokenResponse, JWTRefreshTokenResponse
+from app.data_access.database.models.user import RoleEnum
 import jwt
 
 TRequestToken = TypeVar('TRequestToken', bound=JWTBaseToken)

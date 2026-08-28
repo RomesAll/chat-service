@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
-from business_logic.active_session.active_session_manager import ActiveSessionManager
+from typing import Any
 
 
 class IUseCase(ABC):

@@ -1,5 +1,5 @@
 from uuid import UUID
-from models.message_attachments import MimeType
+from app.data_access.database.models.message_attachments import MimeType
 from pathlib import Path
 from .base import (
     BaseDtoGetResponse,

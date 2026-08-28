@@ -1,7 +1,7 @@
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase
-from dtos.keys import PublicKeyDtoGet
-from repositories.user_keys import PublicKeyRepository
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
+from app.shared.dtos.keys import PublicKeyDtoGet
+from app.data_access.database.repositories.user_keys import PublicKeyRepository
 
 
 class GetPublicKeyUseCase(IUseCase):

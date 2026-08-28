@@ -1,7 +1,7 @@
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import UserDtoGetResponse
-from repositories import UserRepository
+from app.data_access.database.repositories import UserRepository
 
 
 class RecoveryUser(IUseCase):
