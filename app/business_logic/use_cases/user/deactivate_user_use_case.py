@@ -1,8 +1,8 @@
 from uuid import UUID
 from app.business_logic.active_session.active_session_manager import ActiveSessionManager
-from business_logic.cache.session_key_storage import SessionKeyStorage
-from business_logic.exceptions import UserNotFoundError
-from business_logic.use_cases.interface.iuse_case import IUseCase
+from app.business_logic.cache.session_key_storage import SessionKeyStorage
+from app.business_logic.exceptions import UserNotFoundError
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
 
 
 class DeactivateUseCase(IUseCase):
