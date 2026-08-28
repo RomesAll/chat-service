@@ -1,8 +1,8 @@
 from typing import Self
-from business_logic.unit_of_work import UnitOfWork
-from business_logic.use_cases.interface.iuse_case import IUseCase
-from dtos import UserDtoBriefInfo
-from repositories import UserRepository
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
+from app.shared.dtos import UserDtoBriefInfo
+from app.data_access.database.repositories import UserRepository
 
 
 class GetOneUsers(IUseCase):
