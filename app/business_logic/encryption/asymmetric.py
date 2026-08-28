@@ -1,6 +1,6 @@
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from dtos.encrypt import AsymmetricKeys
+from app.shared.dtos.encrypt import AsymmetricKeys
 import base64
 
 
