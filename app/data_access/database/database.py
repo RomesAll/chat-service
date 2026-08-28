@@ -6,7 +6,7 @@ from starlette.middleware.sessions import Session
 
 class Database:
     """Класс для управления подключением к бд"""
-    def __init__(self, url: str = 'sqlite:///test.db'):
+    def __init__(self, url: str):
         self.engine = create_engine(url=url)
         self.session_factory = sessionmaker(self.engine)
 
@@ -26,5 +26,3 @@ class Database:
     def create_session(self) -> Session:
         """Прямое получение сессии"""
         return self.session_factory()
-
-db = Database()
