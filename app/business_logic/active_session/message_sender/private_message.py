@@ -61,7 +61,7 @@ class PrivateMessageRoute(IMessageRoute):
             if exclude_session and session_id in exclude_session:
                 continue
             session_key = self.session_key_storage.get(user_id, session_id)
-            if not session_key:
+            if not session_key or not isinstance(session_key, bytes):
                 raise Exception
             encoder = self.symmetric_encode(session_key)
             payload = encoder.encrypt_package(message_send_response.model_dump(mode='json'))
