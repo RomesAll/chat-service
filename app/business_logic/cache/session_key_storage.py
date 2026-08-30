@@ -20,6 +20,8 @@ class SessionKeyStorage:
     def get(self, user_id: str, session_id: UUID) -> bytes | None:
         """Получение сессионного ключа"""
         session_key_hex: bytes | str | None = self.client.get(f'session:{user_id}:{session_id}')
+        if isinstance(session_key_hex, bytes):
+            session_key_hex = session_key_hex.decode('utf-8')
         if not session_key_hex:
             return None
         return bytes.fromhex(session_key_hex)
