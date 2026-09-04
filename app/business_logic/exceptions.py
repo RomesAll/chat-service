@@ -57,3 +57,33 @@ class PermissionFileDownError(Exception):
     def __init__(self, user_id: str, file_id: UUID):
         message = f'У пользователя {user_id} нет прав на доступ к файлу {file_id}'
         super().__init__(message)
+
+
+class RefreshTokenIdNotFound(Exception):
+    """Не удалось найти refresh токен по id в white list"""
+    def __init__(self, user_id: str, token_id: UUID):
+        message = (f'Не удалось найти токен у пользователя {user_id} '
+                   f'по id {token_id} в white list')
+        super().__init__(message)
+
+
+class SessionKeyNotFound(Exception):
+    """Не удалось найти session key пользователя"""
+    def __init__(self, user_id: str, session_id: UUID):
+        message = (f'Не удалось найти session id у пользователя {user_id} '
+                   f'по session_id {session_id} в кеше')
+        super().__init__(message)
+
+
+class SaveIdRefreshTokenWhiteListError(Exception):
+    """Неудачная попытка сохранения id refresh токена"""
+    def __init__(self, user_id: str):
+        message = f'Не удалось сохранить id refresh токена пользователя {user_id} в white list'
+        super().__init__(message)
+
+
+class SaveSessionKeyError(Exception):
+    """Неудачная попытка сохранения сессионного ключа"""
+    def __init__(self, user_id: str, session_id: UUID):
+        message = f'Не удалось сохранить сессионный ключ пользователя {user_id}'
+        super().__init__(message)
