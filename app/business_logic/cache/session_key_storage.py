@@ -1,5 +1,6 @@
 from uuid import UUID
 from redis import Redis
+from cachetools import TTLCache
 
 from business_logic.exceptions import SessionKeyNotFound, SaveSessionKeyError
 
@@ -11,6 +12,10 @@ class SessionKeyStorage:
         self.db = db
         self.client.select(db)
         self._prefix = 'session'
+        self.fallback = TTLCache(
+            maxsize=100,
+            ttl=3600
+        )
 
     def __len__(self):
         return self.client.dbsize()
@@ -51,14 +56,19 @@ class SessionKeyStorage:
         :param session_key: сессионный ключ
         :return: True или False
         """
+        name = f'{self._prefix}:{user_id}:{session_id}'
         result = bool(
             self.client.setex(
-                name=f'{self._prefix}:{user_id}:{session_id}',
+                name=name,
                 time=3600,
                 value=session_key.hex()
             )
         )
         if not result:
+            self.fallback[name] = {
+                'value': session_key.hex(),
+                'time': 3600
+            }
             raise SaveSessionKeyError(user_id, session_id)
         return result
 
