@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from cachetools import TTLCache
 from uuid import UUID
 from redis import Redis
 
@@ -16,6 +17,10 @@ class JWTWhiteListCache:
         self.db = db
         self.client.select(self.db)
         self._prefix = 'white_list'
+        self.fallback = TTLCache(
+            maxsize=100,
+            ttl=JWTFacade.jwt_refresh_manager.EXPIRES_DELTA.total_seconds()
+        )
 
     def __contains__(self, item):
         """
@@ -31,7 +36,7 @@ class JWTWhiteListCache:
                 raise TypeError(f'Для проверки сущ. токена нужно передать '
                                 f'ровно два значения - это user_id и token_id')
             user_id, token_id = item
-            return self.check_exist(user_id, token_id)
+            return self.is_token_active(user_id, token_id)
         except TypeError:
             raise
 
@@ -61,7 +66,7 @@ class JWTWhiteListCache:
         :return:
         """
         user_id, token_id = item
-        return self.check_exist(user_id, token_id)
+        return self.is_token_active(user_id, token_id)
 
     def __call__(self, user_id: str, old_refresh_id: UUID, new_refresh_id: UUID):
         """Позволяет вызвать объект как функцию для обновления"""
@@ -72,14 +77,22 @@ class JWTWhiteListCache:
 
     def save_refresh_token(self, user_id: str, token_id: UUID, ex: int) -> bool:
         """Сохранение refresh токена"""
-        result = bool(self.client.set(f'{self._prefix}:{user_id}:{token_id}', 'active', ex=ex))
+        name = f'{self._prefix}:{user_id}:{token_id}'
+        result = bool(self.client.set(name, 'active', ex=ex))
         if not result:
+            self.fallback[name] = {
+                'active': True,
+                'expires_at': ex
+            }
             raise SaveIdRefreshTokenWhiteListError(user_id)
         return result
 
-    def check_exist(self, user_id: str, token_id: UUID) -> bool:
+    def is_token_active(self, user_id: str, token_id: UUID) -> bool:
         """Проверка существования refresh токена"""
-        return bool(self.client.exists(f'{self._prefix}:{user_id}:{token_id}'))
+        result = self.client.get(f'{self._prefix}:{user_id}:{token_id}')
+        if result == 'active':
+            return True
+        return False
 
     def delete_refresh_token(self, user_id: str, token_id: UUID) -> bool:
         """Удаление refresh токена"""
