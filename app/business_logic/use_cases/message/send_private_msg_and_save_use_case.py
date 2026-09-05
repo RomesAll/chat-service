@@ -36,24 +36,7 @@ class SendPrivateMsgAndSave(IUseCase):
             file_msg_repo = uow.get_repository(MessageAttachmentsRepository)
             dto_response = private_msg_repo.save(dto_private_msg)
             if upload_file:
-                for file in upload_file:
-                    if not file.filename or not file.size:
-                        continue
-                    file_id = uuid4()
-                    file_path=get_bootstrap().config.upload_file_path
-                    dto_file = MessageAttachmentsDtoPostRequest(
-                        id=file_id,
-                        file_name=file.filename,
-                        file_path=file_path,
-                        file_size=file.size,
-                        message_id=dto_response.id,
-                        mime_type=MimeType(file.content_type)
-                    )
+                for dto_file in self.file_manager.upload_file(upload_file, dto_response):
                     file_msg_repo.save(dto_file)
-                    await self.file_manager.write_file(
-                        path_to_save=file_path,
-                        file=file
-                    )
-                    dto_response.file_id.append(file_id)
             await self.private_msg_route.send_message(self.session_id, dto_response)
             return dto_response
