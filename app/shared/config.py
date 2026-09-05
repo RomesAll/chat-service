@@ -4,6 +4,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent.parent.resolve()
 
+
 class PostgresqlSettings(BaseModel):
     """Конфиг для postgresql"""
     host: str
@@ -38,6 +39,14 @@ class JWTSettings(BaseModel):
     secretkey: str
 
 
+class LogLevelInfo(BaseModel):
+    """Конфиг для хранения уровня логирования"""
+    log_name: str
+    base_log: str
+    error_file_log: str
+    info_file_log: str
+
+
 class BaseConfig(BaseSettings):
     """Базовый конфиг для хранения настроек проекта"""
     postgres: PostgresqlSettings
@@ -45,6 +54,7 @@ class BaseConfig(BaseSettings):
     jwtaccess: JWTSettings
     jwtrefresh: JWTSettings
     upload_file_path: str = f'{BASE_DIR}/user-files'
+    log_info: LogLevelInfo
 
 
 class DevelopConfig(BaseConfig):
