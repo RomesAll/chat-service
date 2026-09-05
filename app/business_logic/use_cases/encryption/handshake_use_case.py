@@ -6,6 +6,7 @@ from starlette.websockets import WebSocket
 from app.shared.dtos import UserDtoBriefInfo
 from uuid import UUID
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
+from business_logic.active_session.active_session_manager import ActiveSessionManager
 
 
 class HandshakeUseCase(IUseCase):
@@ -18,16 +19,18 @@ class HandshakeUseCase(IUseCase):
     def __init__(
             self,
             uow: UnitOfWork,
+            active_session_manager: ActiveSessionManager,
             user_connection: WebSocket,
             asymmetric_encrypt: AsymmetricEncrypt,
             session_key_storage: SessionKeyStorage
     ):
         self.uow = uow
+        self.active_session_manager = active_session_manager
         self.user_connection = user_connection
         self.asymmetric_encrypt = asymmetric_encrypt
         self.session_key_storage = session_key_storage
 
-    async def execute(self, session_id: UUID, user_brief_info: UserDtoBriefInfo):
+    async def execute(self, session_id: UUID, user_brief_info: UserDtoBriefInfo, websocket: WebSocket):
         await self.user_connection.send_json(WebsocketPackage(
             action_type=WebsocketActionType.GET_SERVER_PUBLIC_KEY.value,
             payload=self.asymmetric_encrypt.get_public_key()
@@ -46,7 +49,13 @@ class HandshakeUseCase(IUseCase):
             session_id=session_id,
             session_key=session_key
         )
-        await self.user_connection.send_json(WebsocketPackage(
-            action_type=WebsocketActionType.GET_SESSION_ID.value,
-            payload=str(session_id)
-        ).model_dump(mode='json'))
+        await self.user_connection.send_json(
+            WebsocketPackage(
+                action_type=WebsocketActionType.GET_SESSION_ID.value,
+                payload=str(session_id)).model_dump(mode='json')
+        )
+        self.active_session_manager.add_connection(
+            user_info=user_brief_info,
+            session_id=session_id,
+            connection=websocket
+        )
