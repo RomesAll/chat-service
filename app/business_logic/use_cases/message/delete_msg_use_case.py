@@ -10,6 +10,7 @@ from app.data_access.database.repositories.message import GroupMessageRepository
 
 
 class DeleteMsgUseCase(IUseCase):
+    """Use case для удаления сообщения"""
     def __init__(
             self,
             uow: UnitOfWork,
