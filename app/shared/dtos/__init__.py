@@ -55,6 +55,8 @@ from .group_message import (
     GroupMessageDtoPostRequest,
 )
 
+__version__ = 'v1.0.1'
+__author__ = 'RomesAll'
 __all__ = [
     'GroupMessageDtoResponse',
     'GroupMessageDtoDeleteRequest',
