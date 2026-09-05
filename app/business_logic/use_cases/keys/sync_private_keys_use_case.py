@@ -14,9 +14,9 @@ class SyncPrivateKeysUseCase(IUseCase):
 
     async def execute(self, user_id: str, encrypt_private_keys: dict):
         try:
-            user_info = self.active_session.active_sessions.get(user_id)
-            if not user_info:
-                raise Exception
+            user_info = self.active_session.get_or_create_session(
+                user_id=user_id
+            )
             user_connections = user_info.user_sessions.values()
             for connection in user_connections:
                 await connection.send_json(encrypt_private_keys)
