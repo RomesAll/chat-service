@@ -4,6 +4,7 @@ from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import JWTRefreshTokenResponse
 from app.shared.dtos.jwt import JWTTokenResponse
+from business_logic.exceptions import RefreshTokenInActive
 
 
 class RefreshTokenUseCase(IUseCase):
@@ -17,8 +18,13 @@ class RefreshTokenUseCase(IUseCase):
         self.jwt_white_list = jwt_white_list
 
     def execute(self, refresh_token: JWTRefreshTokenResponse) -> JWTTokenResponse:
+        if self.jwt_white_list.is_token_active(
+                user_id=refresh_token.user_id,
+                token_id=refresh_token.refresh_id
+        ):
+            raise RefreshTokenInActive(refresh_token.user_id, refresh_token.refresh_id)
         new_refresh_id = uuid4()
-        self.jwt_white_list.update_refresh(
+        self.jwt_white_list(
             user_id=refresh_token.user_id,
             old_refresh_id=refresh_token.refresh_id,
             new_refresh_id=new_refresh_id
