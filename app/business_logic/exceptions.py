@@ -87,3 +87,24 @@ class SaveSessionKeyError(Exception):
     def __init__(self, user_id: str, session_id: UUID):
         message = f'Не удалось сохранить сессионный ключ пользователя {user_id}'
         super().__init__(message)
+
+
+class UserNotFoundInRoom(Exception):
+    """Не удалось найти пользователя в комнате"""
+    def __init__(self, user_id: str, room_id: UUID):
+        message = f'Не удалось найти пользователя {user_id} в комнате {room_id}'
+        super().__init__(message)
+
+
+class RoomNotFound(Exception):
+    """Комната не найдена"""
+    def __init__(self, room_id: UUID):
+        message = f'Не удалось найти комнату {room_id}'
+        super().__init__(message)
+
+
+class RefreshTokenInActive(Exception):
+    """Refresh токен больше не активен"""
+    def __init__(self, user_id: str, token_id):
+        message = f'Refresh токен больше не активен для пользователя {user_id}, токен id: {token_id}'
+        super().__init__(message)
