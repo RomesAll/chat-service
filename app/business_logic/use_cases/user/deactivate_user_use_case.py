@@ -15,13 +15,6 @@ class DeactivateUseCase(IUseCase):
         self.active_session_manager = active_session_manager
         self.session_key_storage = session_key_storage
 
-    def execute(self, user_id: str, session_id: UUID) -> tuple[bool, bool]:
-        is_delete_session_key = self.session_key_storage.delete(
-            user_id=user_id,
-            session_id=session_id,
-        )
-        user_session = self.active_session_manager.active_sessions.get(user_id)
-        if not user_session:
-            raise UserNotFoundError(user_id)
-        is_delete_websocket_conn = user_session.user_sessions.pop(session_id, None)
-        return is_delete_session_key, bool(is_delete_websocket_conn)
+    def execute(self, user_id: str, session_id: UUID):
+        del self.session_key_storage[user_id, session_id]
+        self.active_session_manager.remove_user_active_session(user_id, session_id)
