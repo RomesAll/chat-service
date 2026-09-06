@@ -19,9 +19,10 @@ from app.data_access.exceptions import (
     DataBaseError,
     InCorrectStmtError, BreachIntegrity
 )
+from shared.log_config import LogMixin
 
 
-class HandleSqlAlchemyException:
+class HandleSqlAlchemyException(LogMixin):
     """
     Класс декоратор для обработки ошибок sqlalchemy
     """
@@ -31,8 +32,7 @@ class HandleSqlAlchemyException:
                 setattr(cls, attr_name, self._wrap_method(attr_value))
         return cls
 
-    @staticmethod
-    def _wrap_method(method: Callable):
+    def _wrap_method(self, method: Callable):
         """Метод обертка для методов репозитория с обработкой ошибок"""
         def wrapper(*args, **kwargs):
             try:
@@ -40,7 +40,9 @@ class HandleSqlAlchemyException:
                 return result
             except ProgrammingError as e:
                 """Исключения связанные ошибкой запроса"""
-                raise InCorrectStmtError(str(e.statement), str(e.orig))
+                exc = InCorrectStmtError(str(e.statement), str(e.orig))
+                self.log_error(exc.message)
+                raise exc
             except IntegrityError as e:
                 """Исключения связанные с нарушение целостности данных"""
                 operation: str = f'({method.__name__.replace('_', ' ')})'
@@ -48,24 +50,42 @@ class HandleSqlAlchemyException:
                 stmt = e.statement
                 cause = str(e.orig)
                 if isinstance(e.orig, psycopg.errors.UniqueViolation):
-                    raise UniqueViolationError(operation, data, stmt, cause)
+                    exc = UniqueViolationError(operation, data, stmt, cause)
+                    self.log_error(exc.message)
+                    raise exc
                 if isinstance(e.orig, psycopg.errors.ForeignKeyViolation):
-                    raise ForeignKeyViolationError(operation, data, stmt, cause)
+                    exc = ForeignKeyViolationError(operation, data, stmt, cause)
+                    self.log_error(exc.message)
+                    raise exc
                 if isinstance(e.orig, psycopg.errors.NotNullViolation):
-                    raise NotNullViolationError(operation, data, stmt, cause)
+                    exc = NotNullViolationError(operation, data, stmt, cause)
+                    self.log_error(exc.message)
+                    raise exc
                 if isinstance(e.orig, psycopg.errors.CheckViolation):
-                    raise CheckViolationError(operation, data, stmt, cause)
-                raise BreachIntegrity(operation, data, stmt, cause)
+                    exc = CheckViolationError(operation, data, stmt, cause)
+                    self.log_error(exc.message)
+                    raise exc
+                exc = BreachIntegrity(operation, data, stmt, cause)
+                self.log_error(exc.message)
+                raise exc
             except OperationalError as e:
                 """Исключения связанные с неверным хостом, портом или бд не запущена"""
-                raise DBOperationalError(str(e.orig))
+                exc = DBOperationalError(str(e.orig))
+                self.log_error(exc.message)
+                raise exc
             except InterfaceError as e:
                 """Исключения связанные с неверным логином, пролем"""
-                raise DBInterfaceError(str(e.orig))
+                exc = DBInterfaceError(str(e.orig))
+                self.log_error(exc.message)
+                raise exc
             except TimeoutError as e:
                 """Исключения связанные с таймаутом"""
-                raise DBTimeoutError(str(e))
+                exc = DBTimeoutError(str(e))
+                self.log_error(exc.message)
+                raise exc
             except SQLAlchemyError as e:
                 """Исключения связанные с другими ошибками sqlalchemy"""
-                raise DataBaseError(f'неизвестная ошибка: {e}')
+                exc = DataBaseError(f'неизвестная ошибка: {e}')
+                self.log_error(exc.message)
+                raise exc
         return wrapper
