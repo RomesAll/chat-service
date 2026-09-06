@@ -62,6 +62,6 @@ class DevelopConfig(BaseConfig):
     mode: str = 'dev'
     model_config = SettingsConfigDict(
         env_file=f'{BASE_DIR}/.dev.env',
-        env_nested_delimiter='_',
+        env_nested_delimiter='__',
         extra='ignore'
     )
