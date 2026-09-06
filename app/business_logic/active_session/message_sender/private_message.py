@@ -8,9 +8,10 @@ from app.business_logic.encryption.symmetric import SymmetricEncode
 from app.business_logic.exceptions import SendMessageError
 from app.shared.dtos import MessageDtoGetResponse
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
+from app.shared.log_config import LogMixin
 
 
-class PrivateMessageRoute(IMessageRoute):
+class PrivateMessageRoute(IMessageRoute, LogMixin):
     """Сервис для управления отправкой приватных сообщений"""
 
     def __init__(
@@ -61,12 +62,13 @@ class PrivateMessageRoute(IMessageRoute):
             if exclude_session and session_id in exclude_session:
                 continue
             session_key = self.session_key_storage.get(user_id, session_id)
-            if not session_key:
-                raise Exception
             encoder = self.symmetric_encode(session_key)
             payload = encoder.encrypt_package(message_send_response.model_dump(mode='json'))
             package = WebsocketPackage(
                 action_type=WebsocketActionType.SEND_PRIVATE_MESSAGE,
                 payload=base64.b64encode(payload).decode('utf-8')
             )
+            self.log_debug(f'Сообщение было отправлено '
+                           f'от {message_send_response.sender_id} '
+                           f'к {message_send_response.recipient_id}')
             await connection.send_json(package.model_dump())

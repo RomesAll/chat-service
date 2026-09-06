@@ -9,9 +9,10 @@ from app.data_access.database.repositories.message import GroupMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.data_access.database.repositories.room import RoomRepository, UserInRoomRepository
 from business_logic.exceptions import UserNotFoundInRoom, RoomNotFound
+from app.shared.log_config import LogMixin
 
 
-class SendGroupMsgAndSave(IUseCase):
+class SendGroupMsgAndSave(IUseCase, LogMixin):
     """Use case для отправки сообщений в группу"""
     def __init__(
             self,
@@ -38,15 +39,21 @@ class SendGroupMsgAndSave(IUseCase):
             if not room_repo.check_exist(
                     record_id=dto_group_msg.room_id
             ):
-                raise RoomNotFound(dto_group_msg.room_id)
+                exc = RoomNotFound(dto_group_msg.room_id)
+                self.log_error(exc.message)
+                raise exc
             if not user_in_room_repo.check_exist_user_in_room(
                     user_id=dto_group_msg.sender_id,
                     room_id=dto_group_msg.room_id
             ):
-                raise UserNotFoundInRoom(dto_group_msg.sender_id, dto_group_msg.room_id)
+                exc = UserNotFoundInRoom(dto_group_msg.sender_id, dto_group_msg.room_id)
+                self.log_error(exc.message)
+                raise exc
             dto_response = group_msg_repo.save(dto_group_msg)
+            self.log_debug(f'Сообщение сохранено в бд, id {dto_response.id}')
             if upload_file:
                 for dto_file in self.file_manager.upload_file(upload_file, dto_response):
                     file_msg_repo.save(dto_file)
+                    self.log_debug(f'Файл успешно сохранен {dto_file}')
             await self.group_msg_route.send_message(self.session_id, dto_response)
             return dto_response

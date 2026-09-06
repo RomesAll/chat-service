@@ -9,6 +9,7 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import UserDtoPostRequest, UserDtoGetResponse
 from app.shared.dtos.auth import LoginOrRegisterDtoResponse
 from app.data_access.database.repositories import UserRepository
+from business_logic.exceptions import SaveIdRefreshTokenWhiteListError
 
 
 class RegisterUser(IUseCase):
@@ -35,11 +36,14 @@ class RegisterUser(IUseCase):
             tokens = self.jwt_manager.create_tokens(
                 user_info.id, user_info.user_name, user_info.role, refresh_token_id
             )
-            self.jwt_white_list.save_refresh_token(
-                user_id=user_info.id,
-                token_id=refresh_token_id,
-                ex=int((datetime.now(tz=timezone.utc) + JWTFacade.jwt_refresh_manager.EXPIRES_DELTA).timestamp())
-            )
+            try:
+                self.jwt_white_list.save_refresh_token(
+                    user_id=user_info.id,
+                    token_id=refresh_token_id,
+                    ex=int((datetime.now(tz=timezone.utc) + JWTFacade.jwt_refresh_manager.EXPIRES_DELTA).timestamp())
+                )
+            except SaveIdRefreshTokenWhiteListError:
+                pass
             return LoginOrRegisterDtoResponse(
                 user_info=user_info,
                 access_token=tokens.access_token,

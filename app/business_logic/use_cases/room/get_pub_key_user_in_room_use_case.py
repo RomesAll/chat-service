@@ -3,9 +3,10 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos.keys import PublicKeyDtoGet
 from app.data_access.database.repositories.room import UserInRoomRepository
 from app.data_access.database.repositories.user_keys import PublicKeyRepository
+from app.shared.log_config import LogMixin
 
 
-class GetPubKeyUserInRoomUseCase(IUseCase):
+class GetPubKeyUserInRoomUseCase(IUseCase, LogMixin):
     """Use case для получения всех публичных ключей пользователей"""
     def __init__(
             self,
@@ -22,4 +23,5 @@ class GetPubKeyUserInRoomUseCase(IUseCase):
             for user in users:
                 key = keys_repo.get_by_id(user.user_id)
                 user_key_info.update({user.user_id: key.model_dump(mode='json')})
+            self.log_debug(f'Получена информация о публичных ключах пользователей в комнате {room_id}')
             return user_key_info

@@ -10,9 +10,10 @@ from app.data_access.database.repositories.message import PrivateMessageReposito
 from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from bootstrap import get_bootstrap
+from app.shared.log_config import LogMixin
 
 
-class SendPrivateMsgAndSave(IUseCase):
+class SendPrivateMsgAndSave(IUseCase, LogMixin):
     """Use case для отправки сообщений другому пользователю"""
     def __init__(
             self,
@@ -35,8 +36,10 @@ class SendPrivateMsgAndSave(IUseCase):
             private_msg_repo = uow.get_repository(PrivateMessageRepository)
             file_msg_repo = uow.get_repository(MessageAttachmentsRepository)
             dto_response = private_msg_repo.save(dto_private_msg)
+            self.log_debug(f'Сообщение сохранено, id {dto_response.id}')
             if upload_file:
                 for dto_file in self.file_manager.upload_file(upload_file, dto_response):
                     file_msg_repo.save(dto_file)
+                    self.log_debug(f'Файл успешно сохранен {dto_file}')
             await self.private_msg_route.send_message(self.session_id, dto_response)
             return dto_response

@@ -2,9 +2,10 @@ from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import UserDtoGetResponse, UserDtoUpdateRequest
 from app.data_access.database.repositories import UserRepository
+from app.shared.log_config import LogMixin
 
 
-class UpdateUser(IUseCase):
+class UpdateUser(IUseCase, LogMixin):
     """Use case для обновления пользователей"""
     def __init__(
             self,
@@ -15,4 +16,6 @@ class UpdateUser(IUseCase):
     def execute(self, dto_user: UserDtoUpdateRequest) -> UserDtoGetResponse:
         with self.uow as uow:
             repo = uow.get_repository(UserRepository)
-            return repo.update(dto_user)
+            result = repo.update(dto_user)
+            self.log_debug(f'Информация о пользователе {dto_user.id} успешно обновлена')
+            return result

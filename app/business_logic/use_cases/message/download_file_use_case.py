@@ -6,9 +6,10 @@ from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import PrivateMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
+from app.shared.log_config import LogMixin
 
 
-class DownloadFileUseCase(IUseCase):
+class DownloadFileUseCase(IUseCase, LogMixin):
     """Use case для загрузки файла с сервера"""
     def __init__(
             self,
@@ -23,9 +24,13 @@ class DownloadFileUseCase(IUseCase):
             file_repo = uow.get_repository(MessageAttachmentsRepository)
             message_repo = uow.get_repository(PrivateMessageRepository)
             file_meta = file_repo.get_by_id(file_id)
+            self.log_debug(f'Получена метаинформация для файла с id {file_id}')
             message_info = message_repo.get_by_id(file_meta.message_id)
+            self.log_debug(f'Получена информация о сообщении {file_meta.message_id}')
             if user_upload_id not in [message_info.sender_id, message_info.recipient_id]:
-                raise PermissionFileDownError(user_upload_id, file_id)
+                exc = PermissionFileDownError(user_upload_id, file_id)
+                self.log_error(exc.message)
+                raise exc
             return StreamingResponse(
                 self.file_manager.read_file(file_meta.file_path),
                 media_type=file_meta.mime_type,
