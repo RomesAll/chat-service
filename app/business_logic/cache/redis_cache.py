@@ -1,29 +1,13 @@
-from typing import Self
 from redis import Redis
-from threading import Lock
+from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
+from app.business_logic.cache.session_key_storage import SessionKeyStorage
+from app.business_logic.singleton import Singleton
 
-from business_logic.cache.jwt_white_list import JWTWhiteListCache
-from business_logic.cache.session_key_storage import SessionKeyStorage
 
-
-class RedisCache:
+class RedisCache(Singleton):
     """Потокобезопасный singleton для redis кеша"""
-    _instance: Self | None = None
-    _lock = Lock()
-
-    def __new__(cls, *args, **kwargs) -> Self:
-        if not cls._instance:
-            with cls._lock:
-                if not cls._instance:
-                    cls._instance = super().__new__(cls)
-        if cls._instance:
-            return cls._instance
-        else:
-            raise Exception('Ошибка создание singleton RedisCache')
-
     def __init__(self, url: str):
-        if hasattr(self, '_is_init'):
-            return
+        super().__init__()
         with self._lock:
             if hasattr(self, '_is_init'):
                 return
