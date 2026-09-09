@@ -1,10 +1,9 @@
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import PrivateMessageRepository
-from app.shared.dtos import MessageDtoGetResponse
+from app.shared.dtos import MessageDtoGetResponse, AuditPostDto
 from app.shared.log_config import LogMixin
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
 
 
 class GetPrivateMsgAndSave(IUseCase, LogMixin):

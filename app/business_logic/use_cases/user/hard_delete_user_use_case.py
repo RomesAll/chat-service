@@ -3,7 +3,7 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories import UserRepository
 from app.shared.log_config import LogMixin
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.shared.dtos import AuditPostDto
 
 
 class HardDeleteUser(IUseCase, LogMixin):

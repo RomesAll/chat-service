@@ -5,7 +5,7 @@ from app.business_logic.cache.session_key_storage import SessionKeyStorage
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.log_config import LogMixin
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.shared.dtos import AuditPostDto
 
 
 class LogoutUseCase(IUseCase, LogMixin):

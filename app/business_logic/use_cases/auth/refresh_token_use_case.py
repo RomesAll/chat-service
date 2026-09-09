@@ -2,12 +2,11 @@ from uuid import uuid4
 from app.business_logic.auth.jwt_manager import JWTFacade
 from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
-from app.shared.dtos import JWTRefreshTokenResponse
+from app.shared.dtos import JWTRefreshTokenResponse, AuditPostDto
 from app.shared.dtos.jwt import JWTTokenResponse
 from business_logic.decorators import audit_system
 from business_logic.exceptions import RefreshTokenInActive
 from app.shared.log_config import LogMixin
-from dtos import AuditPostDto
 
 
 class RefreshTokenUseCase(IUseCase, LogMixin):

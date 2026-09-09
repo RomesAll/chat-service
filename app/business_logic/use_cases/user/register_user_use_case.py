@@ -11,7 +11,7 @@ from app.shared.dtos.auth import LoginOrRegisterDtoResponse
 from app.data_access.database.repositories import UserRepository
 from business_logic.decorators import audit_system
 from business_logic.exceptions import SaveIdRefreshTokenWhiteListError
-from log_config import LogMixin
+from app.shared.log_config import LogMixin
 
 
 class RegisterUser(IUseCase, LogMixin):

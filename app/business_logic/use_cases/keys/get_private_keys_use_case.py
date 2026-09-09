@@ -4,7 +4,7 @@ from app.shared.dtos.keys import PrivateKeyDtoGet
 from app.data_access.database.repositories.user_keys import PrivateKeyRepository
 from app.shared.log_config import LogMixin
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.shared.dtos import AuditPostDto
 
 
 class GetPrivateKeysUseCase(IUseCase, LogMixin):

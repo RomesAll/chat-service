@@ -2,7 +2,7 @@ import logging
 from functools import wraps
 from app.shared.dtos import AuditPostDto
 from bootstrap import get_bootstrap
-from config import config
+from app.shared.config import config
 
 logger = logging.getLogger(config.log_info.log_name)
 

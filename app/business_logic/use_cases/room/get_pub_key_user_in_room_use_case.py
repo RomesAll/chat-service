@@ -5,7 +5,7 @@ from app.data_access.database.repositories.room import UserInRoomRepository
 from app.data_access.database.repositories.user_keys import PublicKeyRepository
 from app.shared.log_config import LogMixin
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.shared.dtos import AuditPostDto
 
 
 class GetPubKeyUserInRoomUseCase(IUseCase, LogMixin):

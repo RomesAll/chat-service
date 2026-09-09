@@ -19,8 +19,8 @@ from app.shared.dtos import (
 )
 from app.data_access.database.models.user import RoleEnum
 from app.presentation.dependencies.base import RequestClientDepends
-from dtos import ActionType, RequestClientDtoHandle
-from exceptions import RecordNotFound
+from app.shared.dtos import ActionType, RequestClientDtoHandle
+from app.data_access.exceptions import RecordNotFound
 
 route = APIRouter()
 bootstrap = get_bootstrap()

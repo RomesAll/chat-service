@@ -3,7 +3,7 @@ from app.business_logic.active_session.active_session_manager import ActiveSessi
 from app.business_logic.exceptions import SyncKeyError
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.shared.dtos import AuditPostDto
 
 
 class SyncPrivateKeysUseCase(IUseCase):

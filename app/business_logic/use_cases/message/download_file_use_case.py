@@ -8,7 +8,7 @@ from app.data_access.database.repositories.message import PrivateMessageReposito
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.shared.log_config import LogMixin
 from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.shared.dtos import AuditPostDto
 
 
 class DownloadFileUseCase(IUseCase, LogMixin):
