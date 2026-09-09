@@ -47,6 +47,20 @@ class LogLevelInfo(BaseModel):
     info_file_log: str
 
 
+class MongoDb(BaseModel):
+    """Конфиг для mongodb"""
+    host: str
+    port: int
+    db: str
+    password: SecretStr
+    username: str
+
+    @property
+    def url(self):
+        return (f'mongodb://{self.username}:{self.password.get_secret_value()}'
+                f'@{self.host}:{self.port}/?authSource=admin')
+
+
 class BaseConfig(BaseSettings):
     """Базовый конфиг для хранения настроек проекта"""
     postgres: PostgresqlSettings
@@ -55,6 +69,7 @@ class BaseConfig(BaseSettings):
     jwtrefresh: JWTSettings
     upload_file_path: str = f'{BASE_DIR}/user-files'
     log_info: LogLevelInfo
+    mongodb: MongoDb
 
 
 class DevelopConfig(BaseConfig):
@@ -65,3 +80,5 @@ class DevelopConfig(BaseConfig):
         env_nested_delimiter='__',
         extra='ignore'
     )
+
+config = DevelopConfig()
