@@ -33,7 +33,7 @@ from app.business_logic.use_cases.user.register_user_use_case import RegisterUse
 from app.business_logic.use_cases.user.soft_delete_user_use_case import SoftDeleteUser
 from app.business_logic.use_cases.user.update_user_use_case import UpdateUser
 
-__version__ = 'v1.0.1'
+__version__ = 'v1.1.1'
 __author__ = 'RomesAll'
 __all__ = [
     'LoginUseCase',

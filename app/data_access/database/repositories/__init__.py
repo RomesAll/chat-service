@@ -6,7 +6,7 @@ from .user import UserRepository
 from .exception_handler import HandleSqlAlchemyException
 from .user_keys import PublicKeyRepository, PrivateKeyRepository
 
-__version__ = 'v1.0.1'
+__version__ = 'v1.1.1'
 __author__ = 'RomesAll'
 __all__ = [
     'BaseRepository',
