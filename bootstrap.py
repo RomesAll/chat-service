@@ -3,8 +3,9 @@ from app.data_access.database.database import Database
 from app.business_logic.active_session.active_session_manager import ActiveSessionManager
 from app.business_logic.auth.jwt_manager import JWTAccessManager, JWTRefreshManager
 from app.business_logic.encryption.asymmetric import AsymmetricEncrypt
+from app.business_logic.audit_service import AuditService
+from app.business_logic.cache.redis_cache import RedisCache
 from datetime import timedelta
-from business_logic.cache.redis_cache import RedisCache
 
 
 class Bootstrap:
@@ -14,6 +15,7 @@ class Bootstrap:
         self._postgres_db: Database | None = None
         self._redis_cache: RedisCache | None = None
         self._asymmetric_encrypt: AsymmetricEncrypt | None = None
+        self._audit_service: AuditService | None = None
         self.config = config
 
     def init_app(self):
@@ -23,6 +25,11 @@ class Bootstrap:
         self._init_database()
         self._init_active_session()
         self._init_app_keys()
+        self._init_audit_service()
+
+    def _init_audit_service(self):
+        """Инициализация аудит-сервиса"""
+        self._audit_service = AuditService(url=self.config.mongodb.url)
 
     def _init_cache_config(self):
         """Инициализация кеша"""
@@ -77,6 +84,12 @@ class Bootstrap:
         if not self._asymmetric_encrypt:
             raise Exception
         return self._asymmetric_encrypt
+
+    @property
+    def audit_service(self):
+        if not self._asymmetric_encrypt:
+            raise Exception
+        return self._audit_service
 
 
 bootstrap: Bootstrap | None = None
