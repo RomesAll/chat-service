@@ -1,11 +1,11 @@
 from logging import getLogger, Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
-from bootstrap import get_bootstrap
+from config import config
 from .filters import JsonFormatter, InfoOrDownFilter
 
-log_info = get_bootstrap().config.log_info
+log_info = config.log_info
 
-app_logger = getLogger('app_logger')
+app_logger = getLogger(log_info.log_name)
 app_logger.setLevel(log_info.base_log)
 
 console_format = Formatter(
@@ -20,7 +20,7 @@ console_handler.setFormatter(console_format)
 console_handler.setLevel(log_info.base_log)
 
 file_error_handler = RotatingFileHandler(
-    filename='log-error.json',
+    filename='logs/error/log-error.json',
     mode='a',
     maxBytes=1048576,
     backupCount=10,
@@ -29,13 +29,13 @@ file_error_handler.setFormatter(error_file_format)
 file_error_handler.setLevel(log_info.error_file_log)
 
 file_info_handler = RotatingFileHandler(
-    filename='log-info.json',
+    filename='logs/info/log-info.json',
     mode='a',
     maxBytes=1048576,
     backupCount=10
 )
 file_info_handler.setFormatter(info_file_format)
-file_info_handler.addFilter(InfoOrDownFilter)
+file_info_handler.addFilter(InfoOrDownFilter())
 file_info_handler.setLevel(log_info.info_file_log)
 
 app_logger.addHandler(console_handler)
