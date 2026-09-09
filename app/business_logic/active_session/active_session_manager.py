@@ -2,7 +2,7 @@ from uuid import UUID
 from starlette.websockets import WebSocket
 from app.shared.dtos import ActiveSession, UserDtoBriefInfo
 from app.business_logic.exceptions import UserConnectionNotFound, UserNotFoundError
-from app.shared.log_config import LogMixin
+from log_config import LogMixin
 
 
 class ActiveSessionManager(LogMixin):

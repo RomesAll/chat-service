@@ -3,6 +3,8 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos.keys import PublicKeyDtoGet
 from app.data_access.database.repositories.user_keys import PublicKeyRepository
 from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
+from dtos import AuditPostDto
 
 
 class GetPublicKeyUseCase(IUseCase, LogMixin):
@@ -10,10 +12,16 @@ class GetPublicKeyUseCase(IUseCase, LogMixin):
     def __init__(
             self,
             uow: UnitOfWork,
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
+        self.dto_audit = dto_audit
 
-    def execute(self, user_id: str) -> PublicKeyDtoGet:
+    @audit_system
+    def execute(
+            self, *,
+            user_id: str,
+    ) -> PublicKeyDtoGet:
         with self.uow as uow:
             repo: PublicKeyRepository = uow.get_repository(PublicKeyRepository)
             result = repo.get_by_id(user_id)

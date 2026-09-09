@@ -1,23 +1,33 @@
 from fastapi import APIRouter, Response, status, Depends
 from starlette.responses import JSONResponse
 from bootstrap import get_bootstrap
-from app.business_logic.auth.jwt_manager import JWTFacade
-from app.business_logic.auth.password_manager import PasswordManager
-from app.business_logic.exceptions import CheckPswError
+from app.business_logic.auth import JWTFacade, PasswordManager
+from app.business_logic.exceptions import CheckPswError, RefreshTokenInActive, RefreshTokenIdNotFound
 from app.business_logic.unit_of_work import UnitOfWork
-from app.business_logic.use_cases.auth.login_use_case import LoginUseCase
-from app.shared.dtos import UserDtoPostRequest
-from app.shared.dtos.auth import LoginDtoRequest
-from app.business_logic.use_cases.auth.logout_use_case import LogoutUseCase
-from app.business_logic.use_cases.auth.refresh_token_use_case import RefreshTokenUseCase
-from app.business_logic.use_cases.user.register_user_use_case import RegisterUser
-from app.shared.dtos import JWTRefreshTokenResponse, JWTTokenResponse
-from app.shared.dtos.auth import LoginOrRegisterDtoResponse
 from app.data_access.database.models.user import RoleEnum
-from app.presentation.dependencies.auth import RoleChecker
+from app.presentation.dependencies.base import RequestClientDepends
+from app.business_logic.use_cases import (
+    LoginUseCase,
+    LogoutUseCase,
+    RefreshTokenUseCase,
+    RegisterUser,
+)
+from app.shared.dtos import (
+    UserDtoPostRequest,
+    LoginDtoRequest,
+    JWTRefreshTokenResponse,
+    JWTTokenResponse,
+    LoginOrRegisterDtoResponse,
+    AuditPostDto,
+    ActionType,
+)
+from dtos import RequestClientDtoHandle
+from presentation.dependencies.audit import AuditDep
+
 
 route = APIRouter()
 bootstrap = get_bootstrap()
+
 
 @route.post(
     path='/auth/login',
@@ -25,14 +35,21 @@ bootstrap = get_bootstrap()
     summary='Вход с систему',
     operation_id="login_user_operation",
 )
-def login_user(credentials: LoginDtoRequest):
+def login_user(
+        credentials: LoginDtoRequest,
+        dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.LOGIN))
+):
     try:
+        dto_audit.user_id = credentials.user_id
         result: LoginOrRegisterDtoResponse = LoginUseCase(
             uow=UnitOfWork(bootstrap.database),
             jwt_manager=JWTFacade,
             psw_manager=PasswordManager,
-            jwt_white_list=bootstrap.jwt_white_list
-        ).execute(credentials)
+            jwt_white_list=bootstrap.redis_cache.jwt_white_list,
+            dto_audit=dto_audit
+        ).execute(
+            dto_request_data=credentials,
+        )
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=result.model_dump(mode='json'),
@@ -52,13 +69,21 @@ def login_user(credentials: LoginDtoRequest):
     description='Добавление нового пользователя в систему',
     operation_id="register_user_operation",
 )
-def register_user(new_user: UserDtoPostRequest, return_record: bool = True):
+def register_user(
+        new_user: UserDtoPostRequest,
+        dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.REGISTER)),
+        return_record: bool = True
+):
+    dto_audit.user_id = new_user.id
     result: LoginOrRegisterDtoResponse = RegisterUser(
         uow=UnitOfWork(bootstrap.database),
         jwt_manager=JWTFacade,
         psw_manager=PasswordManager,
-        jwt_white_list=bootstrap.jwt_white_list
-    ).execute(new_user)
+        jwt_white_list=bootstrap.redis_cache.jwt_white_list,
+        dto_audit=dto_audit
+    ).execute(
+        dto_register_user=new_user,
+    )
     if not return_record:
         return Response(
             status_code=status.HTTP_204_NO_CONTENT
@@ -78,17 +103,36 @@ def register_user(new_user: UserDtoPostRequest, return_record: bool = True):
     operation_id="refresh_tokens_operation",
 )
 def refresh_tokens(
-    refresh_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTRefreshTokenResponse](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.REFRESH_TOKENS
+            ),
+        )
 ):
-    result: JWTTokenResponse = RefreshTokenUseCase(
-        jwt_facade=JWTFacade,
-        jwt_white_list=bootstrap.jwt_white_list
-    ).execute(refresh_token)
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
-    )
+    try:
+        result: JWTTokenResponse = RefreshTokenUseCase(
+            jwt_facade=JWTFacade,
+            jwt_white_list=bootstrap.redis_cache.jwt_white_list,
+            dto_audit=request_client_dep.dto_audit
+        ).execute(
+            refresh_token=request_client_dep.token_info,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content=result.model_dump(mode='json'),
+            media_type="application/json"
+        )
+    except RefreshTokenInActive:
+        return Response(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content='Токен не активен, пройдите аутентификацию заново'
+        )
+    except RefreshTokenIdNotFound:
+        return Response(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content='Токен недействителен, пройдите аутентификацию заново'
+        )
 
 
 @route.post(
@@ -99,16 +143,22 @@ def refresh_tokens(
     operation_id="logout_user_operation",
 )
 def logout_user_operation(
-    refresh_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTRefreshTokenResponse](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.LOGOUT
+            ),
+        )
 ):
     is_delete_refresh, is_delete_session_key = LogoutUseCase(
-        session_key_storage=bootstrap.session_key_storage,
+        session_key_storage=bootstrap.redis_cache.session_key_storage,
         active_session_manager=bootstrap.active_session_manager,
-        white_list=bootstrap.jwt_white_list
+        white_list=bootstrap.redis_cache.jwt_white_list,
+        dto_audit=request_client_dep.dto_audit
     ).execute(
-        user_id=refresh_token.user_id,
-        session_id=refresh_token.session_id,
-        refresh_token_id=refresh_token.refresh_id
+        user_id=request_client_dep.token_info.user_id,
+        session_id=request_client_dep.token_info.session_id,
+        refresh_token_id=request_client_dep.token_info.refresh_id,
     )
     return Response(
         status_code=status.HTTP_200_OK,

@@ -10,10 +10,11 @@ from app.shared.dtos import (
     JWTAccessToken,
     RoomDtoPostRequest,
     UserInRoomPostRequest,
+    RequestClientDtoHandle,
+    ActionType
 )
 from app.data_access.database.models.user import RoleEnum
-from app.presentation.dependencies.auth import RoleChecker
-
+from app.presentation.dependencies.base import RequestClientDepends
 
 route = APIRouter()
 bootstrap = get_bootstrap()
@@ -26,10 +27,16 @@ bootstrap = get_bootstrap()
 )
 def save_new_room(
         dto_request: RoomDtoPostRequest,
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.SAVE_NEW_ROOM
+            )
+        )
 ):
     result = SaveRoomUseCase(
         uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(
         dto_request=dto_request,
     )
@@ -48,10 +55,16 @@ def save_new_room(
 def add_user_in_room(
         user_id: str,
         room_id: UUID,
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.ADD_USER_IN_ROOM
+            )
+        )
 ):
     result = SaveUserInRoomUseCase(
         uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(
         dto_request=UserInRoomPostRequest(
             room_id=room_id,
@@ -72,10 +85,16 @@ def add_user_in_room(
 )
 def get_pub_key_users_in_room(
         room_id: UUID,
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_PUBLIC_KEY_USER_IN_ROOM
+            )
+        )
 ):
     results = GetPubKeyUserInRoomUseCase(
         uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(room_id=room_id)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,

@@ -4,6 +4,8 @@ from app.shared.dtos.keys import PublicKeyDtoGet
 from app.data_access.database.repositories.room import UserInRoomRepository
 from app.data_access.database.repositories.user_keys import PublicKeyRepository
 from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
+from dtos import AuditPostDto
 
 
 class GetPubKeyUserInRoomUseCase(IUseCase, LogMixin):
@@ -11,9 +13,12 @@ class GetPubKeyUserInRoomUseCase(IUseCase, LogMixin):
     def __init__(
             self,
             uow: UnitOfWork,
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
+        self.dto_audit = dto_audit
 
+    @audit_system
     def execute(self, room_id) -> dict[str, PublicKeyDtoGet]:
         with self.uow as uow:
             keys_repo = uow.get_repository(PublicKeyRepository)

@@ -8,7 +8,9 @@ from uuid import UUID
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
 from business_logic.active_session.active_session_manager import ActiveSessionManager
 from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
 from business_logic.exceptions import SaveSessionKeyError
+from dtos import AuditPostDto
 
 
 class HandshakeUseCase(IUseCase, LogMixin):
@@ -24,14 +26,17 @@ class HandshakeUseCase(IUseCase, LogMixin):
             active_session_manager: ActiveSessionManager,
             user_connection: WebSocket,
             asymmetric_encrypt: AsymmetricEncrypt,
-            session_key_storage: SessionKeyStorage
+            session_key_storage: SessionKeyStorage,
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
         self.active_session_manager = active_session_manager
         self.user_connection = user_connection
         self.asymmetric_encrypt = asymmetric_encrypt
         self.session_key_storage = session_key_storage
+        self.dto_audit = dto_audit
 
+    @audit_system
     async def execute(self, session_id: UUID, user_brief_info: UserDtoBriefInfo, websocket: WebSocket):
         await self.user_connection.send_json(WebsocketPackage(
             action_type=WebsocketActionType.GET_SERVER_PUBLIC_KEY.value,

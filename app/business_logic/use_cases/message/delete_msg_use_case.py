@@ -8,7 +8,9 @@ from app.shared.dtos import MessageType, GroupMessageDtoResponse, MessageDtoGetR
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
 from app.data_access.database.repositories import PrivateMessageRepository
 from app.data_access.database.repositories.message import GroupMessageRepository
+from business_logic.decorators import audit_system
 from business_logic.exceptions import MessageOwnerInCorrect
+from dtos import AuditPostDto
 from log_config import LogMixin
 
 
@@ -19,14 +21,23 @@ class DeleteMsgUseCase(IUseCase, LogMixin):
             uow: UnitOfWork,
             type_message: MessageType,
             active_session_manager: ActiveSessionManager,
-            file_manager: type[FileManager]
+            file_manager: type[FileManager],
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
         self.type_message = type_message
         self.active_session_manager = active_session_manager
         self.file_manager = file_manager
+        self.dto_audit = dto_audit
 
-    async def execute(self, message_id: UUID, sender_id: str, type_msg: MessageType) -> UUID:
+    @audit_system
+    async def execute(
+            self,
+            message_id: UUID,
+            sender_id: str,
+            type_msg: MessageType,
+
+    ) -> UUID:
         mapping_msg_type = {
             type_msg.PRIVATE_MSG: self._get_user_connection_in_private_msg,
             type_msg.GROUP_MSG: self._get_user_connection_in_group_msg

@@ -1,20 +1,30 @@
 from starlette.responses import Response
 from bootstrap import get_bootstrap
-from app.business_logic.use_cases.keys.get_private_keys_use_case import GetPrivateKeysUseCase
-from app.business_logic.use_cases.keys.save_private_keys_use_case import SavePrivateKeysUseCase
-from app.business_logic.use_cases.keys.save_public_key_use_case import SavePublicKeyUseCase
-from app.business_logic.use_cases.keys.sync_private_keys_use_case import SyncPrivateKeysUseCase
+from app.business_logic.use_cases import (
+    GetPrivateKeysUseCase,
+    SavePrivateKeysUseCase,
+    SavePublicKeyUseCase,
+    SyncPrivateKeysUseCase,
+    GetPublicKeyUseCase,
+)
 from fastapi import APIRouter, status, Depends
 from starlette.responses import JSONResponse
 from app.business_logic.unit_of_work import UnitOfWork
-from app.business_logic.use_cases.keys.get_public_key_use_case import GetPublicKeyUseCase
-from app.shared.dtos import JWTAccessToken
-from app.shared.dtos.keys import PublicKeyDtoCreate, PrivateKeyDtoCreate, PublicKeyRequest, PrivateKeyRequest
+from app.shared.dtos import (
+    JWTAccessToken,
+    PublicKeyDtoCreate,
+    PrivateKeyDtoCreate,
+    PublicKeyRequest,
+    PrivateKeyRequest
+)
 from app.data_access.database.models.user import RoleEnum
-from app.presentation.dependencies.auth import RoleChecker
+from app.presentation.dependencies.base import RequestClientDepends
+from dtos import ActionType, RequestClientDtoHandle
+from exceptions import RecordNotFound
 
 route = APIRouter()
 bootstrap = get_bootstrap()
+
 
 @route.get(
     path='/users/me/keys/public-key',
@@ -23,16 +33,30 @@ bootstrap = get_bootstrap()
     operation_id="get_my_public_key",
 )
 async def get_my_public_key(
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_USER_PUBLIC_KEY
+            )
+        )
 ):
-    result = GetPublicKeyUseCase(
-        uow=UnitOfWork(bootstrap.database)
-    ).execute(access_token.user_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
-    )
+    try:
+        result = GetPublicKeyUseCase(
+            uow=UnitOfWork(bootstrap.database),
+            dto_audit=request_client_dep.dto_audit
+        ).execute(
+            user_id=request_client_dep.token_info.user_id,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=result.model_dump(mode='json'),
+            media_type="application/json"
+        )
+    except RecordNotFound:
+        return Response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content='Публичный ключ не найден'
+        )
 
 
 @route.get(
@@ -43,16 +67,30 @@ async def get_my_public_key(
 )
 async def get_user_public_key(
         user_id: str,
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_USER_PUBLIC_KEY
+            )
+        )
 ):
-    result = GetPublicKeyUseCase(
-        uow=UnitOfWork(bootstrap.database)
-    ).execute(user_id)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
-    )
+    try:
+        result = GetPublicKeyUseCase(
+            uow=UnitOfWork(bootstrap.database),
+            dto_audit=request_client_dep.dto_audit
+        ).execute(
+            user_id=user_id,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=result.model_dump(mode='json'),
+            media_type="application/json"
+        )
+    except RecordNotFound:
+        return Response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content='Публичный ключ не найден'
+        )
 
 
 @route.post(
@@ -63,11 +101,20 @@ async def get_user_public_key(
 )
 def sync_devices_user(
         encrypt_private_keys: dict[str, str],
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.SYNC_DEVICES_USER
+            )
+        )
 ):
     SyncPrivateKeysUseCase(
-        active_session=bootstrap.active_session_manager
-    ).execute(access_token.user_id, encrypt_private_keys)
+        active_session=bootstrap.active_session_manager,
+        dto_audit=request_client_dep.dto_audit
+    ).execute(
+        user_id=request_client_dep.token_info.user_id,
+        encrypt_private_keys=encrypt_private_keys,
+    )
     return Response(
         status_code=status.HTTP_200_OK,
         content='Новый ключ отправлен на другие подключения для синхронизации'
@@ -81,22 +128,29 @@ def sync_devices_user(
     operation_id="get_private_key",
 )
 def get_private_keys(
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_USER_PRIVATE_KEYS
+            )
+        )
 ):
     try:
         results = GetPrivateKeysUseCase(
-            uow=UnitOfWork(bootstrap.database)
-        ).execute(access_token.user_id)
+            uow=UnitOfWork(bootstrap.database),
+            dto_audit=request_client_dep.dto_audit
+        ).execute(
+            user_id=request_client_dep.token_info.user_id,
+        )
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content=[res.model_dump(mode='json') for res in results],
             media_type = "application/json"
         )
-    except Exception:
-        return JSONResponse(
+    except RecordNotFound:
+        return Response(
             status_code=status.HTTP_404_NOT_FOUND,
-            content='Приватных ключей нет',
-            media_type="application/json"
+            content='Приватный ключи не найдены'
         )
 
 
@@ -108,18 +162,26 @@ def get_private_keys(
 )
 def save_public_key(
         key_info: PublicKeyRequest,
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.SAVE_PUBLIC_KEY
+            )
+        )
 ):
     SavePublicKeyUseCase(
-        uow=UnitOfWork(bootstrap.database)
-    ).execute(PublicKeyDtoCreate(
-        user_id=access_token.user_id,
-        public_key=key_info.public_key,
-        version=key_info.version
-    ))
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(
+        key_info=PublicKeyDtoCreate(
+            user_id=request_client_dep.token_info.user_id,
+            public_key=key_info.public_key,
+            version=key_info.version
+        ),
+    )
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
-        content=f'Публичный ключ пользователя {access_token.user_id} сохранен',
+        content=f'Публичный ключ пользователя {request_client_dep.token_info.user_id} сохранен',
         media_type="application/json"
     )
 
@@ -132,15 +194,23 @@ def save_public_key(
 )
 def save_private_key(
         key_info: PrivateKeyRequest,
-        access_token: JWTAccessToken = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.SAVE_PRIVATE_KEY
+            )
+        )
 ):
     results = SavePrivateKeysUseCase(
-        uow=UnitOfWork(bootstrap.database)
-    ).execute(PrivateKeyDtoCreate(
-        user_id=access_token.user_id,
-        private_key=key_info.private_key,
-        version=key_info.version
-    ))
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(
+        key_info=PrivateKeyDtoCreate(
+            user_id=request_client_dep.token_info.user_id,
+            private_key=key_info.private_key,
+            version=key_info.version
+        ),
+    )
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content=[res.model_dump(mode='json') for res in results],

@@ -1,5 +1,5 @@
 from uuid import uuid4
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.responses import JSONResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -9,17 +9,24 @@ from app.business_logic.use_cases.encryption.handshake_use_case import Handshake
 from app.business_logic.use_cases.user.deactivate_user_use_case import DeactivateUseCase
 from app.business_logic.use_cases.user.get_one_user_use_case import GetOneUsers
 from app.shared.dtos import UserDtoBriefInfo
+from dtos import AuditPostDto, ActionType
+from presentation.dependencies import AuditDep
 
 route = APIRouter()
 bootstrap = get_bootstrap()
+
 
 @route.websocket("/ws/{client_id}")
 async def realtime_connection_v1(
         websocket: WebSocket,
         client_id: str,
+        dto_audit: AuditPostDto = Depends(AuditDep)
 ):
+    dto_audit.user_id = client_id
+    dto_audit.action = ActionType.GET_ONE_USER
     user_brief_info: UserDtoBriefInfo | None = GetOneUsers(
-        uow=UnitOfWork(bootstrap.database)
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=dto_audit
     ).execute(client_id).get_brief_info()
     if not user_brief_info:
         return JSONResponse(
@@ -28,31 +35,29 @@ async def realtime_connection_v1(
         )
     await websocket.accept()
     session_id = uuid4()
+    dto_audit.action = ActionType.HANDSHAKE
     await HandshakeUseCase(
         uow=UnitOfWork(bootstrap.database),
+        active_session_manager = bootstrap.active_session_manager,
         user_connection=websocket,
         asymmetric_encrypt=bootstrap.asymmetric_encrypt,
-        session_key_storage=bootstrap.session_key_storage
-    ).execute(session_id, user_brief_info)
-    bootstrap.active_session_manager.add_connection(
-        user_info=user_brief_info,
-        session_id=session_id,
-        connection=websocket
-    )
+        session_key_storage=bootstrap.redis_cache.session_key_storage,
+        dto_audit=dto_audit
+    ).execute(session_id, user_brief_info, websocket)
     try:
         while True:
             raw_data: dict = await websocket.receive_json()
             print(raw_data)
     except WebSocketDisconnect:
-        is_delete_session_key, is_delete_websocket_conn = DeactivateUseCase(
+        dto_audit.action = ActionType.DEACTIVATE
+        DeactivateUseCase(
             active_session_manager=bootstrap.active_session_manager,
-            session_key_storage=bootstrap.session_key_storage
+            session_key_storage=bootstrap.redis_cache.session_key_storage
         ).execute(
             user_id=client_id,
             session_id=session_id
         )
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content=f'Пользователь {client_id} отключился, сессионный '
-                    f'ключ удален из кеша: {is_delete_session_key} и удален из активной сессии {is_delete_websocket_conn}'
+            content=f'Пользователь {client_id} отключился'
         )

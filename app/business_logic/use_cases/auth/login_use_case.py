@@ -10,6 +10,8 @@ from app.shared.dtos import UserDtoGetResponse
 from app.shared.dtos.auth import LoginDtoRequest, LoginOrRegisterDtoResponse
 from app.data_access.database.repositories import UserRepository
 from app.shared.log_config import LogMixin
+from app.shared.dtos import AuditPostDto
+from business_logic.decorators import audit_system
 
 
 class LoginUseCase(IUseCase, LogMixin):
@@ -19,14 +21,20 @@ class LoginUseCase(IUseCase, LogMixin):
             uow: UnitOfWork,
             psw_manager: type[PasswordManager],
             jwt_manager: type[JWTFacade],
-            jwt_white_list: JWTWhiteListCache
+            jwt_white_list: JWTWhiteListCache,
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
         self.psw_manager = psw_manager
         self.jwt_manager = jwt_manager
         self.jwt_white_list = jwt_white_list
+        self.dto_audit = dto_audit
 
-    def execute(self, dto_request_data: LoginDtoRequest) -> LoginOrRegisterDtoResponse:
+    @audit_system
+    def execute(
+            self, *,
+            dto_request_data: LoginDtoRequest
+    ) -> LoginOrRegisterDtoResponse:
         with self.uow as uow:
             user_repo = uow.get_repository(UserRepository)
             user_info: UserDtoGetResponse = user_repo.get_by_id(dto_request_data.user_id)

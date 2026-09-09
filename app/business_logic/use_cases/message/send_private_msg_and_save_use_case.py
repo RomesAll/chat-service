@@ -9,8 +9,9 @@ from app.data_access.database.models.message_attachments import MimeType
 from app.data_access.database.repositories.message import PrivateMessageRepository
 from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
-from bootstrap import get_bootstrap
 from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
+from dtos import AuditPostDto
 
 
 class SendPrivateMsgAndSave(IUseCase, LogMixin):
@@ -20,17 +21,20 @@ class SendPrivateMsgAndSave(IUseCase, LogMixin):
             session_id: UUID,
             uow: UnitOfWork,
             private_msg_route: PrivateMessageRoute,
-            file_manager: type[FileManager]
+            file_manager: type[FileManager],
+            dto_audit: AuditPostDto
     ):
         self.session_id = session_id
         self.uow = uow
         self.private_msg_route = private_msg_route
         self.file_manager=file_manager
+        self.dto_audit = dto_audit
 
+    @audit_system
     async def execute(
             self,
             dto_private_msg: PrivateMessageDtoPostRequest,
-            upload_file: list[UploadFile] | None = None
+            upload_file: list[UploadFile] | None = None,
     ) -> MessageDtoGetResponse:
         with self.uow as uow:
             private_msg_repo = uow.get_repository(PrivateMessageRepository)

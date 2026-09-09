@@ -1,7 +1,5 @@
-from bootstrap import get_bootstrap
 import logging
-
-logger_name = get_bootstrap().config.log_info.log_name
+from config import config
 
 
 class LogMixin:
@@ -9,7 +7,7 @@ class LogMixin:
     @property
     def get_logger(self):
         """Получение логгера"""
-        return logging.getLogger(logger_name)
+        return logging.getLogger(config.log_info.log_name)
 
     def log_debug(self, msg: str):
         """
@@ -42,4 +40,4 @@ class LogMixin:
         :param is_exp: является ли ошибка исключением (для вывода исключения в файл)
         :return:
         """
-        self.get_logger.error(msg)
+        self.get_logger.error(msg, exc_info=is_exp)

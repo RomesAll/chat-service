@@ -8,8 +8,10 @@ from app.shared.dtos import GroupMessageDtoPostRequest, GroupMessageDtoResponse
 from app.data_access.database.repositories.message import GroupMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.data_access.database.repositories.room import RoomRepository, UserInRoomRepository
+from business_logic.decorators import audit_system
 from business_logic.exceptions import UserNotFoundInRoom, RoomNotFound
 from app.shared.log_config import LogMixin
+from dtos import AuditPostDto
 
 
 class SendGroupMsgAndSave(IUseCase, LogMixin):
@@ -19,17 +21,20 @@ class SendGroupMsgAndSave(IUseCase, LogMixin):
             session_id: UUID,
             uow: UnitOfWork,
             group_msg_route: GroupMessageRoute,
-            file_manager: type[FileManager]
+            file_manager: type[FileManager],
+            dto_audit: AuditPostDto
     ):
         self.session_id = session_id
         self.uow = uow
         self.group_msg_route = group_msg_route
         self.file_manager = file_manager
+        self.dto_audit = dto_audit
 
+    @audit_system
     async def execute(
             self,
             dto_group_msg: GroupMessageDtoPostRequest,
-            upload_file: list[UploadFile] | None = None
+            upload_file: list[UploadFile] | None = None,
     ) -> GroupMessageDtoResponse:
         with self.uow as uow:
             group_msg_repo = uow.get_repository(GroupMessageRepository)

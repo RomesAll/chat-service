@@ -7,6 +7,8 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import PrivateMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
+from dtos import AuditPostDto
 
 
 class DownloadFileUseCase(IUseCase, LogMixin):
@@ -14,12 +16,19 @@ class DownloadFileUseCase(IUseCase, LogMixin):
     def __init__(
             self,
             uow: UnitOfWork,
-            file_manager: type[FileManager]
+            file_manager: type[FileManager],
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
         self.file_manager = file_manager
+        self.dto_audit = dto_audit
 
-    async def execute(self, user_upload_id: str, file_id: UUID) -> StreamingResponse:
+    @audit_system
+    async def execute(
+            self,
+            user_upload_id: str,
+            file_id: UUID,
+    ) -> StreamingResponse:
         with self.uow as uow:
             file_repo = uow.get_repository(MessageAttachmentsRepository)
             message_repo = uow.get_repository(PrivateMessageRepository)

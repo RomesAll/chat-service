@@ -40,7 +40,7 @@ class GroupMessageRoute(IMessageRoute, LogMixin):
                 session_id, message_send_request = await self.processing_send_queue.get()
                 if not hasattr(message_send_request, 'payload'):
                     raise Exception
-                keys_info: list[dict] = message_send_request.payload.get('keys')
+                keys_info: list[dict] = message_send_request.payload.get('keys', [])
                 users_id: list[str] = [key['user_id'] for key in keys_info]
                 active_sessions: list[ActiveSession] = []
                 for user_id in users_id:
