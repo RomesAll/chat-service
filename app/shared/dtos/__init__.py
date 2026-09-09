@@ -1,3 +1,11 @@
+from .auth import (
+    LoginDtoRequest,
+    LoginOrRegisterDtoResponse
+)
+from .audit import (
+    AuditPostDto,
+    ActionType
+)
 from .base import (
     OperatorEnum,
     SortEnum,
@@ -9,7 +17,14 @@ from .base import (
     BaseDtoClientRequest,
     BaseDtoGetResponse,
     BaseDtoPostDeleteRequest,
-    BaseDtoPutPathRequest
+    BaseDtoPutPathRequest,
+    RequestClientDtoHandle
+)
+from .keys import (
+    PublicKeyDtoCreate,
+    PrivateKeyDtoCreate,
+    PublicKeyRequest,
+    PrivateKeyRequest
 )
 from .message import (
     MessageType,
@@ -55,6 +70,8 @@ from .group_message import (
     GroupMessageDtoPostRequest,
 )
 
+__version__ = 'v1.1.1'
+__author__ = 'RomesAll'
 __all__ = [
     'GroupMessageDtoResponse',
     'GroupMessageDtoDeleteRequest',
@@ -97,5 +114,14 @@ __all__ = [
     'BaseMessageDto',
     'MessageAttachmentsDtoGetResponse',
     'MessageAttachmentsDtoPostRequest',
-    'MessageAttachmentsDeleteRequest'
+    'MessageAttachmentsDeleteRequest',
+    'LoginDtoRequest',
+    'LoginOrRegisterDtoResponse',
+    'PublicKeyDtoCreate',
+    'PrivateKeyDtoCreate',
+    'PublicKeyRequest',
+    'PrivateKeyRequest',
+    'AuditPostDto',
+    'ActionType',
+    'RequestClientDtoHandle'
 ]

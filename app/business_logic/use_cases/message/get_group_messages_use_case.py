@@ -4,9 +4,11 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import GroupMessageRepository
 from app.shared.dtos import GroupMessageDtoResponse
 from app.data_access.database.repositories.room import UserInRoomRepository
+from business_logic.exceptions import UserNotFoundInRoom
+from app.shared.log_config import LogMixin
 
 
-class GetGroupMsg(IUseCase):
+class GetGroupMsg(IUseCase, LogMixin):
     """Use case для получения сообщений с пользователем"""
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
@@ -20,5 +22,7 @@ class GetGroupMsg(IUseCase):
             group_msg_repo = uow.get_repository(GroupMessageRepository)
             user_in_room_repo = uow.get_repository(UserInRoomRepository)
             if not user_in_room_repo.check_exist_user_in_room(user_id, room_id):
-                raise Exception
+                exc = UserNotFoundInRoom(user_id, room_id)
+                self.log_error(exc.message)
+                raise exc
             return group_msg_repo.get_message_by_room(room_id)

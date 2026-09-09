@@ -1,8 +1,11 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum, unique
-from typing import Any
+from typing import Any, TypeVar, Generic
 from uuid import UUID
 from pydantic import BaseModel, Field, model_validator, field_validator, ConfigDict
+from .jwt import JWTBaseToken
+from .audit import AuditPostDto
 
 
 class OperatorEnum(str, Enum):
@@ -23,6 +26,14 @@ class SortEnum(str, Enum):
     """Перечисление вариантов сортировок"""
     ASC = 'asc'
     DESC = 'desc'
+
+TToken = TypeVar('TToken', bound=JWTBaseToken)
+
+@dataclass
+class RequestClientDtoHandle(Generic[TToken]):
+    """Зависимости DI для запросов в end-point"""
+    token_info: TToken
+    dto_audit: AuditPostDto
 
 
 class PaginationDto(BaseModel):

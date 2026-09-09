@@ -6,10 +6,10 @@ from app.business_logic.use_cases.user.update_user_use_case import UpdateUser
 from app.shared.dtos import (
     UserDtoGetResponse,
     UserDtoUpdateRequest,
-    JWTRefreshTokenResponse
 )
 from app.data_access.database.models.user import RoleEnum
-from app.presentation.dependencies.auth import RoleChecker
+from dtos import RequestClientDtoHandle, JWTAccessToken, ActionType
+from presentation.dependencies import RequestClientDepends
 
 route = APIRouter()
 bootstrap = get_bootstrap()
@@ -24,10 +24,16 @@ path='/users',
 def update_user(
         update_user_info: UserDtoUpdateRequest,
         return_record: bool = True,
-        access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.UPDATE_USER
+            )
+        )
 ):
     result: UserDtoGetResponse = UpdateUser(
-        uow=UnitOfWork(bootstrap.database)
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(update_user_info)
     if not return_record:
         return Response(
@@ -49,16 +55,22 @@ path='/users/me',
 def update_me(
         update_user_info: UserDtoUpdateRequest,
         return_record: bool = True,
-        access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
+                action_type=ActionType.UPDATE_USER
+            )
+        )
 ):
-    if access_token.user_id != update_user_info.id:
+    if request_client_dep.token_info.user_id != update_user_info.id:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content='Id пользователя в токене не совпадает с id пользователя в теле запроса',
             media_type="application/json"
         )
     result: UserDtoGetResponse = UpdateUser(
-        uow=UnitOfWork(bootstrap.database)
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(update_user_info)
     if not return_record:
         return Response(

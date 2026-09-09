@@ -2,11 +2,10 @@ from app.shared.config import BaseConfig
 from app.data_access.database.database import Database
 from app.business_logic.active_session.active_session_manager import ActiveSessionManager
 from app.business_logic.auth.jwt_manager import JWTAccessManager, JWTRefreshManager
-from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
-from app.business_logic.cache.session_key_storage import SessionKeyStorage
 from app.business_logic.encryption.asymmetric import AsymmetricEncrypt
+from app.business_logic.audit_service import AuditService
+from app.business_logic.cache.redis_cache import RedisCache
 from datetime import timedelta
-import redis
 
 
 class Bootstrap:
@@ -14,9 +13,9 @@ class Bootstrap:
     def __init__(self, config: BaseConfig):
         self._active_session_manager: ActiveSessionManager | None = None
         self._postgres_db: Database | None = None
-        self._jwt_white_list: JWTWhiteListCache | None = None
-        self._session_key_storage: SessionKeyStorage | None = None
+        self._redis_cache: RedisCache | None = None
         self._asymmetric_encrypt: AsymmetricEncrypt | None = None
+        self._audit_service: AuditService | None = None
         self.config = config
 
     def init_app(self):
@@ -26,15 +25,15 @@ class Bootstrap:
         self._init_database()
         self._init_active_session()
         self._init_app_keys()
+        self._init_audit_service()
+
+    def _init_audit_service(self):
+        """Инициализация аудит-сервиса"""
+        self._audit_service = AuditService(url=self.config.mongodb.url)
 
     def _init_cache_config(self):
         """Инициализация кеша"""
-        self._jwt_white_list = JWTWhiteListCache(
-            client=redis.from_url(self.config.redis.url)
-        )
-        self._session_key_storage = SessionKeyStorage(
-            client=redis.from_url(self.config.redis.url)
-        )
+        self._redis_cache = RedisCache(url=self.config.redis.url)
 
     def _init_jwt_tokens(self):
         """Инициализация jwt токенов"""
@@ -75,22 +74,22 @@ class Bootstrap:
         return self._active_session_manager
 
     @property
-    def jwt_white_list(self) -> JWTWhiteListCache:
-        if not self._jwt_white_list:
+    def redis_cache(self) -> RedisCache:
+        if not self._redis_cache:
             raise Exception
-        return self._jwt_white_list
-
-    @property
-    def session_key_storage(self) -> SessionKeyStorage:
-        if not self._session_key_storage:
-            raise Exception
-        return self._session_key_storage
+        return self._redis_cache
 
     @property
     def asymmetric_encrypt(self) -> AsymmetricEncrypt:
         if not self._asymmetric_encrypt:
             raise Exception
         return self._asymmetric_encrypt
+
+    @property
+    def audit_service(self):
+        if not self._asymmetric_encrypt:
+            raise Exception
+        return self._audit_service
 
 
 bootstrap: Bootstrap | None = None

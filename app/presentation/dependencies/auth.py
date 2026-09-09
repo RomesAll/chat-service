@@ -1,11 +1,9 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from starlette import status
 from app.business_logic.auth.jwt_manager import JWTAccessManager, JWTRefreshManager
 from app.shared.dtos import JWTBaseToken
 import jwt
 from app.shared.dtos.jwt import TokenType, JWTAccessTokenResponse, JWTRefreshTokenResponse
-from app.data_access.database.models.user import RoleEnum
 
 security = HTTPBearer()
 
@@ -33,17 +31,3 @@ class AuthChecker:
             raise HTTPException(status_code=401, detail="Token expired (Access токен протух)")
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Недействительный токен")
-
-
-class RoleChecker:
-    """Проверка ролей в токене"""
-    def __init__(self, allowed_roles: list[RoleEnum]):
-        self.allowed_roles = allowed_roles
-
-    def __call__(self, current_user: JWTBaseToken = Depends(AuthChecker())) -> JWTBaseToken:
-        if current_user.role not in self.allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="У вас недостаточно прав для выполнения этого действия"
-            )
-        return current_user

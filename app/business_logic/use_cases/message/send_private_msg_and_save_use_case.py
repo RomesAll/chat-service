@@ -9,51 +9,41 @@ from app.data_access.database.models.message_attachments import MimeType
 from app.data_access.database.repositories.message import PrivateMessageRepository
 from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
-from bootstrap import get_bootstrap
+from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
+from dtos import AuditPostDto
 
 
-class SendPrivateMsgAndSave(IUseCase):
+class SendPrivateMsgAndSave(IUseCase, LogMixin):
     """Use case для отправки сообщений другому пользователю"""
     def __init__(
             self,
             session_id: UUID,
             uow: UnitOfWork,
             private_msg_route: PrivateMessageRoute,
-            file_manager: type[FileManager]
+            file_manager: type[FileManager],
+            dto_audit: AuditPostDto
     ):
         self.session_id = session_id
         self.uow = uow
         self.private_msg_route = private_msg_route
         self.file_manager=file_manager
+        self.dto_audit = dto_audit
 
+    @audit_system
     async def execute(
             self,
             dto_private_msg: PrivateMessageDtoPostRequest,
-            upload_file: list[UploadFile] | None = None
+            upload_file: list[UploadFile] | None = None,
     ) -> MessageDtoGetResponse:
         with self.uow as uow:
             private_msg_repo = uow.get_repository(PrivateMessageRepository)
             file_msg_repo = uow.get_repository(MessageAttachmentsRepository)
             dto_response = private_msg_repo.save(dto_private_msg)
+            self.log_debug(f'Сообщение сохранено, id {dto_response.id}')
             if upload_file:
-                for file in upload_file:
-                    if not file.filename or not file.size:
-                        continue
-                    file_id = uuid4()
-                    file_path=get_bootstrap().config.upload_file_path
-                    dto_file = MessageAttachmentsDtoPostRequest(
-                        id=file_id,
-                        file_name=file.filename,
-                        file_path=file_path,
-                        file_size=file.size,
-                        message_id=dto_response.id,
-                        mime_type=MimeType(file.content_type)
-                    )
+                for dto_file in self.file_manager.upload_file(upload_file, dto_response):
                     file_msg_repo.save(dto_file)
-                    await self.file_manager.write_file(
-                        path_to_save=file_path,
-                        file=file
-                    )
-                    dto_response.file_id.append(file_id)
+                    self.log_debug(f'Файл успешно сохранен {dto_file}')
             await self.private_msg_route.send_message(self.session_id, dto_response)
             return dto_response

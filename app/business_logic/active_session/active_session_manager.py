@@ -2,9 +2,10 @@ from uuid import UUID
 from starlette.websockets import WebSocket
 from app.shared.dtos import ActiveSession, UserDtoBriefInfo
 from app.business_logic.exceptions import UserConnectionNotFound, UserNotFoundError
+from log_config import LogMixin
 
 
-class ActiveSessionManager:
+class ActiveSessionManager(LogMixin):
     """Класс для управления активными подключениями пользователей"""
     def __init__(self):
         # Список активных подключений
@@ -39,8 +40,11 @@ class ActiveSessionManager:
                     user_sessions={}
                 )
                 self.active_sessions[user_info.id] = active_session
+                self.log_info(f'Для пользователя {user_id} была создана новая (пустая) активная сессия')
             else:
-                raise UserNotFoundError(user_id)
+                exc = UserNotFoundError(user_id)
+                self.log_error(exc.message)
+                raise exc
         return active_session
 
     def add_connection(
@@ -56,6 +60,7 @@ class ActiveSessionManager:
             create_if_not_exist=True
         )
         active_session.user_sessions[session_id] = connection
+        self.log_debug(f'Добавлено новое подключение для пользователя {user_info.id}')
 
     def disconnect(
             self,
@@ -64,8 +69,12 @@ class ActiveSessionManager:
         """Отключение пользователя"""
         try:
             self.active_sessions.pop(user_id)
+            self.log_debug(f'Активная сессия для пользователя {user_id} была удаленна, '
+                           f'из-за отсутсвия активных подключений')
         except KeyError:
-            raise UserConnectionNotFound(user_id)
+            exc = UserConnectionNotFound(user_id)
+            self.log_error(exc.message)
+            raise exc
 
     def remove_user_active_session(
             self,
@@ -77,5 +86,6 @@ class ActiveSessionManager:
             user_id=user_id,
         )
         active_session.user_sessions.pop(session_id)
+        self.log_debug(f'Подключение с session_id: {session_id} для пользователя {user_id} было удалено')
         if not active_session.user_sessions:
             self.disconnect(user_id)

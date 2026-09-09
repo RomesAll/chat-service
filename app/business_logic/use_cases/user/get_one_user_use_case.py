@@ -3,21 +3,28 @@ from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import UserDtoBriefInfo
 from app.data_access.database.repositories import UserRepository
+from app.shared.log_config import LogMixin
+from business_logic.decorators import audit_system
+from dtos import AuditPostDto
 
 
-class GetOneUsers(IUseCase):
+class GetOneUsers(IUseCase, LogMixin):
     """Use case для получения пользователя"""
     def __init__(
             self,
-            uow: UnitOfWork
+            uow: UnitOfWork,
+            dto_audit: AuditPostDto
     ):
         self.uow = uow
+        self.dto_audit = dto_audit
         self.dto_response = None
 
+    @audit_system
     def execute(self, user_id: str) -> Self:
         with self.uow as uow:
             group_msg_repo = uow.get_repository(UserRepository)
             self.dto_response = group_msg_repo.get_by_id(user_id)
+            self.log_debug(f'Получена информация о пользователе {user_id}')
             return self
 
     def get_brief_info(self) -> UserDtoBriefInfo | None:

@@ -4,6 +4,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent.parent.resolve()
 
+
 class PostgresqlSettings(BaseModel):
     """Конфиг для postgresql"""
     host: str
@@ -38,6 +39,28 @@ class JWTSettings(BaseModel):
     secretkey: str
 
 
+class LogLevelInfo(BaseModel):
+    """Конфиг для хранения уровня логирования"""
+    log_name: str
+    base_log: str
+    error_file_log: str
+    info_file_log: str
+
+
+class MongoDb(BaseModel):
+    """Конфиг для mongodb"""
+    host: str
+    port: int
+    db: str
+    password: SecretStr
+    username: str
+
+    @property
+    def url(self):
+        return (f'mongodb://{self.username}:{self.password.get_secret_value()}'
+                f'@{self.host}:{self.port}/?authSource=admin')
+
+
 class BaseConfig(BaseSettings):
     """Базовый конфиг для хранения настроек проекта"""
     postgres: PostgresqlSettings
@@ -45,6 +68,8 @@ class BaseConfig(BaseSettings):
     jwtaccess: JWTSettings
     jwtrefresh: JWTSettings
     upload_file_path: str = f'{BASE_DIR}/user-files'
+    log_info: LogLevelInfo
+    mongodb: MongoDb
 
 
 class DevelopConfig(BaseConfig):
@@ -52,6 +77,8 @@ class DevelopConfig(BaseConfig):
     mode: str = 'dev'
     model_config = SettingsConfigDict(
         env_file=f'{BASE_DIR}/.dev.env',
-        env_nested_delimiter='_',
+        env_nested_delimiter='__',
         extra='ignore'
     )
+
+config = DevelopConfig()

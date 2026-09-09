@@ -13,7 +13,8 @@ from app.shared.dtos import (
     JWTRefreshTokenResponse, UserDtoBriefInfo
 )
 from app.data_access.database.models.user import RoleEnum
-from app.presentation.dependencies.auth import RoleChecker
+from dtos import RequestClientDtoHandle, JWTAccessToken, ActionType
+from presentation.dependencies import RequestClientDepends
 
 route = APIRouter()
 bootstrap = get_bootstrap()
@@ -30,7 +31,12 @@ def get_users(
         offset: int = Query(default=0, ge=0, description="Кол-во пропускаемых записей"),
         sort_field: list[str] = Query(default_factory=list, description="Поля для сортировки (порядок важен)"),
         sort_order: list[str] | None = Query(default_factory=list, description="Порядки сортировки (asc, desc) в том же порядке, что и sort_field"),
-        access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_USERS
+            )
+        )
 ):
     dto_request = BaseDtoGetListRequest(
         pagination=PaginationDto(limit=limit, offset=offset),
@@ -40,7 +46,8 @@ def get_users(
         ]
     )
     results: list[UserDtoGetResponse] = GetUsers(
-        uow=UnitOfWork(bootstrap.database)
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(dto_request)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -57,10 +64,16 @@ def get_users(
 )
 def get_one_user(
         user_id: str,
-        access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_ONE_USER
+            )
+        )
 ):
     result: UserDtoGetResponse = GetOneUsers(
-        uow=UnitOfWork(bootstrap.database)
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(user_id).dto_response
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -77,11 +90,17 @@ def get_one_user(
     operation_id='get_me_info_operation'
 )
 def get_me_info(
-        access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
+                action_type=ActionType.GET_ONE_USER
+            )
+        )
 ):
     result: UserDtoGetResponse = GetOneUsers(
-        uow=UnitOfWork(bootstrap.database)
-    ).execute(access_token.user_id).dto_response
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(request_client_dep.token_info.user_id).dto_response
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
@@ -95,15 +114,21 @@ def get_me_info(
     path='/users/{user_id}/brief-info',
     tags=['Users'],
     summary='Получить краткую информацию о пользователе',
-    description='Получение полную информацию о себе по токену',
+    description='Получение полную информацию по токену',
     operation_id='get_user_brief_info'
 )
 def get_user_brief_info(
         user_id: str,
-        access_token: JWTRefreshTokenResponse = Depends(RoleChecker([RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN]))
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_ONE_USER
+            )
+        )
 ):
     result: UserDtoBriefInfo | None = GetOneUsers(
-        uow=UnitOfWork(bootstrap.database)
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
     ).execute(user_id).get_brief_info()
     if not result:
         return JSONResponse(

@@ -9,6 +9,7 @@ class ValidationOrm(Exception):
         else:
             result_message = f'Ошибка валидации ORM модели {orm_model}'
         self.orm_model = orm_model
+        self.result_message = result_message
         super().__init__(result_message)
 
 
@@ -65,7 +66,7 @@ class ValidationOrmIncorrectTableNameError(ValidationOrmTableNameError):
 class DataBaseError(Exception):
     """Базовая ошибка базы данных"""
     def __init__(self, message):
-        message = f'Ошибка базы данных, {message}'
+        self.message = f'Ошибка базы данных, {message}'
         super().__init__(message)
 
 
