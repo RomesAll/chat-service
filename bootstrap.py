@@ -6,6 +6,8 @@ from app.business_logic.encryption.asymmetric import AsymmetricEncrypt
 from app.business_logic.audit_service import AuditService
 from app.business_logic.cache.redis_cache import RedisCache
 from datetime import timedelta
+from app.business_logic.sender_service import EmailSender, SMSSender
+from app.shared.dtos.auth import SendType
 
 
 class Bootstrap:
@@ -16,6 +18,8 @@ class Bootstrap:
         self._redis_cache: RedisCache | None = None
         self._asymmetric_encrypt: AsymmetricEncrypt | None = None
         self._audit_service: AuditService | None = None
+        self._smtp_service: EmailSender | None = None
+        self._sms_service: SMSSender | None = None
         self.config = config
 
     def init_app(self):
@@ -26,6 +30,21 @@ class Bootstrap:
         self._init_active_session()
         self._init_app_keys()
         self._init_audit_service()
+        self._init_smtp_service()
+        self._init_sms_service()
+
+    def _init_smtp_service(self):
+        """Инициализация smtp сервиса"""
+        self._smtp_service = EmailSender(
+            smtp_server=self.config.smtp.server,
+            port=self.config.smtp.port,
+            sender_email=self.config.smtp.gmail,
+            password=self.config.smtp.app_psw
+        )
+
+    def _init_sms_service(self):
+        """Инициализация sms сервиса"""
+        self._sms_service = SMSSender(api_token_id=self.config.sms.api_token_id)
 
     def _init_audit_service(self):
         """Инициализация аудит-сервиса"""
@@ -60,6 +79,26 @@ class Bootstrap:
     def _init_app_keys(self):
         """Инициализация ключей приложения"""
         self._asymmetric_encrypt = AsymmetricEncrypt()
+
+    def get_sender_service_by_type(self, send_type: SendType):
+        """Получение сервиса отправки по типу"""
+        if send_type.EMAIL:
+            return self._smtp_service
+        elif send_type.PHONE:
+            return self._sms_service
+        raise Exception
+
+    @property
+    def sms_service(self):
+        if not self._sms_service:
+            raise Exception
+        return self._sms_service
+
+    @property
+    def smtp_service(self):
+        if not self._smtp_service:
+            raise Exception
+        return self._smtp_service
 
     @property
     def database(self) -> Database:

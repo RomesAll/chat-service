@@ -4,7 +4,7 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import GroupMessageRepository
 from app.shared.dtos import GroupMessageDtoResponse
 from app.data_access.database.repositories.room import UserInRoomRepository
-from business_logic.exceptions import UserNotFoundInRoom
+from app.business_logic.exceptions import UserNotFoundInRoom
 from app.shared.log_config import LogMixin
 
 

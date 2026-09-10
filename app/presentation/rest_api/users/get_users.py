@@ -13,8 +13,8 @@ from app.shared.dtos import (
     JWTRefreshTokenResponse, UserDtoBriefInfo
 )
 from app.data_access.database.models.user import RoleEnum
-from dtos import RequestClientDtoHandle, JWTAccessToken, ActionType
-from presentation.dependencies import RequestClientDepends
+from app.shared.dtos import RequestClientDtoHandle, JWTAccessToken, ActionType
+from app.presentation.dependencies import RequestClientDepends
 
 route = APIRouter()
 bootstrap = get_bootstrap()

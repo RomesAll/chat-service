@@ -8,8 +8,8 @@ from app.shared.dtos import MessageType, GroupMessageDtoResponse, MessageDtoGetR
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
 from app.data_access.database.repositories import PrivateMessageRepository
 from app.data_access.database.repositories.message import GroupMessageRepository
-from business_logic.decorators import audit_system
-from business_logic.exceptions import MessageOwnerInCorrect
+from app.business_logic.decorators import audit_system
+from app.business_logic.exceptions import MessageOwnerInCorrect
 from app.shared.log_config import LogMixin
 
 

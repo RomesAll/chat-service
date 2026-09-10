@@ -19,7 +19,7 @@ from app.data_access.exceptions import (
     DataBaseError,
     InCorrectStmtError, BreachIntegrity
 )
-from shared.log_config import LogMixin
+from app.shared.log_config import LogMixin
 
 
 class HandleSqlAlchemyException(LogMixin):

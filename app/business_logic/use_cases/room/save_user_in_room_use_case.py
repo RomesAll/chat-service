@@ -4,8 +4,8 @@ from app.shared.dtos import UserInRoomPostRequest, UserInRoomResponse, AuditPost
 from app.data_access.database.repositories import UserRepository
 from app.data_access.database.repositories.room import UserInRoomRepository, RoomRepository
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
-from business_logic.exceptions import RoomNotFound, UserNotFoundError
+from app.business_logic.decorators import audit_system
+from app.business_logic.exceptions import RoomNotFound, UserNotFoundError
 
 
 class SaveUserInRoomUseCase(IUseCase, LogMixin):

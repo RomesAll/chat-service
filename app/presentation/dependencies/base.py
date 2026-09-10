@@ -2,7 +2,7 @@ from typing import Generic
 from fastapi import Depends, HTTPException, status
 from app.shared.dtos import ActionType, JWTBaseToken, AuditPostDto, RequestClientDtoHandle
 from app.data_access.database.models.user import RoleEnum
-from dtos.base import TToken
+from app.shared.dtos.base import TToken
 from .audit import AuditDep
 from .auth import AuthChecker
 

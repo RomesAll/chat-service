@@ -3,7 +3,7 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos.keys import PublicKeyDtoGet
 from app.data_access.database.repositories.user_keys import PublicKeyRepository
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
+from app.business_logic.decorators import audit_system
 from app.shared.dtos import AuditPostDto
 
 

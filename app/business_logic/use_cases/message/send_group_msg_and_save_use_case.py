@@ -8,8 +8,8 @@ from app.shared.dtos import GroupMessageDtoPostRequest, GroupMessageDtoResponse,
 from app.data_access.database.repositories.message import GroupMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.data_access.database.repositories.room import RoomRepository, UserInRoomRepository
-from business_logic.decorators import audit_system
-from business_logic.exceptions import UserNotFoundInRoom, RoomNotFound
+from app.business_logic.decorators import audit_system
+from app.business_logic.exceptions import UserNotFoundInRoom, RoomNotFound
 from app.shared.log_config import LogMixin
 
 

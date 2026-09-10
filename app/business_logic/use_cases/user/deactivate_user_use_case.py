@@ -3,7 +3,7 @@ from app.business_logic.active_session.active_session_manager import ActiveSessi
 from app.business_logic.cache.session_key_storage import SessionKeyStorage
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
+from app.business_logic.decorators import audit_system
 
 
 class DeactivateUseCase(IUseCase, LogMixin):

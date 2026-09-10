@@ -2,7 +2,7 @@ from bootstrap import set_bootstrap
 from app.shared.config import config
 set_bootstrap(config)
 from starlette.middleware.cors import CORSMiddleware
-from presentation.rest_api import register_route
+from app.presentation.rest_api import register_route
 from fastapi import FastAPI
 import uvicorn
 import app.shared.log_config.log_config

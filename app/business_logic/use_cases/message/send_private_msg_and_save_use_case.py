@@ -8,7 +8,7 @@ from app.data_access.database.repositories.message import PrivateMessageReposito
 from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse, AuditPostDto
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
+from app.business_logic.decorators import audit_system
 
 
 class SendPrivateMsgAndSave(IUseCase, LogMixin):
