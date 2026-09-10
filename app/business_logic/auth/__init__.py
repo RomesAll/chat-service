@@ -8,7 +8,7 @@ from app.business_logic.auth.password_manager import (
     PasswordManager
 )
 
-__version__ = 'v1.2.1'
+__version__ = 'v1.3.1'
 __author__ = 'RomesAll'
 __all__ = [
     'JWTFacade',

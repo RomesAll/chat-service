@@ -49,7 +49,6 @@ def login_user(
             psw_manager=PasswordManager,
             dto_audit=dto_audit,
             verify_code_storage=bootstrap.redis_cache.verify_code_storage,
-            sender_service=bootstrap.get_sender_service_by_type(send_type)
         ).execute(
             dto_request_data=credentials,
             send_type=send_type
@@ -83,7 +82,6 @@ def register_user(
         psw_manager=PasswordManager,
         dto_audit=dto_audit,
         verify_code_storage=bootstrap.redis_cache.verify_code_storage,
-        sender_service=bootstrap.get_sender_service_by_type(send_type)
     ).execute(
         dto_register_user=new_user,
         send_type=send_type
@@ -212,7 +210,6 @@ def refresh_verify_code(
     user_info = RefreshVerifyCodeUseCase(
         uow=UnitOfWork(bootstrap.database),
         verify_code_storage=bootstrap.redis_cache.verify_code_storage,
-        sender_service=bootstrap.get_sender_service_by_type(send_type),
         dto_audit=dto_audit
     ).execute(
         request=request,

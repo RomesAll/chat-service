@@ -11,7 +11,7 @@ from app.shared.dtos import AuditPostDto
 from app.business_logic.cache.verify_code_storage import VerifyCodeStorage
 from app.business_logic.decorators import audit_system
 from app.shared.dtos.auth import SendType
-from app.business_logic.sender_service import ISender
+from app.business_logic.celery_tasks.sender_tasks import send_message
 
 
 class LoginUseCase(IUseCase, LogMixin):
@@ -22,13 +22,11 @@ class LoginUseCase(IUseCase, LogMixin):
             verify_code_storage: VerifyCodeStorage,
             psw_manager: type[PasswordManager],
             dto_audit: AuditPostDto,
-            sender_service: ISender
     ):
         self.uow = uow
         self.psw_manager = psw_manager
         self.dto_audit = dto_audit
         self.verify_code_storage = verify_code_storage
-        self.sender_service = sender_service
 
     @audit_system
     def execute(
@@ -56,5 +54,6 @@ class LoginUseCase(IUseCase, LogMixin):
             self.log_info(f'Вход для пользователя {user_info.id} выполнен успешно')
             if not (to := user_info.get_contact_details(send_type)):
                 raise Exception
-            self.sender_service.send_message(to=to, msg_send=f'Код подтверждения: {new_code}')
+            result = send_message.delay(to=to, msg=f'Код подтверждения: {new_code}', send_type=send_type)
+            self.log_debug(f'UUID задачи отправки кода: {result.id}, статус: {result.status}')
             return user_info
