@@ -21,7 +21,7 @@ def register_route(app: FastAPI):
     app.include_router(save_user_in_room_route, prefix=api_v1)
     app.include_router(db_route, prefix=api_v1)
 
-__version__ = 'v1.1.1'
+__version__ = 'v1.2.1'
 __author__ = 'RomesAll'
 __all__ = [
     'register_route'
