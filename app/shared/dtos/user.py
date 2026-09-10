@@ -8,6 +8,7 @@ from .base import (
     BaseDtoPostDeleteRequest,
     BaseDtoPutPathRequest
 )
+from .auth import SendType
 
 
 class UserDtoGetResponse(BaseDtoGetResponse):
@@ -20,6 +21,21 @@ class UserDtoGetResponse(BaseDtoGetResponse):
     email: EmailStr
     phone: str
 
+    def get_contact_details(self, send_type: SendType) -> str | None:
+        if send_type.EMAIL:
+            return self.email
+        else:
+            return self.phone
+
+    def get_success_send_msg(self, send_type: SendType) -> str:
+        msg = f'Код подтверждения был выслан на {send_type}, '
+        if send_type == SendType.EMAIL:
+            msg += f'по адресу: {self.email}'
+        elif send_type == SendType.PHONE:
+            msg += f'по номеру: {self.email}'
+        else:
+            raise Exception
+        return msg
 
 class UserDtoPostRequest(BaseDtoPostDeleteRequest):
     """User DTO для операции добавления (Post) информации о пользователе"""
@@ -72,3 +88,9 @@ class ActiveSession(BaseModel):
     info: UserDtoBriefInfo
     user_sessions: dict[UUID, WebSocket]
     model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes = True)
+
+
+class VerifyCodeResponse(BaseModel):
+    user_info: UserDtoGetResponse
+    access_token: str
+    refresh_token: str
