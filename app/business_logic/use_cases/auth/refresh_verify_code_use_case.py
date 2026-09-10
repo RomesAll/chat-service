@@ -10,6 +10,7 @@ from app.data_access.database.repositories import UserRepository
 from app.business_logic.sender_service import ISender
 from app.shared.dtos.auth import SendType
 from app.business_logic.exceptions import VerifyCodeStorageError
+from app.business_logic.celery_tasks.sender_tasks import send_message
 import random
 
 
@@ -20,12 +21,10 @@ class RefreshVerifyCodeUseCase(IUseCase, LogMixin):
             uow: UnitOfWork,
             dto_audit: AuditPostDto,
             verify_code_storage: VerifyCodeStorage,
-            sender_service: ISender
     ):
         self.uow = uow
         self.verify_code_storage = verify_code_storage
         self.dto_audit = dto_audit
-        self.sender_service = sender_service
 
     @audit_system
     def execute(
@@ -45,5 +44,6 @@ class RefreshVerifyCodeUseCase(IUseCase, LogMixin):
                 raise VerifyCodeStorageError()
             if not (to := user_info.get_contact_details(send_type)):
                 raise Exception
-            self.sender_service.send_message(to=to, msg_send=f'Код подтверждения: {new_code}')
+            result = send_message.delay(to=to, msg=f'Код подтверждения: {new_code}', send_type=send_type)
+            self.log_debug(f'UUID задачи отправки кода: {result.id}, статус: {result.status}')
             return user_info
