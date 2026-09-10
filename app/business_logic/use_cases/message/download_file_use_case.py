@@ -7,8 +7,8 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import PrivateMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.business_logic.decorators import audit_system
+from app.shared.dtos import AuditPostDto
 
 
 class DownloadFileUseCase(IUseCase, LogMixin):

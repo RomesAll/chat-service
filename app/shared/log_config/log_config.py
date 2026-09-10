@@ -1,6 +1,6 @@
 from logging import getLogger, Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
-from config import config
+from app.shared.config import config, BASE_DIR
 from .filters import JsonFormatter, InfoOrDownFilter
 
 log_info = config.log_info
@@ -20,7 +20,7 @@ console_handler.setFormatter(console_format)
 console_handler.setLevel(log_info.base_log)
 
 file_error_handler = RotatingFileHandler(
-    filename='logs/error/log-error.json',
+    filename=f'{BASE_DIR}/logs/error/log-error.json',
     mode='a',
     maxBytes=1048576,
     backupCount=10,
@@ -29,7 +29,7 @@ file_error_handler.setFormatter(error_file_format)
 file_error_handler.setLevel(log_info.error_file_log)
 
 file_info_handler = RotatingFileHandler(
-    filename='logs/info/log-info.json',
+    filename=f'{BASE_DIR}/logs/info/log-info.json',
     mode='a',
     maxBytes=1048576,
     backupCount=10

@@ -9,8 +9,8 @@ from app.business_logic.use_cases.encryption.handshake_use_case import Handshake
 from app.business_logic.use_cases.user.deactivate_user_use_case import DeactivateUseCase
 from app.business_logic.use_cases.user.get_one_user_use_case import GetOneUsers
 from app.shared.dtos import UserDtoBriefInfo
-from dtos import AuditPostDto, ActionType
-from presentation.dependencies import AuditDep
+from app.shared.dtos import AuditPostDto, ActionType
+from app.presentation.dependencies import AuditDep
 
 route = APIRouter()
 bootstrap = get_bootstrap()

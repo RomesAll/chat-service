@@ -4,7 +4,7 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import RoomDtoGetResponse
 from app.data_access.database.repositories.room import RoomRepository, UserInRoomRepository
 from app.shared.log_config import LogMixin
-from business_logic.exceptions import UserNotFoundInRoom
+from app.business_logic.exceptions import UserNotFoundInRoom
 
 
 class GetOneRoomUseCase(IUseCase, LogMixin):

@@ -5,7 +5,7 @@ from pymongo.errors import ConnectionFailure, PyMongoError
 from app.business_logic.singleton import Singleton
 from app.shared.dtos import AuditPostDto
 from datetime import datetime, timezone
-from log_config import LogMixin
+from app.shared.log_config import LogMixin
 
 
 class AuditService(Singleton, LogMixin):

@@ -4,14 +4,13 @@ from app.business_logic.active_session.active_session_manager import ActiveSessi
 from app.business_logic.file_manager.file_manager import FileManager
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
-from app.shared.dtos import MessageType, GroupMessageDtoResponse, MessageDtoGetResponse
+from app.shared.dtos import MessageType, GroupMessageDtoResponse, MessageDtoGetResponse, AuditPostDto
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
 from app.data_access.database.repositories import PrivateMessageRepository
 from app.data_access.database.repositories.message import GroupMessageRepository
-from business_logic.decorators import audit_system
-from business_logic.exceptions import MessageOwnerInCorrect
-from dtos import AuditPostDto
-from log_config import LogMixin
+from app.business_logic.decorators import audit_system
+from app.business_logic.exceptions import MessageOwnerInCorrect
+from app.shared.log_config import LogMixin
 
 
 class DeleteMsgUseCase(IUseCase, LogMixin):

@@ -61,6 +61,19 @@ class MongoDb(BaseModel):
                 f'@{self.host}:{self.port}/?authSource=admin')
 
 
+class SmtpConfig(BaseModel):
+    """Конфиг для отправки сообщений по email"""
+    server: str
+    gmail: str
+    app_psw: SecretStr
+    port: int
+
+
+class SmsConfig(BaseModel):
+    """Конфиг для отправки сообщений по телефону"""
+    api_token_id: SecretStr
+
+
 class BaseConfig(BaseSettings):
     """Базовый конфиг для хранения настроек проекта"""
     postgres: PostgresqlSettings
@@ -70,6 +83,8 @@ class BaseConfig(BaseSettings):
     upload_file_path: str = f'{BASE_DIR}/user-files'
     log_info: LogLevelInfo
     mongodb: MongoDb
+    smtp: SmtpConfig
+    sms: SmsConfig
 
 
 class DevelopConfig(BaseConfig):

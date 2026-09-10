@@ -116,3 +116,18 @@ class MessageOwnerInCorrect(Exception):
         self.message = (f'Попытка удалить сообщение {message_id}, '
                         f'которое не принадлежит отправителю {sender_id}')
         super().__init__(self.message)
+
+
+class VerifyCodeStorageError(Exception):
+    """Не удалось получить код подтверждения из кеша"""
+    def __init__(self,):
+        self.message = ('Не удалось найти код подтверждения, '
+                        'т.к. сервис временно недоступен')
+        super().__init__(self.message)
+
+
+class VerifyCodeInCorrect(Exception):
+    """Введенный код подтверждения неверный"""
+    def __init__(self,):
+        self.message = 'Введенный код подтверждения неверный'
+        super().__init__(self.message)

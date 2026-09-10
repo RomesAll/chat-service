@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 
 
@@ -34,6 +34,8 @@ class ActionType(str, Enum):
     UPDATE_USER = 'Обновление пользователей'
     HANDSHAKE = 'Выполнение рукопожатия с сервером'
     DEACTIVATE = 'Отключение пользователя'
+    VERIFY_CODE = 'Подтверждение сообщения'
+    REFRESH_VERIFY_CODE = 'Обновление кода подтверждения'
 
 
 class AuditPostDto(BaseModel):

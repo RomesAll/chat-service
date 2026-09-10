@@ -1,5 +1,5 @@
 import logging
-from config import config
+from app.shared.config import config
 
 
 class LogMixin:

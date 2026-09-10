@@ -4,7 +4,7 @@ from uuid import UUID
 from redis import Redis
 
 from app.business_logic.auth.jwt_manager import JWTFacade
-from business_logic.exceptions import RefreshTokenIdNotFound, SaveIdRefreshTokenWhiteListError
+from app.business_logic.exceptions import RefreshTokenIdNotFound, SaveIdRefreshTokenWhiteListError
 
 
 class JWTWhiteListCache:

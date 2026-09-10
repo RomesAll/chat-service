@@ -6,7 +6,7 @@ from app.business_logic.exceptions import SendMessageError
 from asyncio import Queue
 from app.shared.dtos import GroupMessageDtoResponse, ActiveSession
 from app.shared.dtos.base import WebsocketActionType, WebsocketPackage
-from log_config import LogMixin
+from app.shared.log_config import LogMixin
 
 
 class GroupMessageRoute(IMessageRoute, LogMixin):

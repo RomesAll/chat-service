@@ -2,8 +2,8 @@ from uuid import uuid4
 from fastapi import UploadFile
 import aiofiles
 from bootstrap import get_bootstrap
-from dtos import MessageAttachmentsDtoPostRequest, MessageDtoGetResponse, GroupMessageDtoResponse
-from models.message_attachments import MimeType
+from app.shared.dtos import MessageAttachmentsDtoPostRequest, MessageDtoGetResponse, GroupMessageDtoResponse
+from app.data_access.database.models.message_attachments import MimeType
 
 
 class FileManager:

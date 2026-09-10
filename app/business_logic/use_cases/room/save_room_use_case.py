@@ -1,10 +1,9 @@
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
-from app.shared.dtos import RoomDtoPostRequest, RoomDtoGetResponse
+from app.shared.dtos import RoomDtoPostRequest, RoomDtoGetResponse, AuditPostDto
 from app.data_access.database.repositories.room import RoomRepository
-from business_logic.decorators import audit_system
-from dtos import AuditPostDto
-from log_config import LogMixin
+from app.business_logic.decorators import audit_system
+from app.shared.log_config import LogMixin
 
 
 class SaveRoomUseCase(IUseCase, LogMixin):

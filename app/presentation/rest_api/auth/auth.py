@@ -2,7 +2,8 @@ from fastapi import APIRouter, Response, status, Depends
 from starlette.responses import JSONResponse
 from bootstrap import get_bootstrap
 from app.business_logic.auth import JWTFacade, PasswordManager
-from app.business_logic.exceptions import CheckPswError, RefreshTokenInActive, RefreshTokenIdNotFound
+from app.business_logic.exceptions import CheckPswError, RefreshTokenInActive, RefreshTokenIdNotFound, \
+    VerifyCodeInCorrect
 from app.business_logic.unit_of_work import UnitOfWork
 from app.data_access.database.models.user import RoleEnum
 from app.presentation.dependencies.base import RequestClientDepends
@@ -17,13 +18,14 @@ from app.shared.dtos import (
     LoginDtoRequest,
     JWTRefreshTokenResponse,
     JWTTokenResponse,
-    LoginOrRegisterDtoResponse,
     AuditPostDto,
     ActionType,
 )
-from dtos import RequestClientDtoHandle
-from presentation.dependencies.audit import AuditDep
-
+from app.shared.dtos import RequestClientDtoHandle
+from app.shared.dtos.auth import SendType, VerifyCodeRequest, RefreshVerifyCodeRequest
+from app.business_logic.use_cases.auth.verify_code_use_case import VerifyCodeUseCase
+from app.presentation.dependencies.audit import AuditDep
+from app.business_logic.use_cases.auth.refresh_verify_code_use_case import RefreshVerifyCodeUseCase
 
 route = APIRouter()
 bootstrap = get_bootstrap()
@@ -37,23 +39,24 @@ bootstrap = get_bootstrap()
 )
 def login_user(
         credentials: LoginDtoRequest,
+        send_type: SendType,
         dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.LOGIN))
 ):
     try:
         dto_audit.user_id = credentials.user_id
-        result: LoginOrRegisterDtoResponse = LoginUseCase(
+        user_info = LoginUseCase(
             uow=UnitOfWork(bootstrap.database),
-            jwt_manager=JWTFacade,
             psw_manager=PasswordManager,
-            jwt_white_list=bootstrap.redis_cache.jwt_white_list,
-            dto_audit=dto_audit
+            dto_audit=dto_audit,
+            verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+            sender_service=bootstrap.get_sender_service_by_type(send_type)
         ).execute(
             dto_request_data=credentials,
+            send_type=send_type
         )
-        return JSONResponse(
+        return Response(
             status_code=status.HTTP_200_OK,
-            content=result.model_dump(mode='json'),
-            media_type="application/json"
+            content=user_info.get_success_send_msg(send_type)
         )
     except CheckPswError:
         return Response(
@@ -71,27 +74,23 @@ def login_user(
 )
 def register_user(
         new_user: UserDtoPostRequest,
+        send_type: SendType,
         dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.REGISTER)),
-        return_record: bool = True
 ):
     dto_audit.user_id = new_user.id
-    result: LoginOrRegisterDtoResponse = RegisterUser(
+    user_info = RegisterUser(
         uow=UnitOfWork(bootstrap.database),
-        jwt_manager=JWTFacade,
         psw_manager=PasswordManager,
-        jwt_white_list=bootstrap.redis_cache.jwt_white_list,
-        dto_audit=dto_audit
+        dto_audit=dto_audit,
+        verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+        sender_service=bootstrap.get_sender_service_by_type(send_type)
     ).execute(
         dto_register_user=new_user,
+        send_type=send_type
     )
-    if not return_record:
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
+    return Response(
+        status_code=status.HTTP_200_OK,
+        content=user_info.get_success_send_msg(send_type)
     )
 
 
@@ -164,4 +163,62 @@ def logout_user_operation(
         status_code=status.HTTP_200_OK,
         content=f'Выход из системы, удаление refresh_token: {is_delete_refresh if is_delete_refresh else 'уже удален'}, '
                 f'удаление session_key: {is_delete_session_key if is_delete_session_key else 'уже удален'} '
+    )
+
+
+@route.post(
+    path='/auth/verify-code',
+    tags=['Auth'],
+    summary='Ввод кода подтверждения',
+    description='Ввод кода подтверждения после auth и регистрации',
+    operation_id="verify_operation",
+)
+def verify_code(request: VerifyCodeRequest, dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.VERIFY_CODE))):
+    try:
+        dto_audit.user_id = request.user_id
+        result = VerifyCodeUseCase(
+            uow=UnitOfWork(bootstrap.database),
+            verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+            jwt_manager=JWTFacade,
+            jwt_white_list=bootstrap.redis_cache.jwt_white_list,
+            dto_audit=dto_audit
+        ).execute(
+            verify_code_request=request
+        )
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content=result.model_dump(mode='json')
+        )
+    except VerifyCodeInCorrect:
+        return Response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content='Неверный код'
+        )
+
+
+@route.post(
+    path='/auth/refresh-verify-code',
+    tags=['Auth'],
+    summary='Обновление кода подтверждения',
+    description='Обновление кода подтверждения',
+    operation_id="refresh_verify_code_operation",
+)
+def refresh_verify_code(
+        request: RefreshVerifyCodeRequest,
+        send_type: SendType,
+        dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.REFRESH_VERIFY_CODE))
+):
+    dto_audit.user_id = request.user_id
+    user_info = RefreshVerifyCodeUseCase(
+        uow=UnitOfWork(bootstrap.database),
+        verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+        sender_service=bootstrap.get_sender_service_by_type(send_type),
+        dto_audit=dto_audit
+    ).execute(
+        request=request,
+        send_type=send_type
+    )
+    return Response(
+        status_code=status.HTTP_200_OK,
+        content=user_info.get_success_send_msg(send_type)
     )

@@ -3,14 +3,13 @@ from app.business_logic.encryption.asymmetric import AsymmetricEncrypt
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from starlette.websockets import WebSocket
-from app.shared.dtos import UserDtoBriefInfo
+from app.shared.dtos import UserDtoBriefInfo, AuditPostDto
 from uuid import UUID
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
-from business_logic.active_session.active_session_manager import ActiveSessionManager
+from app.business_logic.active_session.active_session_manager import ActiveSessionManager
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
-from business_logic.exceptions import SaveSessionKeyError
-from dtos import AuditPostDto
+from app.business_logic.decorators import audit_system
+from app.business_logic.exceptions import SaveSessionKeyError
 
 
 class HandshakeUseCase(IUseCase, LogMixin):

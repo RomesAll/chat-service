@@ -2,8 +2,8 @@ from starlette.exceptions import WebSocketException
 from app.business_logic.active_session.active_session_manager import ActiveSessionManager
 from app.business_logic.exceptions import SyncKeyError
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
-from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.business_logic.decorators import audit_system
+from app.shared.dtos import AuditPostDto
 
 
 class SyncPrivateKeysUseCase(IUseCase):

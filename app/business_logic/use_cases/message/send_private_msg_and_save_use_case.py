@@ -4,14 +4,11 @@ from app.business_logic.active_session.message_sender.private_message import Pri
 from app.business_logic.file_manager.file_manager import FileManager
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
-from app.shared.dtos import MessageAttachmentsDtoPostRequest
-from app.data_access.database.models.message_attachments import MimeType
 from app.data_access.database.repositories.message import PrivateMessageRepository
-from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse
+from app.shared.dtos import PrivateMessageDtoPostRequest, MessageDtoGetResponse, AuditPostDto
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.shared.log_config import LogMixin
-from business_logic.decorators import audit_system
-from dtos import AuditPostDto
+from app.business_logic.decorators import audit_system
 
 
 class SendPrivateMsgAndSave(IUseCase, LogMixin):

@@ -2,7 +2,7 @@ from uuid import UUID
 from redis import Redis
 from cachetools import TTLCache
 
-from business_logic.exceptions import SessionKeyNotFound, SaveSessionKeyError
+from app.business_logic.exceptions import SessionKeyNotFound, SaveSessionKeyError
 
 
 class SessionKeyStorage:
