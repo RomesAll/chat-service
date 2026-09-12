@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Any
 from uuid import UUID
 from app.data_access.database.models.base import BaseOrm
 from sqlalchemy import select, between, and_, or_, delete, Select, exists
@@ -149,10 +149,12 @@ class BaseRepositoryUpdate(
     IRepositoryUpdate[TDtoGetResponse, TDtoPostPutDeleteRequest]
 ):
     """Базовый репозиторий для обновления записей"""
-    def update(self, dto_update_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+    def update(self, record_id: Any, dto_update_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
         """Обновление записи в бд"""
-        orm_object = self._find_orm_object(dto_update_request.id)
+        orm_object = self._find_orm_object(record_id)
         raw_data: dict = dto_update_request.model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
+        if not raw_data:
+            return self._get_dto(orm_object)
         for field, value in raw_data.items():
             setattr(orm_object, field, value)
         self.session.flush()
