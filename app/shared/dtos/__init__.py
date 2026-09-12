@@ -43,7 +43,9 @@ from .room import (
 )
 from .user import (
     UserDtoGetResponse,
-    UserDtoPostRequest,
+    UserDtoBaseInfoPostRequest,
+    UserDtoRegisterRequest,
+    UserDtoPostRequestWithRole,
     UserDtoUpdateRequest,
     UserDtoBriefInfo,
     UserDtoChangePsw,
@@ -73,6 +75,9 @@ from .group_message import (
 __version__ = 'v1.3.1'
 __author__ = 'RomesAll'
 __all__ = [
+    'UserDtoBaseInfoPostRequest',
+    'UserDtoRegisterRequest',
+    'UserDtoPostRequestWithRole',
     'GroupMessageDtoResponse',
     'GroupMessageDtoDeleteRequest',
     'GroupMessageDtoPostRequest',
@@ -95,7 +100,6 @@ __all__ = [
     'RoomDtoPostRequest',
     'RoomDtoUpdateRequest',
     'UserDtoGetResponse',
-    'UserDtoPostRequest',
     'UserDtoUpdateRequest',
     'UserDtoBriefInfo',
     'UserDtoChangePsw',
