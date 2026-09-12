@@ -14,36 +14,6 @@ from app.presentation.dependencies import RequestClientDepends
 route = APIRouter()
 bootstrap = get_bootstrap()
 
-@route.put(
-path='/users',
-    tags=['Users'],
-    summary='Обновление пользователя',
-    description='Изменение информации о пользователе',
-    operation_id="update_user_operation",
-)
-def update_user(
-        update_user_info: UserDtoUpdateRequest,
-        return_record: bool = True,
-        request_client_dep: RequestClientDtoHandle = Depends(
-            RequestClientDepends[JWTAccessToken](
-                allowed_roles=[RoleEnum.SUPER_ADMIN],
-                action_type=ActionType.UPDATE_USER
-            )
-        )
-):
-    result: UserDtoGetResponse = UpdateUser(
-        uow=UnitOfWork(bootstrap.database),
-        dto_audit=request_client_dep.dto_audit
-    ).execute(update_user_info)
-    if not return_record:
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
-    )
 
 @route.put(
 path='/users/me',
@@ -62,16 +32,43 @@ def update_me(
             )
         )
 ):
-    if request_client_dep.token_info.user_id != update_user_info.id:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content='Id пользователя в токене не совпадает с id пользователя в теле запроса',
-            media_type="application/json"
-        )
     result: UserDtoGetResponse = UpdateUser(
         uow=UnitOfWork(bootstrap.database),
         dto_audit=request_client_dep.dto_audit
-    ).execute(update_user_info)
+    ).execute(request_client_dep.token_info.user_id, update_user_info)
+    if not return_record:
+        return Response(
+            status_code=status.HTTP_204_NO_CONTENT
+        )
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=result.model_dump(mode='json'),
+        media_type="application/json"
+    )
+
+
+@route.put(
+path='/users/{user_id}',
+    tags=['Users'],
+    summary='Обновление пользователя',
+    description='Изменение информации о пользователе',
+    operation_id="update_user_operation",
+)
+def update_user(
+        user_id: str,
+        update_user_info: UserDtoUpdateRequest,
+        return_record: bool = True,
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.UPDATE_USER
+            )
+        )
+):
+    result: UserDtoGetResponse = UpdateUser(
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(user_id, update_user_info)
     if not return_record:
         return Response(
             status_code=status.HTTP_204_NO_CONTENT

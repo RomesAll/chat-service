@@ -17,9 +17,9 @@ class UpdateUser(IUseCase, LogMixin):
         self.dto_audit = dto_audit
 
     @audit_system
-    def execute(self, dto_user: UserDtoUpdateRequest) -> UserDtoGetResponse:
+    def execute(self, user_id: str, dto_user: UserDtoUpdateRequest) -> UserDtoGetResponse:
         with self.uow as uow:
             repo = uow.get_repository(UserRepository)
-            result = repo.update(dto_user)
-            self.log_debug(f'Информация о пользователе {dto_user.id} успешно обновлена')
+            result = repo.update(user_id, dto_user)
+            self.log_debug(f'Информация о пользователе {user_id} успешно обновлена')
             return result
