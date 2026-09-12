@@ -1,5 +1,6 @@
+import bcrypt
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, field_validator
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent.parent.resolve()
@@ -85,6 +86,15 @@ class BaseConfig(BaseSettings):
     mongodb: MongoDb
     smtp: SmtpConfig
     sms: SmsConfig
+    app_master_key: bytes
+    mode: str = ''
+
+    @field_validator('app_master_key', mode='before')
+    @classmethod
+    def hash_master_key(cls, v):
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(v.encode(), salt)
+        return hashed
 
 
 class DevelopConfig(BaseConfig):
