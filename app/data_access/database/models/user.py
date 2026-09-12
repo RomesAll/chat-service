@@ -20,7 +20,7 @@ class UserOrm(BaseOrm, StringIdMixin):
     bio: Mapped[str] = mapped_column(String(100), default=None, nullable=True)
     years_old: Mapped[int] = mapped_column(default=None, nullable=True)
     password: Mapped[bytes] = mapped_column(LargeBinary(60), nullable=False)
-    role: Mapped[RoleEnum] = mapped_column(default=RoleEnum.SUPER_ADMIN)
+    role: Mapped[RoleEnum] = mapped_column()
 
     @validates('id')
     def validate_id(self, key, value):
