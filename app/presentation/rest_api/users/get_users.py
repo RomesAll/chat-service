@@ -19,6 +19,35 @@ from app.presentation.dependencies import RequestClientDepends
 route = APIRouter()
 bootstrap = get_bootstrap()
 
+
+@route.get(
+    path='/users/me',
+    tags=['Users'],
+    summary='Получить полную информацию о себе',
+    description='Получение полную информацию о себе по токену',
+    operation_id='get_me_info_operation'
+)
+def get_me_info(
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
+                action_type=ActionType.GET_ONE_USER
+            )
+        )
+):
+    result: UserDtoGetResponse = GetOneUsers(
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(request_client_dep.token_info.user_id).dto_response
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            'message': result.model_dump(mode='json')
+        },
+        media_type="application/json"
+    )
+
+
 @route.get(
     path='/users',
     tags=['Users'],
@@ -78,34 +107,6 @@ def get_one_user(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=result.model_dump(mode='json'),
-        media_type="application/json"
-    )
-
-
-@route.get(
-    path='/users/me',
-    tags=['Users'],
-    summary='Получить полную информацию о себе',
-    description='Получение полную информацию о себе по токену',
-    operation_id='get_me_info_operation'
-)
-def get_me_info(
-        request_client_dep: RequestClientDtoHandle = Depends(
-            RequestClientDepends[JWTAccessToken](
-                allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
-                action_type=ActionType.GET_ONE_USER
-            )
-        )
-):
-    result: UserDtoGetResponse = GetOneUsers(
-        uow=UnitOfWork(bootstrap.database),
-        dto_audit=request_client_dep.dto_audit
-    ).execute(request_client_dep.token_info.user_id).dto_response
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            'message': result.model_dump(mode='json')
-        },
         media_type="application/json"
     )
 
