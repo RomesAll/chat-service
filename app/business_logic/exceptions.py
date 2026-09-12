@@ -41,7 +41,15 @@ class UserNotFoundError(Exception):
 class CheckPswError(Exception):
     """Переданный пароль не совпадает с сохраненным"""
     def __init__(self, user_id: str):
+        self.user_id = user_id
         self.message = f'Передан неверный пароль для пользователя {user_id}'
+        super().__init__(self.message)
+
+
+class CheckMasterPswError(Exception):
+    """Переданный пароль не совпадает с мастер паролем"""
+    def __init__(self):
+        self.message = f'Передан неверный мастер пароль'
         super().__init__(self.message)
 
 
@@ -106,6 +114,7 @@ class RoomNotFound(Exception):
 class RefreshTokenInActive(Exception):
     """Refresh токен больше не активен"""
     def __init__(self, user_id: str, token_id):
+        self.user_id = user_id
         self.message = f'Refresh токен больше не активен для пользователя {user_id}, токен id: {token_id}'
         super().__init__(self.message)
 
