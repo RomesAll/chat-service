@@ -101,6 +101,7 @@ class DBTimeoutError(ConnectionDBError):
 class RecordNotFound(DataBaseError):
     """Запись в бд не найдена"""
     def __init__(self, id: Any):
+        self.id = id
         message = f'не удалось найти запись с id: {id}'
         super().__init__(message)
 
@@ -140,7 +141,7 @@ class BreachIntegrity(DataBaseError):
 
 
 class UniqueViolationError(BreachIntegrity):
-    """Ошибка уникльности"""
+    """Ошибка уникальности"""
     def __init__(
             self,
             operation: str,
