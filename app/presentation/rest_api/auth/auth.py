@@ -14,12 +14,12 @@ from app.business_logic.use_cases import (
     RegisterUser,
 )
 from app.shared.dtos import (
-    UserDtoPostRequest,
     LoginDtoRequest,
     JWTRefreshTokenResponse,
     JWTTokenResponse,
     AuditPostDto,
     ActionType,
+    UserDtoRegisterRequest,
 )
 from app.shared.dtos import RequestClientDtoHandle
 from app.shared.dtos.auth import SendType, VerifyCodeRequest, RefreshVerifyCodeRequest
@@ -53,9 +53,12 @@ def login_user(
             dto_request_data=credentials,
             send_type=send_type
         )
-        return Response(
+        return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content=user_info.get_success_send_msg(send_type)
+            content={
+                'message': user_info.get_success_send_msg(send_type),
+                'detail': user_info.model_dump(mode='json')
+            }
         )
     except CheckPswError:
         return Response(
@@ -72,7 +75,7 @@ def login_user(
     operation_id="register_user_operation",
 )
 def register_user(
-        new_user: UserDtoPostRequest,
+        new_user: UserDtoRegisterRequest,
         send_type: SendType,
         dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.REGISTER)),
 ):
@@ -86,9 +89,12 @@ def register_user(
         dto_register_user=new_user,
         send_type=send_type
     )
-    return Response(
+    return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=user_info.get_success_send_msg(send_type)
+        content={
+            'message': user_info.get_success_send_msg(send_type),
+            'detail': user_info.model_dump(mode='json')
+        }
     )
 
 
