@@ -36,6 +36,8 @@ class ActionType(str, Enum):
     DEACTIVATE = 'Отключение пользователя'
     VERIFY_CODE = 'Подтверждение сообщения'
     REFRESH_VERIFY_CODE = 'Обновление кода подтверждения'
+    GRAND_RIGHTS = 'Изменение роли пользователя'
+    GRAND_RIGHTS_MASTER_KEY = 'Изменение роли пользователя по мастер ключу'
 
 
 class AuditPostDto(BaseModel):

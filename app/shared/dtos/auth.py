@@ -10,7 +10,7 @@ class LoginDtoRequest(BaseModel):
 
 
 class SendType(str, Enum):
-    PHONE = 'телефон'
+    # PHONE = 'телефон'
     EMAIL = 'email'
 
 

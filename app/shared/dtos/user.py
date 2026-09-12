@@ -1,6 +1,7 @@
 from typing import Self
 from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator, ValidationError
+from pydantic import BaseModel, Field, ConfigDict, SecretStr, EmailStr, model_validator, ValidationError, \
+    field_serializer
 from fastapi.websockets import WebSocket
 from app.data_access.database.models.user import RoleEnum
 from .base import (
@@ -20,6 +21,7 @@ class UserDtoGetResponse(BaseDtoGetResponse):
     years_old: int = Field(None)
     email: EmailStr
     phone: str
+    model_config = ConfigDict(extra='allow')
 
     def get_contact_details(self, send_type: SendType) -> str | None:
         if send_type.EMAIL:
@@ -28,7 +30,7 @@ class UserDtoGetResponse(BaseDtoGetResponse):
             return self.phone
 
     def get_success_send_msg(self, send_type: SendType) -> str:
-        msg = f'Код подтверждения был выслан на {send_type}, '
+        msg = f'Код подтверждения был выслан на {send_type.value}, '
         if send_type == SendType.EMAIL:
             msg += f'по адресу: {self.email}'
         elif send_type == SendType.PHONE:
@@ -37,13 +39,18 @@ class UserDtoGetResponse(BaseDtoGetResponse):
             raise Exception
         return msg
 
-class UserDtoPostRequest(BaseDtoPostDeleteRequest):
-    """User DTO для операции добавления (Post) информации о пользователе"""
+
+class UserDtoBaseInfoPostRequest(BaseDtoPostDeleteRequest):
+    """User DTO для операции добавления (Post) информации о пользователе (базовая информация)"""
     id: str
     user_name: str
     email: EmailStr
     phone: str
-    password: SecretStr = Field(..., exclude=True)
+    password: SecretStr
+
+
+class UserDtoRegisterRequest(UserDtoBaseInfoPostRequest):
+    """User DTO для операции добавления (Post) информации о пользователе"""
     repeat_password: SecretStr = Field(..., exclude=True)
 
     @model_validator(mode='after')
@@ -53,9 +60,13 @@ class UserDtoPostRequest(BaseDtoPostDeleteRequest):
         return self
 
 
+class UserDtoPostRequestWithRole(UserDtoBaseInfoPostRequest):
+    """User DTO для операции добавления (Post) информации о пользователе с ролью"""
+    role: RoleEnum
+
+
 class UserDtoUpdateRequest(BaseDtoPutPathRequest):
     """User DTO для операции обновления (Put) информации о пользователе"""
-    id: str
     user_name: str | None = Field(default=None, examples=[None])
     bio: str | None = Field(default=None, examples=[None])
     years_old: int | None = Field(default=None, examples=[None])

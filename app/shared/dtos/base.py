@@ -156,7 +156,7 @@ class BaseDtoGetResponse(BaseDtoClientRequest):
         return value
 
 
-class BaseDtoPostDeleteRequest(BaseDtoClientRequest):
+class BaseDtoPostDeleteRequest(BaseModelWithPrint):
     """Базовый DTO с общими полями для операции добавления (Post), удаления (Delete)"""
     pass
 
