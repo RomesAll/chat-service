@@ -12,6 +12,7 @@ from app.business_logic.cache.verify_code_storage import VerifyCodeStorage
 from app.business_logic.decorators import audit_system
 from app.shared.dtos.auth import SendType
 from app.business_logic.celery_tasks.sender_tasks import send_message
+from bootstrap import get_bootstrap
 
 
 class LoginUseCase(IUseCase, LogMixin):
@@ -54,6 +55,9 @@ class LoginUseCase(IUseCase, LogMixin):
             self.log_info(f'Вход для пользователя {user_info.id} выполнен успешно')
             if not (to := user_info.get_contact_details(send_type)):
                 raise Exception
+            if get_bootstrap().config.mode == 'dev':
+                setattr(user_info, 'code', new_code)
+                return user_info
             result = send_message.delay(to=to, msg=f'Код подтверждения: {new_code}', send_type=send_type)
             self.log_debug(f'UUID задачи отправки кода: {result.id}, статус: {result.status}')
             return user_info
