@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic
+from typing import Generic, Any
 from uuid import UUID
 from typing_extensions import TypeVar
 from app.shared.dtos import (
@@ -87,9 +87,10 @@ class IRepositoryDeleteRecovery(Generic[TDtoGetResponse], ABC):
 class IRepositoryUpdate(Generic[TDtoPostPutDeleteRequest, TDtoGetResponse], ABC):
     """Интерфейс репозитория для операций обновления записи"""
     @abstractmethod
-    def update(self, dto_update_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
+    def update(self, record_id: Any, dto_update_request: TDtoPostPutDeleteRequest) -> TDtoGetResponse:
         """
         Обновление записи
+        :param record_id: id записи в бд
         :param dto_update_request: принимает объект BaseDtoUpdateRequest,
         :return: возвращает либо None (если мы в dto указали return_value=False), либо обновленный объект
         """
