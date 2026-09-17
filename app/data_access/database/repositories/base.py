@@ -176,7 +176,9 @@ class BaseRepositoryDelete(
     def hard_delete(self, record_id: UUID | str | int) -> UUID | str | int:
         """Удаление из бд"""
         stmt = delete(self.model).where(self.model.id == record_id)
-        self.session.execute(stmt)
+        result = self.session.execute(stmt)
+        if result.rowcount == 0:
+            raise RecordNotFound(record_id)
         return record_id
 
     def recovery(self, record_id: UUID | str | int) -> TDtoGetResponse:
