@@ -34,6 +34,7 @@ class ChatNotFound(Exception):
 class UserNotFoundError(Exception):
     """Информация о пользователе не найдена"""
     def __init__(self, user_id: str):
+        self.user_id = user_id
         self.message = f'Информация о пользователе {user_id} не передана в метод для получения или создание активной сессии'
         super().__init__(self.message)
 
@@ -63,6 +64,8 @@ class SyncKeyError(Exception):
 class PermissionFileDownError(Exception):
     """Нет прав для загрузки файлов"""
     def __init__(self, user_id: str, file_id: UUID):
+        self.user_id = user_id
+        self.file_id = file_id
         self.message = f'У пользователя {user_id} нет прав на доступ к файлу {file_id}'
         super().__init__(self.message)
 
@@ -70,6 +73,7 @@ class PermissionFileDownError(Exception):
 class RefreshTokenIdNotFound(Exception):
     """Не удалось найти refresh токен по id в white list"""
     def __init__(self, user_id: str, token_id: UUID):
+        self.user_id = user_id
         self.message = (f'Не удалось найти токен у пользователя {user_id} '
                    f'по id {token_id} в white list')
         super().__init__(self.message)
@@ -100,6 +104,8 @@ class SaveSessionKeyError(Exception):
 class UserNotFoundInRoom(Exception):
     """Не удалось найти пользователя в комнате"""
     def __init__(self, user_id: str, room_id: UUID):
+        self.user_id = user_id
+        self.room_id = room_id
         self.message = f'Не удалось найти пользователя {user_id} в комнате {room_id}'
         super().__init__(self.message)
 
@@ -140,3 +146,17 @@ class VerifyCodeInCorrect(Exception):
     def __init__(self,):
         self.message = 'Введенный код подтверждения неверный'
         super().__init__(self.message)
+
+
+class UnsupportedFileTypeError(Exception):
+    """Тип файла не поддерживается"""
+    def __init__(self, msg):
+        self.message = msg
+        super().__init__(self.message)
+
+
+class RoomDeleteForbidden(Exception):
+    """Нет доступа к удалению комнаты"""
+    def __init__(self, room_id: UUID):
+        self.room_id = room_id
+        super().__init__(f'Нет доступа к удалению комнаты {room_id}')
