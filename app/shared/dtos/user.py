@@ -17,13 +17,12 @@ class UserDtoGetResponse(BaseDtoGetResponse):
     id: str
     user_name: str
     role: RoleEnum
-    bio: str = Field(None)
-    years_old: int = Field(None)
+    bio: str | None = None
+    years_old: int | None = None
     email: EmailStr
     phone: str
-    model_config = ConfigDict(extra='allow')
 
-    def get_contact_details(self, send_type: SendType) -> str | None:
+    def get_contact_details(self, send_type: SendType) -> str:
         if send_type.EMAIL:
             return self.email
         else:
@@ -33,11 +32,25 @@ class UserDtoGetResponse(BaseDtoGetResponse):
         msg = f'Код подтверждения был выслан на {send_type.value}, '
         if send_type == SendType.EMAIL:
             msg += f'по адресу: {self.email}'
-        elif send_type == SendType.PHONE:
-            msg += f'по номеру: {self.email}'
         else:
             raise Exception
         return msg
+
+
+class UserDtoGetResponseWithCode(UserDtoGetResponse):
+    """DTO для получения информации о пользователе с кодом подтв."""
+    code: int
+
+
+class UserDtoGetRefreshCodeResponse(BaseModel):
+    """DTO для получения id и username пользователя"""
+    id: str
+    user_name: str
+
+
+class UserDtoGetRefreshCodeResponseWithCode(UserDtoGetRefreshCodeResponse):
+    """DTO для получения id и username пользователя с кодом"""
+    code: int
 
 
 class UserDtoBaseInfoPostRequest(BaseDtoPostDeleteRequest):
@@ -56,7 +69,7 @@ class UserDtoRegisterRequest(UserDtoBaseInfoPostRequest):
     @model_validator(mode='after')
     def validate_psw(self) -> Self:
         if self.repeat_password != self.password:
-            raise ValidationError('Пароли не совпадают')
+            raise ValueError('Пароли не совпадают')
         return self
 
 
@@ -84,6 +97,26 @@ class UserDtoBriefInfo(BaseModel):
     years_old: int | None = None
     email: str
     phone: str
+    code: int | None = None
+
+    def get_contact_details(self, send_type: SendType) -> str | None:
+        if send_type.EMAIL:
+            return self.email
+        else:
+            return self.phone
+
+    def get_success_send_msg(self, send_type: SendType) -> str:
+        msg = f'Код подтверждения был выслан на {send_type.value}, '
+        if send_type == SendType.EMAIL:
+            msg += f'по адресу: {self.email}'
+        else:
+            raise Exception
+        return msg
+
+
+class UserDtoBriefInfoWithCode(UserDtoBriefInfo):
+    """DTO для получения краткой информации пользователя с кодом"""
+    code: int
 
 
 class UserDtoChangePsw(BaseModel):
