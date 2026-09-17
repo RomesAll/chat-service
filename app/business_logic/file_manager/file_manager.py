@@ -1,6 +1,7 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 from fastapi import UploadFile
 import aiofiles
+from app.business_logic.exceptions import UnsupportedFileTypeError
 from bootstrap import get_bootstrap
 from app.shared.dtos import MessageAttachmentsDtoPostRequest, MessageDtoGetResponse, GroupMessageDtoResponse
 from app.data_access.database.models.message_attachments import MimeType
@@ -38,7 +39,7 @@ class FileManager:
     async def upload_file(
             cls,
             upload_file:  list[UploadFile],
-            dto_response: MessageDtoGetResponse | GroupMessageDtoResponse
+            message_id: UUID
     ):
         """Функция загрузки файлов на сервер"""
         for file in upload_file:
@@ -46,17 +47,22 @@ class FileManager:
                 continue
             file_id = uuid4()
             file_path = get_bootstrap().config.upload_file_path
+            try:
+                mime_type = MimeType(file.content_type)
+            except ValueError:
+                raise UnsupportedFileTypeError(
+                    f"Тип файла {file.content_type} не поддерживается"
+                )
             dto_file = MessageAttachmentsDtoPostRequest(
                 id=file_id,
                 file_name=file.filename,
                 file_path=file_path,
                 file_size=file.size,
-                message_id=dto_response.id,
-                mime_type=MimeType(file.content_type)
+                message_id=message_id,
+                mime_type=mime_type
             )
             await cls.write_file(
-                path_to_save=file_path,
+                path_to_save=f'{file_path}/{file.filename}',
                 file=file
             )
-            dto_response.file_id.append(file_id)
             yield dto_file
