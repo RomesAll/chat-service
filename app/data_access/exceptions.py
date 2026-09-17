@@ -1,4 +1,5 @@
 from typing import Any
+from sqlalchemy.exc import IntegrityError
 
 
 class ValidationOrm(Exception):
@@ -92,7 +93,7 @@ class DBInterfaceError(ConnectionDBError):
 
 
 class DBTimeoutError(ConnectionDBError):
-    """Ошибка таймаута бд"""
+    """Ошибка тайм-аута бд"""
     def __init__(self, original: str):
         message = f'сервер БД перегружен или не отвечает, оригинальная ошибка {original}'
         super().__init__(message)
@@ -111,7 +112,7 @@ class InCorrectStmtError(DataBaseError):
     def __init__(
             self,
             stmt: object,
-            cause: str
+            cause: Any
     ):
         self.stmt = stmt
         self.cause = cause
@@ -128,15 +129,16 @@ class BreachIntegrity(DataBaseError):
             operation: str,
             data: dict,
             stmt: object,
-            cause: str
+            cause: IntegrityError,
+            message: str
     ):
         self.operation = operation
         self.data = data
         self.stmt = stmt
         self.cause = cause
-        message = (f'нарушение целостности данных при {operation} данных: {data}.\n'
+        _message = (f'нарушение целостности данных при {operation} данных: {data}.\n'
                    f'Оригинальный sql запрос: {stmt}.\n'
-                   f'Причина: {cause}')
+                   f'Причина: {message}')
         super().__init__(message)
 
 
@@ -147,14 +149,14 @@ class UniqueViolationError(BreachIntegrity):
             operation: str,
             data: dict,
             stmt: object,
-            cause: str
+            cause: IntegrityError
     ):
         self.operation = operation
         self.data = data
         self.stmt = stmt
         self.cause = cause
         message = f'ошибка уникальности: {cause}'
-        super().__init__(operation, data, stmt, message)
+        super().__init__(operation, data, stmt, cause, message)
 
 
 class ForeignKeyViolationError(BreachIntegrity):
@@ -164,14 +166,14 @@ class ForeignKeyViolationError(BreachIntegrity):
             operation: str,
             data: dict,
             stmt: object,
-            cause: str
+            cause: IntegrityError
     ):
         self.operation = operation
         self.data = data
         self.stmt = stmt
         self.cause = cause
         message = f'ошибка внешнего ключа: {cause}'
-        super().__init__(operation, data, stmt, message)
+        super().__init__(operation, data, stmt, cause, message)
 
 
 class NotNullViolationError(BreachIntegrity):
@@ -181,14 +183,14 @@ class NotNullViolationError(BreachIntegrity):
             operation: str,
             data: dict,
             stmt: object,
-            cause: str
+            cause: IntegrityError
     ):
         self.operation = operation
         self.data = data
         self.stmt = stmt
         self.cause = cause
         message = f'столбец не может быть пустым (NOT NULL): {cause}'
-        super().__init__(operation, data, stmt, message)
+        super().__init__(operation, data, stmt, cause, message)
 
 
 class CheckViolationError(BreachIntegrity):
@@ -198,11 +200,11 @@ class CheckViolationError(BreachIntegrity):
             operation: str,
             data: dict,
             stmt: object,
-            cause: str
+            cause: IntegrityError
     ):
         self.operation = operation
         self.data = data
         self.stmt = stmt
         self.cause = cause
         message = f'данные не подходят под условия (Check): {cause}'
-        super().__init__(operation, data, stmt, message)
+        super().__init__(operation, data, stmt, cause, message)
