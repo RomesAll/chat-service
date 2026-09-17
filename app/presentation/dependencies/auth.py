@@ -1,5 +1,7 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import InvalidSignatureError, DecodeError
+
 from app.business_logic.auth.jwt_manager import JWTAccessManager, JWTRefreshManager
 from app.shared.dtos import JWTBaseToken
 import jwt
@@ -13,21 +15,32 @@ class AuthChecker:
     def __call__(
             self,
             credentials: HTTPAuthorizationCredentials = Depends(security),
-            token_type: TokenType = TokenType.ACCESS_TOKEN
     ) -> JWTBaseToken:
         token = credentials.credentials
         try:
             payload = None
-            if token_type == TokenType.ACCESS_TOKEN:
+            try:
                 payload: JWTAccessTokenResponse = JWTAccessManager.decode_token(token)
-            elif token_type == TokenType.REFRESH_TOKEN:
+                if payload.type == TokenType.ACCESS_TOKEN:
+                    return payload
+            except (InvalidSignatureError, DecodeError):
+                pass
+
+            try:
                 payload: JWTRefreshTokenResponse = JWTRefreshManager.decode_token(token)
+                if payload.type == TokenType.REFRESH_TOKEN:
+                    return payload
+            except (InvalidSignatureError, DecodeError):
+                pass
+
             if not payload:
-                raise Exception
+                raise HTTPException(status_code=401, detail="Не удалось обработать переданный токен")
+
             if not payload.user_id or not payload.role:
-                raise HTTPException(status_code=401, detail="Неверные данные в токена")
+                raise HTTPException(status_code=401, detail="Неверные данные в токене")
+
             return payload
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="Token expired (Access токен протух)")
+            raise HTTPException(status_code=401, detail="Время жизни токена истекло")
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Недействительный токен")
