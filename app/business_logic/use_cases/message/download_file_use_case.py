@@ -7,7 +7,7 @@ from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.data_access.database.repositories.message import PrivateMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.shared.log_config import LogMixin
-from app.business_logic.decorators import audit_system
+from app.business_logic.decorators import audit_system, audit_system_async
 from app.shared.dtos import AuditPostDto
 
 
@@ -23,7 +23,7 @@ class DownloadFileUseCase(IUseCase, LogMixin):
         self.file_manager = file_manager
         self.dto_audit = dto_audit
 
-    @audit_system
+    @audit_system_async
     async def execute(
             self,
             user_upload_id: str,
@@ -41,7 +41,7 @@ class DownloadFileUseCase(IUseCase, LogMixin):
                 self.log_error(exc.message)
                 raise exc
             return StreamingResponse(
-                self.file_manager.read_file(file_meta.file_path),
+                self.file_manager.read_file(f'{file_meta.file_path}/{file_meta.file_name}'),
                 media_type=file_meta.mime_type,
                 headers={
                     "Content-Disposition": f"attachment; filename={file_meta.file_name}"
