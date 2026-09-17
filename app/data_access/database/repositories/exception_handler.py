@@ -1,5 +1,6 @@
+import inspect
 from typing import Callable
-import psycopg.errors
+from psycopg2 import errorcodes
 from sqlalchemy.exc import (
     IntegrityError,
     OperationalError,
@@ -28,8 +29,12 @@ class HandleSqlAlchemyException(LogMixin):
     """
     def __call__(self, cls):
         for attr_name, attr_value in cls.__dict__.items():
-            if callable(attr_value) and not attr_name.startswith('__'):
-                setattr(cls, attr_name, self._wrap_method(attr_value))
+            # Пропускаем dunder-методы и всё, что не функция
+            if attr_name.startswith('__'):
+                continue
+            if not inspect.isfunction(attr_value):
+                continue
+            setattr(cls, attr_name, self._wrap_method(attr_value))
         return cls
 
     def _wrap_method(self, method: Callable):
@@ -48,24 +53,24 @@ class HandleSqlAlchemyException(LogMixin):
                 operation: str = f'({method.__name__.replace('_', ' ')})'
                 data = {'position_args': args, 'named_args': kwargs}
                 stmt = e.statement
-                cause = str(e.orig)
-                if isinstance(e.orig, psycopg.errors.UniqueViolation):
-                    exc = UniqueViolationError(operation, data, stmt, cause)
+                code = getattr(e.orig, "pgcode", None)
+                if code == errorcodes.UNIQUE_VIOLATION:
+                    exc = UniqueViolationError(operation, data, stmt, e)
                     self.log_error(exc.message)
                     raise exc
-                if isinstance(e.orig, psycopg.errors.ForeignKeyViolation):
-                    exc = ForeignKeyViolationError(operation, data, stmt, cause)
+                if code == errorcodes.FOREIGN_KEY_VIOLATION:
+                    exc = ForeignKeyViolationError(operation, data, stmt, e)
                     self.log_error(exc.message)
                     raise exc
-                if isinstance(e.orig, psycopg.errors.NotNullViolation):
-                    exc = NotNullViolationError(operation, data, stmt, cause)
+                if code == errorcodes.NOT_NULL_VIOLATION:
+                    exc = NotNullViolationError(operation, data, stmt, e)
                     self.log_error(exc.message)
                     raise exc
-                if isinstance(e.orig, psycopg.errors.CheckViolation):
-                    exc = CheckViolationError(operation, data, stmt, cause)
+                if code == errorcodes.CHECK_VIOLATION:
+                    exc = CheckViolationError(operation, data, stmt, e)
                     self.log_error(exc.message)
                     raise exc
-                exc = BreachIntegrity(operation, data, stmt, cause)
+                exc = BreachIntegrity(operation, data, stmt, e)
                 self.log_error(exc.message)
                 raise exc
             except OperationalError as e:
