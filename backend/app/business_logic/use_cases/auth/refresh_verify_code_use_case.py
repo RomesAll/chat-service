@@ -1,0 +1,58 @@
+from app.business_logic.use_cases.interface.iuse_case import IUseCase
+from app.shared.config import AppMode
+from app.shared.log_config import LogMixin
+from app.business_logic.cache.verify_code_storage import VerifyCodeStorage
+from app.shared.dtos.auth import RefreshVerifyCodeRequest
+from app.business_logic.decorators import audit_system
+from app.shared.dtos.user import UserDtoGetResponse, UserDtoGetRefreshCodeResponse, \
+    UserDtoGetRefreshCodeResponseWithCode
+from app.shared.dtos import AuditPostDto
+from app.business_logic.unit_of_work import UnitOfWork
+from app.data_access.database.repositories import UserRepository
+from app.shared.dtos.auth import SendType
+from app.business_logic.exceptions import VerifyCodeStorageError
+from app.business_logic.celery_tasks.sender_tasks import send_message
+import random
+
+
+class RefreshVerifyCodeUseCase(IUseCase, LogMixin):
+    """Use case для обновления кода подтверждения"""
+    def __init__(
+            self,
+            uow: UnitOfWork,
+            dto_audit: AuditPostDto,
+            verify_code_storage: VerifyCodeStorage,
+            app_mode: AppMode
+    ):
+        self.uow = uow
+        self.verify_code_storage = verify_code_storage
+        self.dto_audit = dto_audit
+        self.app_mode = app_mode
+
+    @audit_system
+    def execute(
+            self,
+            request: RefreshVerifyCodeRequest,
+            send_type: SendType
+    ) -> UserDtoGetRefreshCodeResponse:
+        with self.uow as uow:
+            user_repo = uow.get_repository(UserRepository)
+            user_info: UserDtoGetResponse = user_repo.get_by_id(
+                request.user_id
+            )
+            self.log_debug(f'Получена информация о пользователе {request.user_id} из бд')
+            new_code = random.randint(10000, 99999)
+            is_code_save = self.verify_code_storage.save(user_info.id, new_code)
+            if not is_code_save:
+                raise VerifyCodeStorageError()
+            to = user_info.get_contact_details(send_type)
+            if self.app_mode == AppMode.DEV:
+                return UserDtoGetRefreshCodeResponseWithCode(
+                    **user_info.model_dump(),
+                    code=new_code
+                )
+            result = send_message.delay(to=to, msg=f'Код подтверждения: {new_code}', send_type=send_type)
+            self.log_debug(f'UUID задачи отправки кода: {result.id}, статус: {result.status}')
+            return UserDtoGetRefreshCodeResponse(
+                **user_info.model_dump()
+            )
