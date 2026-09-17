@@ -1,3 +1,4 @@
+from app.business_logic.invite_url_generate_service import InviteUrlGenerateService
 from app.shared.config import BaseConfig
 from app.data_access.database.database import Database
 from app.business_logic.active_session.active_session_manager import ActiveSessionManager
@@ -20,6 +21,7 @@ class Bootstrap:
         self._audit_service: AuditService | None = None
         self._smtp_service: EmailSender | None = None
         self._sms_service: SMSSender | None = None
+        self._invite_room_service: InviteUrlGenerateService | None = None
         self.config = config
 
     def init_app(self):
@@ -32,6 +34,10 @@ class Bootstrap:
         self._init_audit_service()
         self._init_smtp_service()
         self._init_sms_service()
+        self._init_invite_room_service()
+
+    def _init_invite_room_service(self):
+        self._invite_room_service = InviteUrlGenerateService(url=self.config.mongodb.url)
 
     def _init_smtp_service(self):
         """Инициализация smtp сервиса"""
@@ -84,9 +90,13 @@ class Bootstrap:
         """Получение сервиса отправки по типу"""
         if send_type.EMAIL:
             return self._smtp_service
-        elif send_type.PHONE:
-            return self._sms_service
         raise Exception
+
+    @property
+    def invite_room_service(self):
+        if not self._invite_room_service:
+            raise Exception
+        return self._invite_room_service
 
     @property
     def sms_service(self):
