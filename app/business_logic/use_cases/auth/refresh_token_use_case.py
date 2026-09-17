@@ -1,9 +1,12 @@
 from uuid import uuid4
+
+from fastapi import HTTPException
+
 from app.business_logic.auth.jwt_manager import JWTFacade
 from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.dtos import JWTRefreshTokenResponse, AuditPostDto
-from app.shared.dtos.jwt import JWTTokenResponse
+from app.shared.dtos.jwt import JWTTokenResponse, TokenType
 from app.business_logic.decorators import audit_system
 from app.business_logic.exceptions import RefreshTokenInActive
 from app.shared.log_config import LogMixin
@@ -26,7 +29,7 @@ class RefreshTokenUseCase(IUseCase, LogMixin):
             self, *,
             refresh_token: JWTRefreshTokenResponse,
     ) -> JWTTokenResponse:
-        if self.jwt_white_list.is_token_active(
+        if not self.jwt_white_list.is_token_active(
                 user_id=refresh_token.user_id,
                 token_id=refresh_token.refresh_id
         ):

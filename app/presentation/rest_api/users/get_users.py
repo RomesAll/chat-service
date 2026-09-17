@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query, status, Depends
+from fastapi import APIRouter, Query, status, Depends, HTTPException
 from starlette.responses import JSONResponse
+from app.shared.dtos.jwt import TokenType
 from bootstrap import get_bootstrap
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.user.get_one_user_use_case import GetOneUsers
@@ -10,7 +11,7 @@ from app.shared.dtos import (
     PaginationDto,
     SortDto,
     SortEnum,
-    JWTRefreshTokenResponse, UserDtoBriefInfo
+    UserDtoBriefInfo
 )
 from app.data_access.database.models.user import RoleEnum
 from app.shared.dtos import RequestClientDtoHandle, JWTAccessToken, ActionType
@@ -30,6 +31,7 @@ bootstrap = get_bootstrap()
 def get_me_info(
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
                 action_type=ActionType.GET_ONE_USER
             )
@@ -42,7 +44,8 @@ def get_me_info(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
-            'message': result.model_dump(mode='json')
+            'message': f'Информация о пользователе {result.id}',
+            'detail': result.model_dump(mode='json')
         },
         media_type="application/json"
     )
@@ -62,6 +65,7 @@ def get_users(
         sort_order: list[str] | None = Query(default_factory=list, description="Порядки сортировки (asc, desc) в том же порядке, что и sort_field"),
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.GET_USERS
             )
@@ -80,7 +84,10 @@ def get_users(
     ).execute(dto_request)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=[result.model_dump(mode='json') for result in results]
+        content={
+            'message': 'Информация о пользователях успешно получена',
+            'detail': [result.model_dump(mode='json') for result in results]
+        }
     )
 
 
@@ -95,6 +102,7 @@ def get_one_user(
         user_id: str,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.GET_ONE_USER
             )
@@ -106,8 +114,10 @@ def get_one_user(
     ).execute(user_id).dto_response
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
+        content={
+            'message': f'Информация о пользователе {result.id} успешно получена',
+            'detail': result.model_dump(mode='json'),
+        }
     )
 
 
@@ -122,6 +132,7 @@ def get_user_brief_info(
         user_id: str,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.GET_ONE_USER
             )
@@ -132,13 +143,14 @@ def get_user_brief_info(
         dto_audit=request_client_dep.dto_audit
     ).execute(user_id).get_brief_info()
     if not result:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=f'Информация о пользователе {user_id} не найдена',
-            media_type="application/json"
+            detail=f'Информация о пользователе {user_id} не найдена',
         )
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
+        content={
+            'message': f'Краткая информация о пользователе {result.id} успешно получена',
+            'detail': result.model_dump(mode='json'),
+        }
     )

@@ -3,12 +3,13 @@ from sqlalchemy import select
 from sqlalchemy.sql.elements import and_
 from app.shared.dtos import RoomDtoGetResponse, RoomDtoPostRequest, UserInRoomResponse, UserInRoomPostRequest
 from app.data_access.database.models.room import RoomOrm, UserInRoomOrm
-from .base import BaseRepositoryGet, BaseRepositorySave
+from .base import BaseRepositoryGet, BaseRepositorySave, BaseRepositoryDelete
 
 
 class RoomRepository(
     BaseRepositoryGet[RoomDtoGetResponse, RoomOrm],
-    BaseRepositorySave[RoomDtoGetResponse, RoomDtoPostRequest, RoomOrm]
+    BaseRepositorySave[RoomDtoGetResponse, RoomDtoPostRequest, RoomOrm],
+    BaseRepositoryDelete[RoomDtoGetResponse, RoomOrm]
 ):
     """Репозиторий для работы с данными комнат"""
     model: type[RoomOrm] = RoomOrm

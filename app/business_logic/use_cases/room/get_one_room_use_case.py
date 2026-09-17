@@ -1,7 +1,9 @@
 from uuid import UUID
+
+from app.business_logic.decorators import audit_system
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
-from app.shared.dtos import RoomDtoGetResponse
+from app.shared.dtos import RoomDtoGetResponse, AuditPostDto
 from app.data_access.database.repositories.room import RoomRepository, UserInRoomRepository
 from app.shared.log_config import LogMixin
 from app.business_logic.exceptions import UserNotFoundInRoom
@@ -11,10 +13,13 @@ class GetOneRoomUseCase(IUseCase, LogMixin):
     """Use case для получения информации о комнате"""
     def __init__(
             self,
-            uow: UnitOfWork
+            uow: UnitOfWork,
+            dto_audit: AuditPostDto,
     ):
         self.uow = uow
+        self.dto_audit = dto_audit
 
+    @audit_system
     def execute(self, room_id: UUID, user_id: str) -> RoomDtoGetResponse:
         room_repo = self.uow.get_repository(RoomRepository)
         user_in_room_repo = self.uow.get_repository(UserInRoomRepository)

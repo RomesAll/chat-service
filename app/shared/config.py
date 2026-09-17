@@ -1,9 +1,16 @@
+from enum import Enum
 import bcrypt
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, SecretStr, field_validator
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent.parent.resolve()
+
+class AppMode(str, Enum):
+    """Режим работы"""
+    DEV = 'dev'
+    TEST = 'test'
+    PROD = 'production'
 
 
 class PostgresqlSettings(BaseModel):
@@ -87,7 +94,7 @@ class BaseConfig(BaseSettings):
     smtp: SmtpConfig
     sms: SmsConfig
     app_master_key: bytes
-    mode: str = ''
+    mode: AppMode = AppMode.DEV
 
     @field_validator('app_master_key', mode='before')
     @classmethod
@@ -99,11 +106,13 @@ class BaseConfig(BaseSettings):
 
 class DevelopConfig(BaseConfig):
     """Конфиг для разработки"""
-    mode: str = 'dev'
+    mode: AppMode = AppMode.DEV
     model_config = SettingsConfigDict(
         env_file=f'{BASE_DIR}/.dev.env',
         env_nested_delimiter='__',
         extra='ignore'
     )
 
+
 config = DevelopConfig()
+Path(config.upload_file_path).mkdir(parents=True, exist_ok=True)

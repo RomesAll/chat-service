@@ -37,7 +37,6 @@ class VerifyCodeUseCase(IUseCase, LogMixin):
             user_info: UserDtoGetResponse = user_repo.get_by_id(verify_code_request.user_id)
             if not(self.verify_code_storage.validate_code(
                     user_id=verify_code_request.user_id,
-                    email=verify_code_request.email,
                     code=verify_code_request.code
             )):
                 exc = VerifyCodeInCorrect()

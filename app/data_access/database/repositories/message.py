@@ -1,12 +1,18 @@
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.sql.elements import or_, and_
-from app.shared.dtos import GroupMessageDtoResponse, GroupMessageDtoPostRequest
+from app.shared.dtos import (
+    GroupMessageDtoResponse,
+    GroupMessageDtoPostRequest,
+    GroupMessageDtoUpdateRequest,
+    PrivateMessageDtoUpdateRequest
+)
 from app.data_access.database.models.message import PrivateMessageOrm, RoomMessageOrm
 from .base import (
     BaseRepositoryGet,
     BaseRepositorySave,
-    BaseRepositoryDelete
+    BaseRepositoryDelete,
+    BaseRepositoryUpdate
 )
 from app.shared.dtos import (
     MessageDtoGetResponse,
@@ -17,7 +23,8 @@ from app.shared.dtos import (
 class PrivateMessageRepository(
     BaseRepositoryGet[MessageDtoGetResponse, PrivateMessageOrm],
     BaseRepositorySave[MessageDtoGetResponse, PrivateMessageDtoPostRequest, PrivateMessageOrm],
-    BaseRepositoryDelete[MessageDtoGetResponse, PrivateMessageOrm]
+    BaseRepositoryDelete[MessageDtoGetResponse, PrivateMessageOrm],
+    BaseRepositoryUpdate[MessageDtoGetResponse, PrivateMessageDtoUpdateRequest, PrivateMessageOrm]
 ):
     """Репозиторий для работы с данными приватных сообщений"""
     model: type[PrivateMessageOrm] = PrivateMessageOrm
@@ -44,7 +51,8 @@ class PrivateMessageRepository(
 class GroupMessageRepository(
     BaseRepositoryGet[GroupMessageDtoResponse, RoomMessageOrm],
     BaseRepositorySave[GroupMessageDtoResponse, GroupMessageDtoPostRequest, RoomMessageOrm],
-    BaseRepositoryDelete[GroupMessageDtoResponse, RoomMessageOrm]
+    BaseRepositoryDelete[GroupMessageDtoResponse, RoomMessageOrm],
+    BaseRepositoryUpdate[GroupMessageDtoResponse, GroupMessageDtoUpdateRequest, RoomMessageOrm]
 ):
     """Репозиторий для работы с данными групповых сообщений"""
     model: type[RoomMessageOrm] = RoomMessageOrm

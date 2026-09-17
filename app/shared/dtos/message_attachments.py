@@ -18,6 +18,7 @@ class MessageAttachmentsDtoGetResponse(BaseDtoGetResponse):
 
 class MessageAttachmentsDtoPostRequest(BaseDtoPostDeleteRequest):
     """User DTO для операции добавления (Post) информации о файлах"""
+    id: UUID
     message_id: UUID
     file_name: str
     file_path: str

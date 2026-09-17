@@ -16,6 +16,7 @@ from app.business_logic.use_cases.message.get_group_messages_use_case import Get
 from app.business_logic.use_cases.message.get_messages_use_case import GetPrivateMsgAndSave
 from app.business_logic.use_cases.message.send_group_msg_and_save_use_case import SendGroupMsgAndSave
 from app.business_logic.use_cases.message.send_private_msg_and_save_use_case import SendPrivateMsgAndSave
+from app.business_logic.use_cases.message.msg_update_use_case import MsgUpdateUseCase
 
 from app.business_logic.use_cases.room.get_one_room_use_case import GetOneRoomUseCase
 from app.business_logic.use_cases.room.get_pub_key_user_in_room_use_case import GetPubKeyUserInRoomUseCase
@@ -39,6 +40,7 @@ from app.business_logic.use_cases.roles.setting_perm_via_master_key_use_case imp
 __version__ = 'v1.3.1'
 __author__ = 'RomesAll'
 __all__ = [
+    'MsgUpdateUseCase',
     'GrantRightsUseCase',
     'SettingPermViaMasterKeyUseCase',
     'LoginUseCase',

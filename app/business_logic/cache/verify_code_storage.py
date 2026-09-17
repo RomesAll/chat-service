@@ -50,15 +50,14 @@ class VerifyCodeStorage(LogMixin):
         return wrapper
 
     @exception_handler
-    def save(self, user_id: str, email: str, code: int, ttl: int = 300) -> bool:
+    def save(self, user_id: str, code: int, ttl: int = 300) -> bool:
         """
         Сохранение кода подтверждения для auth и регистрации.
         user_id - идентификатор пользователя
-        email - электронный адрес пользователя
         code - числовой код подтверждения
         ttl - время жизни кода
         """
-        name = f'{self._prefix}:{user_id}:{email}'
+        name = f'{self._prefix}:{user_id}'
         try:
             result = bool(self.client.setex(
                 name=name,
@@ -74,14 +73,13 @@ class VerifyCodeStorage(LogMixin):
             raise
 
     @exception_handler
-    def validate_code(self, user_id: str, email: str, code: int) -> bool:
+    def validate_code(self, user_id: str, code: int) -> bool:
         """
         Проверка корректности введенного кода подтверждения
         user_id - идентификатор пользователя
-        email - электронный адрес пользователя
         code - числовой код подтверждения
         """
-        name = f'{self._prefix}:{user_id}:{email}'
+        name = f'{self._prefix}:{user_id}'
         result = self.client.get(name)
         if type(result) == bytes:
             if result.decode() == str(code):

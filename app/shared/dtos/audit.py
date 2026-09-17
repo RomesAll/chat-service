@@ -38,6 +38,7 @@ class ActionType(str, Enum):
     REFRESH_VERIFY_CODE = 'Обновление кода подтверждения'
     GRAND_RIGHTS = 'Изменение роли пользователя'
     GRAND_RIGHTS_MASTER_KEY = 'Изменение роли пользователя по мастер ключу'
+    UPDATE_MESSAGE = 'Обновление сообщений'
 
 
 class AuditPostDto(BaseModel):

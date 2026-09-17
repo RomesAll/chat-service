@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Response, status, Depends
+from fastapi import APIRouter, Response, status, Depends, Query
 from starlette.responses import JSONResponse
+from app.shared.dtos.jwt import TokenType
 from bootstrap import get_bootstrap
 from app.business_logic.auth import JWTFacade, PasswordManager
-from app.business_logic.exceptions import CheckPswError, RefreshTokenInActive, RefreshTokenIdNotFound, \
-    VerifyCodeInCorrect
 from app.business_logic.unit_of_work import UnitOfWork
 from app.data_access.database.models.user import RoleEnum
 from app.presentation.dependencies.base import RequestClientDepends
@@ -34,37 +33,36 @@ bootstrap = get_bootstrap()
 @route.post(
     path='/auth/login',
     tags=['Auth'],
-    summary='Вход с систему',
+    summary='Вход в систему',
     operation_id="login_user_operation",
 )
 def login_user(
         credentials: LoginDtoRequest,
-        send_type: SendType,
+        send_type: SendType = Query(
+            ...,
+            description='Способ отправки кода подтверждения',
+            example='email'
+        ),
         dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.LOGIN))
 ):
-    try:
-        dto_audit.user_id = credentials.user_id
-        user_info = LoginUseCase(
-            uow=UnitOfWork(bootstrap.database),
-            psw_manager=PasswordManager,
-            dto_audit=dto_audit,
-            verify_code_storage=bootstrap.redis_cache.verify_code_storage,
-        ).execute(
-            dto_request_data=credentials,
-            send_type=send_type
-        )
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={
-                'message': user_info.get_success_send_msg(send_type),
-                'detail': user_info.model_dump(mode='json')
-            }
-        )
-    except CheckPswError:
-        return Response(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content='Неверный логин или пароль',
-        )
+    dto_audit.user_id = credentials.user_id
+    user_info = LoginUseCase(
+        uow=UnitOfWork(bootstrap.database),
+        psw_manager=PasswordManager,
+        dto_audit=dto_audit,
+        verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+        app_mode=get_bootstrap().config.mode
+    ).execute(
+        dto_request_data=credentials,
+        send_type=send_type
+    )
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            'message': user_info.get_success_send_msg(send_type),
+            'detail': user_info.model_dump(mode='json')
+        }
+    )
 
 
 @route.post(
@@ -85,6 +83,7 @@ def register_user(
         psw_manager=PasswordManager,
         dto_audit=dto_audit,
         verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+        app_mode=get_bootstrap().config.mode
     ).execute(
         dto_register_user=new_user,
         send_type=send_type
@@ -108,34 +107,27 @@ def register_user(
 def refresh_tokens(
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTRefreshTokenResponse](
+                token_type=TokenType.REFRESH_TOKEN,
                 allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.REFRESH_TOKENS
             ),
         )
 ):
-    try:
-        result: JWTTokenResponse = RefreshTokenUseCase(
-            jwt_facade=JWTFacade,
-            jwt_white_list=bootstrap.redis_cache.jwt_white_list,
-            dto_audit=request_client_dep.dto_audit
-        ).execute(
-            refresh_token=request_client_dep.token_info,
-        )
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content=result.model_dump(mode='json'),
-            media_type="application/json"
-        )
-    except RefreshTokenInActive:
-        return Response(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content='Токен не активен, пройдите аутентификацию заново'
-        )
-    except RefreshTokenIdNotFound:
-        return Response(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content='Токен недействителен, пройдите аутентификацию заново'
-        )
+    result: JWTTokenResponse = RefreshTokenUseCase(
+        jwt_facade=JWTFacade,
+        jwt_white_list=bootstrap.redis_cache.jwt_white_list,
+        dto_audit=request_client_dep.dto_audit
+    ).execute(
+        refresh_token=request_client_dep.token_info,
+    )
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            'message': 'Токен успешно обновлен',
+            'detail': result.model_dump(mode='json')
+        },
+        media_type="application/json"
+    )
 
 
 @route.post(
@@ -148,12 +140,13 @@ def refresh_tokens(
 def logout_user_operation(
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTRefreshTokenResponse](
+                token_type=TokenType.REFRESH_TOKEN,
                 allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.LOGOUT
             ),
         )
 ):
-    is_delete_refresh, is_delete_session_key = LogoutUseCase(
+    LogoutUseCase(
         session_key_storage=bootstrap.redis_cache.session_key_storage,
         active_session_manager=bootstrap.active_session_manager,
         white_list=bootstrap.redis_cache.jwt_white_list,
@@ -165,8 +158,7 @@ def logout_user_operation(
     )
     return Response(
         status_code=status.HTTP_200_OK,
-        content=f'Выход из системы, удаление refresh_token: {is_delete_refresh if is_delete_refresh else 'уже удален'}, '
-                f'удаление session_key: {is_delete_session_key if is_delete_session_key else 'уже удален'} '
+        content=f'Выход из системы'
     )
 
 
@@ -177,27 +169,27 @@ def logout_user_operation(
     description='Ввод кода подтверждения после auth и регистрации',
     operation_id="verify_operation",
 )
-def verify_code(request: VerifyCodeRequest, dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.VERIFY_CODE))):
-    try:
-        dto_audit.user_id = request.user_id
-        result = VerifyCodeUseCase(
-            uow=UnitOfWork(bootstrap.database),
-            verify_code_storage=bootstrap.redis_cache.verify_code_storage,
-            jwt_manager=JWTFacade,
-            jwt_white_list=bootstrap.redis_cache.jwt_white_list,
-            dto_audit=dto_audit
-        ).execute(
-            verify_code_request=request
-        )
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content=result.model_dump(mode='json')
-        )
-    except VerifyCodeInCorrect:
-        return Response(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content='Неверный код'
-        )
+def verify_code(
+        request: VerifyCodeRequest,
+        dto_audit: AuditPostDto = Depends(AuditDep(action=ActionType.VERIFY_CODE))
+):
+    dto_audit.user_id = request.user_id
+    result = VerifyCodeUseCase(
+        uow=UnitOfWork(bootstrap.database),
+        verify_code_storage=bootstrap.redis_cache.verify_code_storage,
+        jwt_manager=JWTFacade,
+        jwt_white_list=bootstrap.redis_cache.jwt_white_list,
+        dto_audit=dto_audit
+    ).execute(
+        verify_code_request=request
+    )
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content = {
+            'message': 'Код успешно подтвержден',
+            'detail': result.model_dump(mode='json')
+        },
+    )
 
 
 @route.post(
@@ -216,12 +208,17 @@ def refresh_verify_code(
     user_info = RefreshVerifyCodeUseCase(
         uow=UnitOfWork(bootstrap.database),
         verify_code_storage=bootstrap.redis_cache.verify_code_storage,
-        dto_audit=dto_audit
+        dto_audit=dto_audit,
+        app_mode=get_bootstrap().config.mode
     ).execute(
         request=request,
         send_type=send_type
     )
-    return Response(
+    return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=user_info.get_success_send_msg(send_type)
+        content = {
+            'message': 'Код подтверждения обновлен',
+            'detail': f'Код подтверждения был выслан на {send_type.value}',
+            'user_info': user_info.model_dump(mode='json')
+        },
     )

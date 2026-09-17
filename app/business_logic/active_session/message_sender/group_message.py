@@ -26,11 +26,11 @@ class GroupMessageRoute(IMessageRoute, LogMixin):
     async def send_message(
             self,
             session_id: UUID,
-            message_send_request: GroupMessageDtoResponse,
+            message_send_response: GroupMessageDtoResponse,
     ):
         """Отправка и сохранение сообщения всем пользователям в комнате"""
-        self.log_debug(f'Групповое сообщение {message_send_request.id} отправлено в очередь')
-        await self.processing_send_queue.put((session_id, message_send_request))
+        self.log_debug(f'Групповое сообщение {message_send_response.id} отправлено в очередь')
+        await self.processing_send_queue.put((session_id, message_send_response))
 
     async def _worker(self):
         """Асинхронный воркер для отправки сообщений всем пользователям"""

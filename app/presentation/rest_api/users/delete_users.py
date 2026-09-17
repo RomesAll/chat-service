@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Response, status, Depends
 from starlette.responses import JSONResponse
+from app.shared.dtos.jwt import TokenType
 from bootstrap import get_bootstrap
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.user.hard_delete_user_use_case import HardDeleteUser
@@ -25,6 +26,7 @@ bootstrap = get_bootstrap()
 def soft_delete_me(
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
                 action_type=ActionType.SOFT_DELETE_USER
             )
@@ -53,6 +55,7 @@ def soft_delete_user(
         user_id: str,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.SOFT_DELETE_USER
             )
@@ -69,7 +72,7 @@ def soft_delete_user(
 
 
 @route.delete(
-    path='/users/me/hard-delete',
+    path='/users/me',
     tags=['Users'],
     summary='Жесткое удаление своей информации',
     description='Жесткое удаление своей информации без возможности восстановления',
@@ -78,6 +81,7 @@ def soft_delete_user(
 def hard_delete_me(
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
                 action_type=ActionType.HARD_DELETE_USER
             )
@@ -94,7 +98,7 @@ def hard_delete_me(
 
 
 @route.delete(
-    path='/users/{user_id}/hard-delete',
+    path='/users/{user_id}',
     tags=['Users'],
     summary='Жесткое удаление пользователя',
     description='Жесткое удаление без возможности восстановления',
@@ -104,6 +108,7 @@ def hard_delete_user(
         user_id: str,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.HARD_DELETE_USER
             )
@@ -130,6 +135,7 @@ def recovery_me(
         return_record: bool = True,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
                 action_type=ActionType.RECOVERY_USER
             )
@@ -164,6 +170,7 @@ def recovery_user(
         return_record: bool = True,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.RECOVERY_USER
             )

@@ -9,6 +9,7 @@ class RoomOrm(BaseOrm, IdMixin):
     """Orm модель для комнат"""
     __tablename__ = 'room'
     name: Mapped[str] = mapped_column(String(100), nullable=False)
+    owner: Mapped[str] = mapped_column(ForeignKey('user.id', ondelete='SET NULL'))
 
     def __repr__(self):
         base_repr = super().__repr__()

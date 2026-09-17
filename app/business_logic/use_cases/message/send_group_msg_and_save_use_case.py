@@ -8,8 +8,8 @@ from app.shared.dtos import GroupMessageDtoPostRequest, GroupMessageDtoResponse,
 from app.data_access.database.repositories.message import GroupMessageRepository
 from app.data_access.database.repositories.message_attachments import MessageAttachmentsRepository
 from app.data_access.database.repositories.room import RoomRepository, UserInRoomRepository
-from app.business_logic.decorators import audit_system
-from app.business_logic.exceptions import UserNotFoundInRoom, RoomNotFound
+from app.business_logic.decorators import audit_system, audit_system_async
+from app.business_logic.exceptions import UserNotFoundInRoom, RoomNotFound, SendMessageError
 from app.shared.log_config import LogMixin
 
 
@@ -29,7 +29,7 @@ class SendGroupMsgAndSave(IUseCase, LogMixin):
         self.file_manager = file_manager
         self.dto_audit = dto_audit
 
-    @audit_system
+    @audit_system_async
     async def execute(
             self,
             dto_group_msg: GroupMessageDtoPostRequest,
@@ -56,8 +56,13 @@ class SendGroupMsgAndSave(IUseCase, LogMixin):
             dto_response = group_msg_repo.save(dto_group_msg)
             self.log_debug(f'Сообщение сохранено в бд, id {dto_response.id}')
             if upload_file:
-                for dto_file in self.file_manager.upload_file(upload_file, dto_response):
+                for dto_file in self.file_manager.upload_file(upload_file, dto_response.id):
                     file_msg_repo.save(dto_file)
+                    dto_response.file_id.append(dto_file.id)
                     self.log_debug(f'Файл успешно сохранен {dto_file}')
-            await self.group_msg_route.send_message(self.session_id, dto_response)
+            try:
+                await self.group_msg_route.send_message(self.session_id, dto_response)
+            except SendMessageError:
+                self.log_debug(f'Не удалось отправить групповое сообщение в {dto_group_msg.room_id}'
+                               f'(возможно у отправителя {dto_group_msg.sender_id} нет активных подключений)')
             return dto_response

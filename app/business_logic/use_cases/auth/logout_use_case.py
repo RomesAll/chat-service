@@ -1,7 +1,11 @@
 from uuid import UUID
+
+from fastapi import HTTPException
+
 from app.business_logic.active_session.active_session_manager import ActiveSessionManager
 from app.business_logic.cache.jwt_white_list import JWTWhiteListCache
 from app.business_logic.cache.session_key_storage import SessionKeyStorage
+from app.business_logic.exceptions import UserNotFoundError
 from app.business_logic.use_cases.interface.iuse_case import IUseCase
 from app.shared.log_config import LogMixin
 from app.business_logic.decorators import audit_system
@@ -29,10 +33,13 @@ class LogoutUseCase(IUseCase, LogMixin):
             refresh_token_id: UUID,
             session_id: UUID,
     ):
-        del self.white_list[user_id, refresh_token_id]
-        self.log_info(f'id refresh ({refresh_token_id}) токена был успешно удален из '
-                      f'white list для пользователя {user_id}')
-        del self.session_key_storage[user_id, session_id]
-        self.log_info(f'Сессионный ключ был успешно удален из кеша '
-                      f'для пользователя {user_id} и session_id {session_id}')
-        self.active_session_manager.remove_user_active_session(user_id, session_id)
+        try:
+            del self.white_list[user_id, refresh_token_id]
+            self.log_info(f'id refresh ({refresh_token_id}) токена был успешно удален из '
+                          f'white list для пользователя {user_id}')
+            del self.session_key_storage[user_id, session_id]
+            self.log_info(f'Сессионный ключ был успешно удален из кеша '
+                          f'для пользователя {user_id} и session_id {session_id}')
+            self.active_session_manager.remove_user_active_session(user_id, session_id)
+        except UserNotFoundError:
+            self.log_info(f'У пользователя {user_id} нет активных подключений')

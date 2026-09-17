@@ -1,4 +1,6 @@
 from typing import Type, TypeVar
+
+from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from typing import TYPE_CHECKING
@@ -23,13 +25,19 @@ class UnitOfWork:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.session:
-            return
-        if exc_type:
+        if self.session is None:
+            return False
+        try:
+            if exc_type:
+                self.session.rollback()
+            else:
+                self.session.commit()
+        except Exception:
             self.session.rollback()
-        else:
-            self.session.commit()
-        self.session.close()
+            raise
+        finally:
+            self.session.close()
+        return False
 
     def get_repository(
             self,

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Response, status, Depends
+from fastapi import APIRouter, status, Depends
 from starlette.responses import JSONResponse
+from app.shared.dtos.jwt import TokenType
 from bootstrap import get_bootstrap
 from app.business_logic.unit_of_work import UnitOfWork
 from app.business_logic.use_cases.user.update_user_use_case import UpdateUser
@@ -24,9 +25,9 @@ path='/users/me',
 )
 def update_me(
         update_user_info: UserDtoUpdateRequest,
-        return_record: bool = True,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
                 action_type=ActionType.UPDATE_USER
             )
@@ -36,14 +37,12 @@ def update_me(
         uow=UnitOfWork(bootstrap.database),
         dto_audit=request_client_dep.dto_audit
     ).execute(request_client_dep.token_info.user_id, update_user_info)
-    if not return_record:
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
+        content={
+            'message': f'Информация о пользователе {result.id} успешно обновлена',
+            'detail': result.model_dump(mode='json'),
+        }
     )
 
 
@@ -57,9 +56,9 @@ path='/users/{user_id}',
 def update_user(
         user_id: str,
         update_user_info: UserDtoUpdateRequest,
-        return_record: bool = True,
         request_client_dep: RequestClientDtoHandle = Depends(
             RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
                 allowed_roles=[RoleEnum.SUPER_ADMIN],
                 action_type=ActionType.UPDATE_USER
             )
@@ -69,12 +68,10 @@ def update_user(
         uow=UnitOfWork(bootstrap.database),
         dto_audit=request_client_dep.dto_audit
     ).execute(user_id, update_user_info)
-    if not return_record:
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
-        content=result.model_dump(mode='json'),
-        media_type="application/json"
+        content={
+            'message': f'Информация о пользователе {result.id} успешно обновлена',
+            'detail': result.model_dump(mode='json'),
+        }
     )

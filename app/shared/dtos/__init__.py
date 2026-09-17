@@ -30,7 +30,9 @@ from .message import (
     MessageType,
     MessageDtoGetResponse,
     PrivateMessageDtoPostRequest,
-    BaseMessageDto
+    BaseMessageDto,
+    PrivateMessageDtoUpdateRequest,
+    GroupMessageDtoUpdateRequest
 )
 from .room import (
     RoomDtoGetResponse,
@@ -75,6 +77,8 @@ from .group_message import (
 __version__ = 'v1.3.1'
 __author__ = 'RomesAll'
 __all__ = [
+    'PrivateMessageDtoUpdateRequest',
+    'GroupMessageDtoUpdateRequest',
     'UserDtoBaseInfoPostRequest',
     'UserDtoRegisterRequest',
     'UserDtoPostRequestWithRole',
