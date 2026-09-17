@@ -23,11 +23,9 @@ class LoginOrRegisterDtoResponse(BaseModel):
 class VerifyCodeRequest(BaseModel):
     """DTO для передачи и проверки кода подтверждения"""
     user_id: str
-    email: str
     code: int
 
 
 class RefreshVerifyCodeRequest(BaseModel):
     """DTO для обновления кода"""
     user_id: str
-    email: str
