@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход — Admin panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+    <div class="auth-wrapper">
+        <div class="card">
+            <div class="auth-title">
+                <h2>🔐 Вход</h2>
+                <p>Войдите в систему</p>
+            </div>
+
+            <input type="text" id="userId" placeholder="user_id" value="alice" autocomplete="username">
+
+            <div class="password-wrapper">
+                <input type="password" id="password" placeholder="Пароль" value="123456" autocomplete="current-password">
+                <button type="button" class="toggle-password" onclick="togglePassword('password', this)" title="Показать пароль">👁️</button>
+            </div>
+
+            <label for="sendType" style="display:block; font-size:13px; color:#666; margin: 6px 0 4px;">Способ отправки кода</label>
+            <select id="sendType" class="version-select" style="width:100%;">
+                <option value="email">📧 Email</option>
+                <option value="sms">📱 SMS</option>
+            </select>
+
+            <div id="errorMsg"   style="color:red;      font-size:13px; min-height:18px; margin-top:8px;"></div>
+            <div id="successMsg" style="color:#28a745;  font-size:13px; min-height:18px;"></div>
+
+            <button class="success" onclick="login()" id="loginBtn" style="width:100%;">🔑 Войти</button>
+        </div>
+        <div class="api-hint">API: <code id="apiUrl"></code></div>
+    </div>
+
+    <!-- ===== МОДАЛКА ДЛЯ ВВОДА КОДА ===== -->
+    <div class="modal-overlay" id="codeModal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>🔐 Подтверждение</h3>
+                <button class="modal-close" onclick="closeCodeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="codeModalMsg" style="font-size:13px; color:#333; margin-bottom:10px;">
+                    Код отправлен. Введите его ниже.
+                </p>
+                <input type="text" id="verifyCode" placeholder="Код из письма" inputmode="numeric" style="width:100%;">
+                <div id="codeError" style="color:red; font-size:13px; min-height:18px; margin-top:8px;"></div>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <div class="actions">
+                    <button class="secondary" onclick="closeCodeModal()">Отмена</button>
+                    <button class="success" onclick="submitCode()" id="submitCodeBtn">Подтвердить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // ===== СОСТОЯНИЕ (объявляем в начале!) =====
+        let pendingUserId = null;
+        let pendingPassword = null;
+
+        document.getElementById('apiUrl').textContent = API_BASE;
+
+        // ===== АВТО-ПРОВЕРКА ТОКЕНА ПРИ ЗАГРУЗКЕ =====
+        (async () => {
+            if (TOKENS.has()) {
+                const ok = await ensureAuthorized();
+                if (ok) {
+                    window.location.href = 'admin.html';
+                    return;
+                }
+            }
+            document.getElementById('userId').focus();
+        })();
+
+        // Enter → login / submitCode
+        ['userId', 'password'].forEach(id => {
+            document.getElementById(id).addEventListener('keydown', e => {
+                if (e.key === 'Enter') login();
+            });
+        });
+        document.getElementById('verifyCode').addEventListener('keydown', e => {
+            if (e.key === 'Enter') submitCode();
+        });
+
+        // ===== ПОКАЗАТЬ/СКРЫТЬ ПАРОЛЬ =====
+        function togglePassword(id, btn) {
+            const input = document.getElementById(id);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+                btn.title = 'Скрыть пароль';
+                btn.classList.add('revealed');
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+                btn.title = 'Показать пароль';
+                btn.classList.remove('revealed');
+            }
+        }
+
+        // ===== ЛОГИН =====
+        async function login() {
+            const userId    = document.getElementById('userId').value.trim();
+            const password  = document.getElementById('password').value.trim();
+            const sendType  = document.getElementById('sendType').value;
+            const errorEl   = document.getElementById('errorMsg');
+            const successEl = document.getElementById('successMsg');
+            const btn       = document.getElementById('loginBtn');
+
+            errorEl.textContent = '';
+            successEl.textContent = '';
+
+            if (!userId || !password) {
+                errorEl.textContent = '❌ Введите user_id и пароль';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Отправка кода...';
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login?send_type=${encodeURIComponent(sendType)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, password: password })
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(data.message || data.detail || `HTTP ${res.status}`);
+                }
+
+                successEl.textContent = `✅ ${data.message || 'Код отправлен'}`;
+                pendingUserId = userId;
+                pendingPassword = password;
+
+                openCodeModal(data.message || `Код отправлен на ${sendType}`);
+
+            } catch (err) {
+                errorEl.textContent = `❌ ${err.message}`;
+                btn.disabled = false;
+                btn.textContent = '🔑 Войти';
+            }
+        }
+
+        // ===== МОДАЛКА =====
+        function openCodeModal(serverMsg) {
+            document.getElementById('codeModalMsg').textContent = serverMsg;
+            document.getElementById('codeError').textContent = '';
+            document.getElementById('verifyCode').value = '';
+            document.getElementById('codeModal').classList.add('active');
+            document.getElementById('submitCodeBtn').disabled = false;
+            document.getElementById('submitCodeBtn').textContent = 'Подтвердить';
+            setTimeout(() => document.getElementById('verifyCode').focus(), 100);
+        }
+
+        function closeCodeModal() {
+            document.getElementById('codeModal').classList.remove('active');
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = false;
+            btn.textContent = '🔑 Войти';
+        }
+
+        // ===== ПОДТВЕРЖДЕНИЕ КОДА =====
+        async function submitCode() {
+            const code    = document.getElementById('verifyCode').value.trim();
+            const errorEl = document.getElementById('codeError');
+            const btn     = document.getElementById('submitCodeBtn');
+
+            errorEl.textContent = '';
+
+            if (!code) {
+                errorEl.textContent = '❌ Введите код';
+                return;
+            }
+
+            if (!pendingUserId) {
+                errorEl.textContent = '❌ Потерян user_id. Начните заново.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Проверка...';
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/verify-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: pendingUserId,
+                        code: parseInt(code, 10)
+                    })
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(data.message || data.detail || `HTTP ${res.status}`);
+                }
+
+                const detail   = data.detail || {};
+                const access   = detail.access_token;
+                const refresh  = detail.refresh_token;
+                const userInfo = detail.user_info || {};
+
+                if (!access || !refresh) {
+                    throw new Error('Сервер не вернул токены');
+                }
+
+                TOKENS.save(access, refresh, userInfo.id || pendingUserId);
+
+                // ✅ запоминаем пароль для шифрования приватных ключей
+                CRYPTO.set(pendingPassword);
+
+                document.getElementById('codeModalMsg').textContent = '✅ Успешно! Перенаправление...';
+                document.getElementById('submitCodeBtn').textContent = '✅ Готово';
+
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 500);
+
+            } catch (err) {
+                errorEl.textContent = `❌ ${err.message}`;
+                btn.disabled = false;
+                btn.textContent = 'Подтвердить';
+            }
+        }
+    </script>
+</body>
+</html>

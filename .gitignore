@@ -1,7 +1,0 @@
-.venv
-*.env
-.idea
-*.db
-*/__pycache__.py
-logs/error/*.json
-logs/info/*.json

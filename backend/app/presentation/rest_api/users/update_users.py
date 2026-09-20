@@ -1,0 +1,77 @@
+from fastapi import APIRouter, status, Depends
+from starlette.responses import JSONResponse
+from app.shared.dtos.jwt import TokenType
+from bootstrap import get_bootstrap
+from app.business_logic.unit_of_work import UnitOfWork
+from app.business_logic.use_cases.user.update_user_use_case import UpdateUser
+from app.shared.dtos import (
+    UserDtoGetResponse,
+    UserDtoUpdateRequest,
+)
+from app.data_access.database.models.user import RoleEnum
+from app.shared.dtos import RequestClientDtoHandle, JWTAccessToken, ActionType
+from app.presentation.dependencies import RequestClientDepends
+
+route = APIRouter()
+bootstrap = get_bootstrap()
+
+
+@route.put(
+path='/users/me',
+    tags=['Users'],
+    summary='Обновление информацию о себе',
+    description='Изменение информации о себе по токену',
+    operation_id="update_my_user_info_operation",
+)
+def update_me(
+        update_user_info: UserDtoUpdateRequest,
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
+                allowed_roles=[RoleEnum.SUPER_ADMIN, RoleEnum.DEFAULT_USER],
+                action_type=ActionType.UPDATE_USER
+            )
+        )
+):
+    result: UserDtoGetResponse = UpdateUser(
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(request_client_dep.token_info.user_id, update_user_info)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            'message': f'Информация о пользователе {result.id} успешно обновлена',
+            'detail': result.model_dump(mode='json'),
+        }
+    )
+
+
+@route.put(
+path='/users/{user_id}',
+    tags=['Users'],
+    summary='Обновление пользователя',
+    description='Изменение информации о пользователе',
+    operation_id="update_user_operation",
+)
+def update_user(
+        user_id: str,
+        update_user_info: UserDtoUpdateRequest,
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
+                allowed_roles=[RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.UPDATE_USER
+            )
+        )
+):
+    result: UserDtoGetResponse = UpdateUser(
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(user_id, update_user_info)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            'message': f'Информация о пользователе {result.id} успешно обновлена',
+            'detail': result.model_dump(mode='json'),
+        }
+    )
