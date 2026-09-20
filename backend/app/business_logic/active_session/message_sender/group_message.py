@@ -58,11 +58,9 @@ class GroupMessageRoute(IMessageRoute, LogMixin):
                         payload=message_send_request.model_dump(mode='json')
                     )
                     for c_session_id, conn in acs.user_sessions.items():
-                        if session_id == c_session_id:
-                            continue
                         self.log_debug(f'Групповое сообщение отправлено пользователю {acs.info.id} '
                                        f'на подключение с session_id {c_session_id}')
-                        await conn.send_json(package)
+                        await conn.send_json(package.model_dump(mode='json'))
             except Exception as e:
                 if message_send_request:
                     exc = SendMessageError(

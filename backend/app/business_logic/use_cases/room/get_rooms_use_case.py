@@ -18,7 +18,8 @@ class GetRoomsUseCase(IUseCase, LogMixin):
 
     @audit_system
     def execute(self, request: BaseDtoGetListRequest) -> list[RoomDtoGetResponse]:
-        room_repo = self.uow.get_repository(RoomRepository)
-        result = room_repo.get(request)
-        self.log_debug('Поучена информация о комнатах')
-        return result
+        with self.uow as uow:
+            room_repo = uow.get_repository(RoomRepository)
+            result = room_repo.get(request)
+            self.log_debug('Поучена информация о комнатах')
+            return result

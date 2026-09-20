@@ -1,8 +1,9 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Query
 from starlette.responses import JSONResponse
 from app.business_logic.use_cases.room.delete_room_use_case import DeleteRoomUseCase
 from app.business_logic.use_cases.room.generate_invite_token_in_room_use_case import GenerateInviteTokenInRoomUseCase
+from app.business_logic.use_cases.room.get_rooms_use_case import GetRoomsUseCase
 from app.business_logic.use_cases.room.get_user_in_room_use_case import GetUserInRoomUseCase
 from app.shared.dtos.jwt import TokenType
 from app.shared.dtos.room import GenerateUrlInviteRoomRequest
@@ -15,13 +16,54 @@ from app.shared.dtos import (
     JWTAccessToken,
     RoomDtoPostRequest,
     RequestClientDtoHandle,
-    ActionType
+    ActionType, BaseDtoGetListRequest, PaginationDto, SortDto, SortEnum
 )
 from app.data_access.database.models.user import RoleEnum
 from app.presentation.dependencies.base import RequestClientDepends
 
 route = APIRouter()
 bootstrap = get_bootstrap()
+
+
+@route.get(
+    path='/rooms',
+    tags=['Room'],
+    summary='Получение комнаты',
+    operation_id='get_room_operation'
+)
+def get_rooms(
+        limit: int = Query(default=10, le=100, ge=1, description="Кол-во выводимых записей за раз"),
+        offset: int = Query(default=0, ge=0, description="Кол-во пропускаемых записей"),
+        sort_field: list[str] = Query(default_factory=list, description="Поля для сортировки (порядок важен)"),
+        sort_order: list[str] | None = Query(default_factory=list, description="Порядки сортировки (asc, desc) в том же порядке, что и sort_field"),
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.GET_ROOMS
+            )
+        )
+):
+    dto_request = BaseDtoGetListRequest(
+        pagination=PaginationDto(limit=limit, offset=offset),
+        sort=[
+            SortDto(field=sort_field[i], order_mode=SortEnum(sort_order[i]))
+            for i in range(len(sort_field))
+        ]
+    )
+    results = GetRoomsUseCase(
+        uow=UnitOfWork(bootstrap.database),
+        dto_audit=request_client_dep.dto_audit
+    ).execute(
+        request=dto_request
+    )
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            'message': 'Список комнат успешно получен',
+            'detail': [result.model_dump(mode='json') for result in results]
+        }
+    )
 
 
 @route.post(
@@ -228,3 +270,5 @@ def delete_room(
             'detail': str(room_id)
         }
     )
+
+

@@ -5,7 +5,7 @@ from app.business_logic.active_session.active_session_manager import ActiveSessi
 from app.business_logic.active_session.message_sender.interface import IMessageRoute
 from app.business_logic.cache.session_key_storage import SessionKeyStorage
 from app.business_logic.encryption.symmetric import SymmetricEncode
-from app.business_logic.exceptions import SendMessageError
+from app.business_logic.exceptions import SendMessageError, UserNotFoundError
 from app.shared.dtos import MessageDtoGetResponse
 from app.shared.dtos.base import WebsocketPackage, WebsocketActionType
 from app.shared.log_config import LogMixin
@@ -34,9 +34,12 @@ class PrivateMessageRoute(IMessageRoute, LogMixin):
         try:
             sender_collection = {}
             for user_id in [message_send_response.sender_id, message_send_response.recipient_id]:
-                sender_collection[user_id] = self.active_session.get_or_create_session(
-                    user_id=user_id
-                )
+                try:
+                    sender_collection[user_id] = self.active_session.get_or_create_session(
+                        user_id=user_id
+                    )
+                except UserNotFoundError:
+                    continue
             for user_id, active_session in sender_collection.items():
                 await self._send_message(
                     user_id=user_id,
@@ -72,3 +75,5 @@ class PrivateMessageRoute(IMessageRoute, LogMixin):
                            f'от {message_send_response.sender_id} '
                            f'к {message_send_response.recipient_id}')
             await connection.send_json(package.model_dump())
+            a = package.model_dump()
+            print(a)

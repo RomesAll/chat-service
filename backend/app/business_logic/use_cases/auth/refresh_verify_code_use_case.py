@@ -5,7 +5,7 @@ from app.business_logic.cache.verify_code_storage import VerifyCodeStorage
 from app.shared.dtos.auth import RefreshVerifyCodeRequest
 from app.business_logic.decorators import audit_system
 from app.shared.dtos.user import UserDtoGetResponse, UserDtoGetRefreshCodeResponse, \
-    UserDtoGetRefreshCodeResponseWithCode
+    UserDtoGetRefreshCodeResponseWithCode, UserDtoGetResponseWithCode
 from app.shared.dtos import AuditPostDto
 from app.business_logic.unit_of_work import UnitOfWork
 from app.data_access.database.repositories import UserRepository
@@ -34,7 +34,7 @@ class RefreshVerifyCodeUseCase(IUseCase, LogMixin):
             self,
             request: RefreshVerifyCodeRequest,
             send_type: SendType
-    ) -> UserDtoGetRefreshCodeResponse:
+    ) -> UserDtoGetResponse:
         with self.uow as uow:
             user_repo = uow.get_repository(UserRepository)
             user_info: UserDtoGetResponse = user_repo.get_by_id(
@@ -47,12 +47,10 @@ class RefreshVerifyCodeUseCase(IUseCase, LogMixin):
                 raise VerifyCodeStorageError()
             to = user_info.get_contact_details(send_type)
             if self.app_mode == AppMode.DEV:
-                return UserDtoGetRefreshCodeResponseWithCode(
+                return UserDtoGetResponseWithCode(
                     **user_info.model_dump(),
                     code=new_code
                 )
             result = send_message.delay(to=to, msg=f'Код подтверждения: {new_code}', send_type=send_type)
             self.log_debug(f'UUID задачи отправки кода: {result.id}, статус: {result.status}')
-            return UserDtoGetRefreshCodeResponse(
-                **user_info.model_dump()
-            )
+            return user_info

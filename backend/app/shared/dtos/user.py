@@ -40,6 +40,10 @@ class UserDtoGetResponseWithCode(UserDtoGetResponse):
     """DTO для получения информации о пользователе с кодом подтв."""
     code: int
 
+    def get_success_send_msg(self, send_type: SendType) -> str:
+        msg = super().get_success_send_msg(send_type)
+        return f'{msg} (код: {self.code})'
+
 
 class UserDtoGetRefreshCodeResponse(BaseModel):
     """DTO для получения id и username пользователя"""
@@ -94,28 +98,6 @@ class UserDtoBriefInfo(BaseModel):
     id: str
     user_name: str
     years_old: int | None = None
-    email: str
-    phone: str
-    code: int | None = None
-
-    def get_contact_details(self, send_type: SendType) -> str | None:
-        if send_type.EMAIL:
-            return self.email
-        else:
-            return self.phone
-
-    def get_success_send_msg(self, send_type: SendType) -> str:
-        msg = f'Код подтверждения был выслан на {send_type.value}, '
-        if send_type == SendType.EMAIL:
-            msg += f'по адресу: {self.email}'
-        else:
-            raise Exception
-        return msg
-
-
-class UserDtoBriefInfoWithCode(UserDtoBriefInfo):
-    """DTO для получения краткой информации пользователя с кодом"""
-    code: int
 
 
 class UserDtoChangePsw(BaseModel):

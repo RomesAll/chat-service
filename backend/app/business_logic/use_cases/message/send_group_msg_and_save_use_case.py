@@ -56,7 +56,7 @@ class SendGroupMsgAndSave(IUseCase, LogMixin):
             dto_response = group_msg_repo.save(dto_group_msg)
             self.log_debug(f'Сообщение сохранено в бд, id {dto_response.id}')
             if upload_file:
-                for dto_file in self.file_manager.upload_file(upload_file, dto_response.id):
+                async for dto_file in self.file_manager.upload_file(upload_file, dto_response.id):
                     file_msg_repo.save(dto_file)
                     dto_response.file_id.append(dto_file.id)
                     self.log_debug(f'Файл успешно сохранен {dto_file}')

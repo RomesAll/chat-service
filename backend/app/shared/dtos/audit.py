@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 class ActionType(str, Enum):
     """Типы действий для аудита"""
+    GET_ROOMS = 'Получение комнат'
     GET_SERVER_PUBLIC_KEY = 'Получение публичного ключа сервера'
     GET_SESSION_ID = 'Получение id сессии'
     GET_USER_PUBLIC_KEY = 'Получение публичного ключа пользователя'
@@ -38,6 +39,7 @@ class ActionType(str, Enum):
     GRAND_RIGHTS = 'Изменение роли пользователя'
     GRAND_RIGHTS_MASTER_KEY = 'Изменение роли пользователя по мастер ключу'
     UPDATE_MESSAGE = 'Обновление сообщений'
+    CHECK_TOKENS = 'Проверка токенов'
 
 
 class AuditPostDto(BaseModel):

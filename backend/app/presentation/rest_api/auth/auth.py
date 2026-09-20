@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Response, status, Depends, Query
 from starlette.responses import JSONResponse
-from app.shared.dtos.jwt import TokenType
+from app.shared.dtos.jwt import TokenType, JWTAccessToken, JWTRefreshToken
 from bootstrap import get_bootstrap
 from app.business_logic.auth import JWTFacade, PasswordManager
 from app.business_logic.unit_of_work import UnitOfWork
@@ -60,7 +60,6 @@ def login_user(
         status_code=status.HTTP_200_OK,
         content={
             'message': user_info.get_success_send_msg(send_type),
-            'detail': user_info.model_dump(mode='json')
         }
     )
 
@@ -91,8 +90,7 @@ def register_user(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
-            'message': user_info.get_success_send_msg(send_type),
-            'detail': user_info.model_dump(mode='json')
+            'message': user_info.get_success_send_msg(send_type)
         }
     )
 
@@ -217,8 +215,46 @@ def refresh_verify_code(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content = {
-            'message': 'Код подтверждения обновлен',
-            'detail': f'Код подтверждения был выслан на {send_type.value}',
-            'user_info': user_info.model_dump(mode='json')
+            'message': user_info.get_success_send_msg(send_type),
         },
+    )
+
+
+@route.get(
+    path='/check/access-tokens',
+    tags=['Auth'],
+    summary='Проверка access токена',
+    operation_id="check_access_token_operation",
+)
+def check_access_tokens(
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTAccessToken](
+                token_type=TokenType.ACCESS_TOKEN,
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.CHECK_TOKENS
+            )
+        )
+):
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT
+    )
+
+
+@route.get(
+    path='/check/refresh-tokens',
+    tags=['Auth'],
+    summary='Проверка refresh токенов',
+    operation_id="check_refresh_tokens_operation",
+)
+def check_refresh_tokens(
+        request_client_dep: RequestClientDtoHandle = Depends(
+            RequestClientDepends[JWTRefreshToken](
+                token_type=TokenType.REFRESH_TOKEN,
+                allowed_roles=[RoleEnum.DEFAULT_USER, RoleEnum.SUPER_ADMIN],
+                action_type=ActionType.CHECK_TOKENS
+            )
+        )
+):
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT
     )

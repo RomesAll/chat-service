@@ -160,3 +160,12 @@ class RoomDeleteForbidden(Exception):
     def __init__(self, room_id: UUID):
         self.room_id = room_id
         super().__init__(f'Нет доступа к удалению комнаты {room_id}')
+
+
+class GenerateInviteTokenOnlyOwner(Exception):
+    """Нет прав для генерации ссылки на вступления в комнату"""
+    def __init__(self, user_id:str, room_id: UUID, room_name: str):
+        self.room_id = room_id
+        self.user_id = user_id
+        self.room_name = room_name
+        super().__init__(f'У пользователя {user_id} нет прав на создания ссылки для вступления в комнату {room_name} ({room_id})')

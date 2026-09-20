@@ -12,7 +12,7 @@ from app.data_access.database.repositories import UserRepository
 from app.business_logic.cache.verify_code_storage import VerifyCodeStorage
 from app.business_logic.decorators import audit_system
 from app.business_logic.exceptions import VerifyCodeStorageError
-from app.shared.dtos.user import UserDtoBriefInfoWithCode
+from app.shared.dtos.user import UserDtoGetResponseWithCode
 from app.shared.log_config import LogMixin
 from app.business_logic.celery_tasks.sender_tasks import send_message
 from bootstrap import get_bootstrap
@@ -39,7 +39,7 @@ class RegisterUser(IUseCase, LogMixin):
             self, *,
             dto_register_user: UserDtoRegisterRequest,
             send_type: SendType
-    ) -> UserDtoBriefInfo:
+    ) -> UserDtoGetResponse:
         with self.uow as uow:
             user_repo = uow.get_repository(UserRepository)
             hash_psw: bytes = self.psw_manager.hash_password(dto_register_user.password)
@@ -62,10 +62,10 @@ class RegisterUser(IUseCase, LogMixin):
             self.log_info(f'Регистрация для пользователя {user_info.id} выполнена успешно')
             to = user_info.get_contact_details(send_type)
             if self.app_mode == AppMode.DEV:
-                return UserDtoBriefInfoWithCode(
+                return UserDtoGetResponseWithCode(
                     **user_info.model_dump(),
                     code=new_code
                 )
             result = send_message.delay(to=to, msg=f'Код подтверждения: {new_code}', send_type=send_type)
             self.log_debug(f'UUID задачи отправки кода: {result.id}, статус: {result.status}')
-            return UserDtoBriefInfo(**user_info.model_dump(mode='json'))
+            return user_info
