@@ -30,7 +30,7 @@ def register_route(app: FastAPI):
     app.include_router(private_message_route, prefix=api_v1)
     app.include_router(base_message_route, prefix=api_v1)
 
-__version__ = 'v1.3.1'
+__version__ = 'v1.4.1'
 __author__ = 'RomesAll'
 __all__ = [
     'register_route'

@@ -69,7 +69,7 @@ def register_exception_handler(app: FastAPI) -> None:
 
 
 
-__version__ = 'v1.3.1'
+__version__ = 'v1.4.1'
 __author__ = 'RomesAll'
 __all__ = [
     'register_exception_handler'

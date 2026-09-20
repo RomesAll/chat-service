@@ -62,8 +62,8 @@ class PrivateMessageRoute(IMessageRoute, LogMixin):
             exclude_session: set[UUID] | None = None
     ):
         for session_id, connection in connections.items():
-            if exclude_session and session_id in exclude_session:
-                continue
+            # if exclude_session and session_id in exclude_session:
+            #     continue
             session_key = self.session_key_storage.get(user_id, session_id)
             encoder = self.symmetric_encode(session_key)
             payload = encoder.encrypt_package(message_send_response.model_dump(mode='json'))
@@ -75,5 +75,3 @@ class PrivateMessageRoute(IMessageRoute, LogMixin):
                            f'от {message_send_response.sender_id} '
                            f'к {message_send_response.recipient_id}')
             await connection.send_json(package.model_dump())
-            a = package.model_dump()
-            print(a)

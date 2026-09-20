@@ -37,7 +37,7 @@ from app.business_logic.use_cases.user.update_user_use_case import UpdateUser
 from app.business_logic.use_cases.roles.grant_rights_use_case import GrantRightsUseCase
 from app.business_logic.use_cases.roles.setting_perm_via_master_key_use_case import SettingPermViaMasterKeyUseCase
 
-__version__ = 'v1.3.1'
+__version__ = 'v1.4.1'
 __author__ = 'RomesAll'
 __all__ = [
     'MsgUpdateUseCase',
