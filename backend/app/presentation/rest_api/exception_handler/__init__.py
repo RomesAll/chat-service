@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 
 from app.business_logic.exceptions import CheckPswError, CheckMasterPswError, RefreshTokenInActive, \
-    RefreshTokenIdNotFound, VerifyCodeInCorrect, VerifyCodeStorageError, PermissionFileDownError, UserNotFoundInRoom
+    RefreshTokenIdNotFound, VerifyCodeInCorrect, VerifyCodeStorageError, PermissionFileDownError, UserNotFoundInRoom, \
+    GenerateInviteTokenOnlyOwner
 from app.data_access.exceptions import (
     DataBaseError,
     ConnectionDBError,
@@ -36,6 +37,7 @@ from app.presentation.rest_api.exception_handler.database_exc_handler import (
 )
 from app.presentation.rest_api.exception_handler.message_exc_handler import permission_file_down_error, \
     file_not_found_error, user_not_found_in_room
+from app.presentation.rest_api.exception_handler.room_exc_handler import generate_invite_url_only_owner
 
 
 def register_exception_handler(app: FastAPI) -> None:
@@ -61,6 +63,10 @@ def register_exception_handler(app: FastAPI) -> None:
     app.add_exception_handler(PermissionFileDownError, permission_file_down_error)
     app.add_exception_handler(FileNotFoundError, file_not_found_error)
     app.add_exception_handler(UserNotFoundInRoom, user_not_found_in_room)
+
+    app.add_exception_handler(GenerateInviteTokenOnlyOwner, generate_invite_url_only_owner)
+
+
 
 
 __version__ = 'v1.3.1'

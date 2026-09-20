@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <div style="font-size:24px;">🛠️</div>
+            <div>
+                <div class="topbar-title">Admin panel</div>
+                <div class="topbar-subtitle">Отладка API и WebSocket</div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <span id="authStatus" class="status-badge status-noauth">⛔ не авторизован</span>
+            <span id="wsStatus"   class="status-badge status-offline">⚪ Отключено</span>
+            <button class="danger" onclick="logout()">🚪 Выйти</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="auth" onclick="switchTab('auth')">🔐 Сессия</button>
+        <button class="tab-btn" data-tab="keys" onclick="switchTab('keys')">🔑 Ключи</button>
+        <button class="tab-btn" data-tab="live" onclick="switchTab('live')">🟢 Живой чат</button>
+        <button class="tab-btn" data-tab="chat" onclick="switchTab('chat')">💬 Отправка</button>
+        <button class="tab-btn" data-tab="history" onclick="switchTab('history')">📜 Переписка</button>
+        <button class="tab-btn" data-tab="rooms" onclick="switchTab('rooms')">🏠 Комнаты</button>
+        <button class="tab-btn" data-tab="ws"   onclick="switchTab('ws')">🔌 WebSocket</button>
+        <button class="tab-btn" data-tab="log"  onclick="switchTab('log')">📋 Лог</button>
+    </div>
+
+    <!-- ===== TAB: AUTH ===== -->
+    <div class="tab-panel active" id="tab-auth">
+        <div class="grid-2">
+            <div class="card">
+                <h3>👤 Текущая сессия</h3>
+                <div class="info-row"><span class="info-label">user_id:</span><span class="info-value" id="currentUser">—</span></div>
+                <div class="info-row"><span class="info-label">API:</span><span class="info-value" id="apiUrl"></span></div>
+
+                <div class="password-section" style="margin-top:15px;">
+                    <h3>🔑 Пароль шифрования</h3>
+                    <p style="font-size:12px; color:#666;">
+                        Используется пароль, введённый при входе. Хранится только в этой вкладке.
+                    </p>
+                    <div class="info-row">
+                        <span class="info-label">Статус:</span>
+                        <span class="info-value" id="cryptoPasswordStatus">—</span>
+                    </div>
+                </div>
+
+                <button class="secondary" onclick="showTokens()" style="width:100%; margin-top:10px;">👁️ Показать токены</button>
+                <div id="tokenDisplay" style="display:none; margin-top:10px;">
+                    <div class="token-display">
+                        <div><span class="label">🔑 Access:</span> <span class="value" id="accessTokenDisplay">—</span></div>
+                        <div><span class="label">🔄 Refresh:</span> <span class="value" id="refreshTokenDisplay">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Статус</h3>
+                <div class="info-row"><span class="info-label">Auth:</span><span class="info-value" id="authStatus2">—</span></div>
+                <div class="info-row"><span class="info-label">Access:</span><span class="info-value" id="accessStatus">—</span></div>
+                <div class="info-row"><span class="info-label">Refresh:</span><span class="info-value" id="refreshStatus">—</span></div>
+                <div class="info-row"><span class="info-label">WebSocket:</span><span class="info-value" id="wsStatus2">—</span></div>
+                <div class="info-row"><span class="info-label">Handshake:</span><span class="info-value" id="handshakeStatus">⚪ не выполнен</span></div>
+                <div class="info-row"><span class="info-label">Session:</span><span class="info-value" id="sessionInfo">—</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: KEYS ===== -->
+    <div class="tab-panel" id="tab-keys">
+        <div class="card">
+            <div class="generate-section">
+                <h3>🚀 Управление ключами</h3>
+                <p style="font-size:12px; color:#666;">Сгенерируйте новую пару или загрузите существующие ключи</p>
+                <div class="flex">
+                    <button class="success"  onclick="generateAndSaveKeys()" id="genKeysBtn" style="font-size:16px; padding:15px 30px;">🔑 Сгенерировать и сохранить</button>
+                    <button class="primary"  onclick="loadMyPublicKey()" style="font-size:16px; padding:15px 30px;">📥 Мой публичный</button>
+                    <button class="warning"  onclick="loadAllPrivateKeys()" style="font-size:14px; padding:15px 20px;">📥 Приватные ключи</button>
+                </div>
+                <div id="genResult" class="test-result"></div>
+            </div>
+        </div>
+        <div class="keys-grid">
+            <div class="key-section">
+                <div class="flex" style="justify-content:space-between;">
+                    <label style="font-weight:bold;">🔑 Публичный ключ</label>
+                    <span id="pubKeyStatus" class="badge badge-warning">Не загружен</span>
+                </div>
+                <textarea id="publicKeyInput" readonly></textarea>
+                <div class="key-info" id="publicKeyInfo">Версия: —</div>
+            </div>
+            <div class="key-section">
+                <div class="flex" style="justify-content:space-between;">
+                    <label style="font-weight:bold;">🔐 Приватные ключи</label>
+                    <span id="privKeyStatus" class="badge badge-warning">Не загружены</span>
+                </div>
+                <div id="privateKeysCollection" class="keys-collection" style="min-height:100px;">
+                    <div style="color:#6c757d; text-align:center; padding:20px;">Нет загруженных ключей</div>
+                </div>
+                <div class="key-actions">
+                    <button class="success" onclick="showDecryptedKeys()">🔓 Расшифрованные</button>
+                    <button class="danger"  onclick="clearAllPrivateKeys()">🗑️ Очистить</button>
+                </div>
+                <div id="decryptedKeysContainer" class="decrypted-keys-section"></div>
+                <div class="key-info" id="privateKeyInfo">Ключей: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: LIVE CHAT ===== -->
+    <div class="tab-panel" id="tab-live">
+        <div class="card">
+            <div class="flex" style="justify-content:space-between; align-items:center;">
+                <h3>🟢 Живой чат</h3>
+                <span style="font-size:12px; color:#666;">WS: <span id="liveWsStatus">не подключён</span></span>
+            </div>
+
+            <div class="chat-mode-toggle" style="margin-bottom:10px;">
+                <button id="livePrivateBtn" class="private-mode active" onclick="setLiveMode('private')">💬 Приватный</button>
+                <button id="liveGroupBtn" class="group-mode" onclick="setLiveMode('group')">👥 Групповой</button>
+            </div>
+
+            <div id="livePrivateInputs">
+                <label style="font-size:13px; color:#666;">user_id собеседника</label>
+                <input type="text" id="liveUserId" placeholder="bob">
+            </div>
+
+            <div id="liveGroupInputs" style="display:none;">
+                <label style="font-size:13px; color:#666;">room_id</label>
+                <input type="text" id="liveRoomId" placeholder="00000000-0000-0000-0000-000000000001" list="liveRoomDatalist">
+                <datalist id="liveRoomDatalist"></datalist>
+            </div>
+
+            <div class="flex" style="margin-top:8px;">
+                <button class="success" onclick="openLiveChat()">🟢 Открыть чат</button>
+                <button class="secondary" onclick="closeLiveChat()">✖ Закрыть</button>
+                <span id="liveChatLabel" style="font-size:12px; color:#888;"></span>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:20px; display:flex; flex-direction:column;">
+            <h3 id="liveChatHeader">— чат не открыт —</h3>
+
+            <div id="liveChatContainer" class="history-container" style="height:60vh; overflow-y:auto;">
+                <div class="muted center" style="padding:40px;">Выбери собеседника и нажми «Открыть чат»</div>
+            </div>
+
+            <div class="flex" style="margin-top:12px;">
+                <textarea id="liveMessageInput" rows="2" placeholder="Введите сообщение..." style="flex:2;"></textarea>
+                <button class="success" onclick="sendLiveMessage()" id="liveSendBtn">📤 Отправить</button>
+            </div>
+            <div class="flex" style="margin-top:6px; gap:8px; align-items:center;">
+                <input type="file" id="liveFileInput" multiple style="flex:1;">
+                <button class="secondary" onclick="clearLiveFiles()">🗑️ Файлы</button>
+            </div>
+            <div id="liveFileList" class="file-list" style="display:none;"></div>
+            <div id="liveSendStatus" style="font-size:13px; margin-top:6px;"></div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: CHAT ===== -->
+    <div class="tab-panel" id="tab-chat">
+        <div class="card">
+            <h3>💬 Отправка сообщений</h3>
+            <p style="font-size:12px; color:#666;">Выберите режим и получателей</p>
+
+            <div class="chat-mode-toggle" style="margin-bottom:10px;">
+                <button id="privateModeBtn" class="private-mode active" onclick="setChatMode('private')">💬 Приватный</button>
+                <button id="groupModeBtn" class="group-mode" onclick="setChatMode('group')">👥 Групповой</button>
+            </div>
+            <div style="font-size:12px; color:#666; margin-bottom:10px;" id="modeStatus">Режим: приватный</div>
+
+            <div id="privateInputs">
+                <label style="font-size:13px; color:#666;">user_id получателя</label>
+                <input type="text" id="targetUserId" placeholder="bob">
+            </div>
+
+            <div id="groupInputs" style="display:none;">
+                <label style="font-size:13px; color:#666;">room_id</label>
+                <input type="text" id="roomIdInput" placeholder="00000000-0000-0000-0000-000000000001" list="roomDatalist">
+                <datalist id="roomDatalist"></datalist>
+                <div class="flex" style="margin-top:5px;">
+                    <button class="primary" onclick="loadRoomUsers()" style="flex:1;">📥 Загрузить участников</button>
+                    <button class="secondary" onclick="fillRoomIdFromList()">🏠 Выбрать</button>
+                </div>
+                <div id="roomUsersList" style="font-size:12px; color:#666; margin-top:5px; max-height:120px; overflow-y:auto;"></div>
+            </div>
+
+            <label style="font-size:13px; color:#666; display:block; margin-top:10px;">Сообщение</label>
+            <textarea id="messageInput" rows="4" placeholder="Введите сообщение..."></textarea>
+
+            <label style="font-size:13px; color:#666; display:block; margin-top:10px;">Файлы</label>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" multiple>
+            </div>
+            <div id="fileList" class="file-list" style="display:none;"></div>
+
+            <div class="flex" style="margin-top:8px;">
+                <button class="success" onclick="sendMessage()" id="sendBtn">📤 Отправить</button>
+                <button class="secondary" onclick="clearFiles()">🗑️ Файлы</button>
+                <span id="sendStatus" style="font-size:13px;"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: HISTORY ===== -->
+    <div class="tab-panel" id="tab-history">
+        <div class="grid-2">
+            <div class="card">
+                <h3>📥 Загрузка истории</h3>
+                <p style="font-size:12px; color:#666;">Приватная или групповая переписка</p>
+
+                <div class="chat-mode-toggle" style="margin-bottom:10px;">
+                    <button id="historyPrivateBtn" class="private-mode active" onclick="setHistoryMode('private')">💬 Приватная</button>
+                    <button id="historyGroupBtn" class="group-mode" onclick="setHistoryMode('group')">👥 Групповая</button>
+                </div>
+
+                <div id="historyPrivateInputs">
+                    <label style="font-size:13px; color:#666;">user_id собеседника</label>
+                    <input type="text" id="historyUserId" placeholder="bob">
+                </div>
+
+                <div id="historyGroupInputs" style="display:none;">
+                    <label style="font-size:13px; color:#666;">room_id</label>
+                    <input type="text" id="historyRoomId" placeholder="00000000-0000-0000-0000-000000000001">
+                </div>
+
+                <div class="flex" style="margin-top:10px;">
+                    <button class="primary" onclick="loadHistory()" id="loadHistoryBtn">📥 Загрузить</button>
+                    <button class="secondary" onclick="clearHistory()">🗑️ Очистить</button>
+                </div>
+                <div id="historyStatus" style="font-size:13px; margin-top:8px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>ℹ️ Инфо</h3>
+                <div class="info-row"><span class="info-label">Сообщений:</span><span class="info-value" id="historyCount">0</span></div>
+                <div class="info-row"><span class="info-label">Расшифровано:</span><span class="info-value" id="historyDecrypted">0</span></div>
+                <div class="info-row"><span class="info-label">Ошибок:</span><span class="info-value" id="historyErrors">0</span></div>
+                <p style="font-size:11px; color:#888; margin-top:10px;">
+                    Расшифровка использует приватные ключи из вкладки «Ключи». Сначала загрузите их.
+                </p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+            <h3>💬 Сообщения</h3>
+            <div id="historyContainer" class="history-container" style="height:60vh; overflow-y:auto;">
+                <div class="muted center" style="padding:40px;">Нет загруженных сообщений</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: ROOMS ===== -->
+    <div class="tab-panel" id="tab-rooms">
+        <div class="grid-2">
+            <div class="card">
+                <h3>➕ Создать комнату</h3>
+                <p style="font-size:12px; color:#666;">room_id генерируется автоматически (UUID v4)</p>
+
+                <label style="font-size:13px; color:#666;">Название комнаты</label>
+                <input type="text" id="newRoomName" placeholder="Рабочий чат">
+
+                <label style="font-size:13px; color:#666; display:block; margin-top:8px;">room_id (UUID)</label>
+                <input type="text" id="newRoomId" readonly style="background:#f8f9fa; color:#666;">
+
+                <div class="flex" style="margin-top:8px;">
+                    <button class="success" onclick="createRoom()">➕ Создать</button>
+                    <button class="secondary" onclick="regenerateRoomId()">🔄 Новый UUID</button>
+                </div>
+                <div id="createRoomStatus" style="font-size:13px; margin-top:8px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>🚪 Войти по ссылке</h3>
+                <p style="font-size:12px; color:#666;">Вставь invite-токен</p>
+
+                <label style="font-size:13px; color:#666;">invite token</label>
+                <input type="text" id="inviteTokenInput" placeholder="token...">
+
+                <div class="flex" style="margin-top:8px;">
+                    <button class="primary" onclick="joinByInviteToken()">🚪 Войти</button>
+                </div>
+                <div id="joinRoomStatus" style="font-size:13px; margin-top:8px;"></div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="flex" style="justify-content:space-between;">
+                    <h3>🏠 Комнаты</h3>
+                    <div class="flex" style="gap:6px;">
+                        <label style="font-size:12px; color:#666; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" id="roomsOnlyMine" checked style="width:auto; margin:0;" onchange="renderRoomsList()">
+                            только мои
+                        </label>
+                        <button class="primary" onclick="loadRoomsFromServer()">📥 Загрузить с сервера</button>
+                        <button class="secondary" onclick="renderRoomsList()">🔄 Перерисовать</button>
+                    </div>
+                </div>
+
+                <p style="font-size:12px; color:#666;">
+                    Комнаты с сервера + локально добавленные. room_id вручную можно добавить ниже.
+                </p>
+
+                <div class="flex" style="margin-bottom:10px;">
+                    <input type="text" id="manualRoomId" placeholder="room_id вручную" style="flex:2;">
+                    <button class="primary" onclick="addManualRoom()">➕ Добавить</button>
+                </div>
+
+                <div class="flex" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+                    <label style="font-size:12px; color:#666;">limit
+                        <input type="number" id="roomsLimit" value="20" min="1" max="100" style="width:70px; display:inline-block; margin-left:4px;">
+                    </label>
+                    <label style="font-size:12px; color:#666;">offset
+                        <input type="number" id="roomsOffset" value="0" min="0" style="width:70px; display:inline-block; margin-left:4px;">
+                    </label>
+                    <label style="font-size:12px; color:#666;">sort
+                        <input type="text" id="roomsSortField" value="name" style="width:100px; display:inline-block; margin-left:4px;">
+                    </label>
+                    <label style="font-size:12px; color:#666;">order
+                        <select id="roomsSortOrder" style="width:80px; margin-left:4px;">
+                            <option value="asc">asc</option>
+                            <option value="desc">desc</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div id="roomsStatus" style="font-size:12px; color:#666; margin-bottom:8px;"></div>
+
+                <div id="roomsList" class="keys-collection" style="max-height:400px;">
+                    <div style="color:#6c757d; text-align:center; padding:20px;">Нет комнат</div>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="flex" style="justify-content:space-between;">
+                    <h3>⚙️ Управление комнатой</h3>
+                    <span id="currentRoomLabel" style="font-size:13px; color:#888;">не выбрана</span>
+                </div>
+
+                <div class="flex" style="margin-bottom:10px;">
+                    <input type="text" id="manageRoomId" placeholder="room_id" style="flex:2;">
+                    <button class="primary" onclick="selectRoomForManage()">📌 Выбрать</button>
+                </div>
+
+                <div class="flex" style="flex-wrap:wrap; gap:8px;">
+                    <button class="success" onclick="generateInviteToken()">🔗 Сгенерировать invite</button>
+                    <button class="primary" onclick="loadRoomUsersForManage()">👥 Список пользователей</button>
+                    <button class="warning" onclick="loadRoomPublicKeys()">🔑 Публичные ключи</button>
+                    <button class="danger" onclick="deleteRoom()">🗑️ Удалить комнату</button>
+                </div>
+
+                <div id="manageRoomStatus" style="font-size:13px; margin-top:10px;"></div>
+
+                <div id="inviteResult" style="display:none; margin-top:12px;">
+                    <div class="info-row"><span class="info-label">Token:</span></div>
+                    <textarea id="inviteTokenResult" readonly style="width:100%; height:60px;"></textarea>
+                    <div class="info-row"><span class="info-label">Истекает:</span><span class="info-value" id="inviteExpires"></span></div>
+                    <button class="secondary" style="margin-top:6px;" onclick="copyInviteToken()">📋 Копировать</button>
+                </div>
+
+                <div id="roomUsersContainer" style="display:none; margin-top:12px;">
+                    <h4 style="font-size:14px; margin-bottom:6px;">👥 Пользователи комнаты:</h4>
+                    <div id="roomUsersContent" class="keys-collection"></div>
+                </div>
+
+                <div id="roomKeysContainer" style="display:none; margin-top:12px;">
+                    <h4 style="font-size:14px; margin-bottom:6px;">🔑 Публичные ключи:</h4>
+                    <div id="roomKeysContent" class="keys-collection"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: WS ===== -->
+    <div class="tab-panel" id="tab-ws">
+        <div class="grid-2">
+            <div class="card">
+                <h3>🔌 Подключение</h3>
+                <p style="font-size:12px; color:#666;">Откройте WebSocket к серверу. Handshake выполняется автоматически.</p>
+                <input type="text" id="wsUrl" value="ws://localhost:8000/ws/{user_id}">
+                <div class="flex">
+                    <button class="success" onclick="connectWebSocket()"    id="connectBtn">🔌 Подключиться</button>
+                    <button class="danger"  onclick="disconnectWebSocket()" id="disconnectBtn" disabled>Отключиться</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📤 Отправить пакет</h3>
+                <p style="font-size:12px; color:#666;">Произвольный JSON (payload шифруется сессионным ключом)</p>
+                <textarea id="wsPayload" rows="8">{
+  "action_type": "ping",
+  "payload": {}
+}</textarea>
+                <div class="flex" style="margin-top:5px;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+                        <input type="checkbox" id="wsEncrypt" checked style="width:auto; margin:0;">
+                        Шифровать payload
+                    </label>
+                </div>
+                <button class="primary" onclick="sendWsPacket()" style="width:100%; margin-top:8px;">📤 Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: LOG ===== -->
+    <div class="tab-panel" id="tab-log">
+        <div class="card">
+            <div class="flex" style="justify-content:space-between;">
+                <h3>📋 Лог событий</h3>
+                <button class="secondary" onclick="clearLog()">Очистить</button>
+            </div>
+            <div id="logContainer" class="log-container"></div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА ОШИБКИ ===== -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal" style="max-width:640px;">
+            <div class="modal-header">
+                <h3>❌ Ошибка</h3>
+                <button class="modal-close" onclick="closeErrorModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="errorModalTitle" style="font-size:13px; margin-bottom:8px; font-weight:bold; color:#333;"></p>
+                <pre id="errorModalDetail" style="background:#1e1e1e; color:#d4d4d4; padding:12px; border-radius:6px; font-size:11px; font-family:'Consolas', monospace; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto; border:1px solid #333; margin:0;"></pre>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <div class="actions">
+                    <button class="secondary" onclick="closeErrorModal()">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // ============================================================
+        // ГЛОБАЛЬНАЯ ОБРАБОТКА ОШИБОК
+        // ============================================================
+        function showErrorModal(title, detail) {
+            const t = document.getElementById('errorModalTitle');
+            const d = document.getElementById('errorModalDetail');
+            if (!t || !d) return;
+            t.textContent = title;
+            d.textContent = typeof detail === 'string' ? detail : JSON.stringify(detail, null, 2);
+            document.getElementById('errorModal').classList.add('active');
+        }
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.remove('active');
+        }
+
+        window.addEventListener('error', (e) => {
+            console.error('Uncaught error:', e);
+            showErrorModal('Uncaught error', e.message || String(e.error || e));
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled rejection:', e.reason);
+            showErrorModal('Unhandled rejection', (e.reason && e.reason.message) || String(e.reason));
+        });
+
+        // ============================================================
+        // СОСТОЯНИЕ
+        // ============================================================
+        document.getElementById('apiUrl').textContent = API_BASE;
+
+        let ws = null;
+        let sessionId = null;
+        let sessionKey = null;
+        let serverPublicKey = null;
+        let handshakeSent = false;
+        let handshakeDone = false;
+
+        let chatMode = 'private';
+        let roomUsers = {};
+
+        let historyMode = 'private';
+
+        let selectedFiles = [];
+
+        // комнаты
+        let localRooms = JSON.parse(localStorage.getItem('my_rooms_' + (localStorage.getItem('user_id') || '')) || '[]');
+        let serverRooms = [];
+        let selectedRoomForManage = null;
+
+        // живой чат
+        let liveMode = 'private';
+        let liveChatPeer = null;
+        let liveSelectedFiles = [];
+
+        // ============================================================
+        // АВТО-ПРОВЕРКА ТОКЕНОВ
+        // ============================================================
+        (async () => {
+            if (!TOKENS.has()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            log('🔍 Проверка токенов...');
+            const ok = await ensureAuthorized();
+            if (!ok) {
+                log('❌ Токены невалидны, редирект на логин');
+                window.location.href = 'login.html';
+                return;
+            }
+            log('✅ Токены валидны');
+            updateAuthStatus();
+            updateTokenStatus();
+            updateCryptoStatus();
+
+            try { await loadRoomsFromServer(); } catch (e) { log('⚠️ auto-load rooms failed: ' + e.message); }
+        })();
+
+        // ============================================================
+        // UI
+        // ============================================================
+        function log(text) {
+            const el = document.getElementById('logContainer');
+            if (!el) return;
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + text;
+            el.appendChild(line);
+            el.scrollTop = el.scrollHeight;
+            while (el.childElementCount > 500) el.removeChild(el.firstChild);
+        }
+        function clearLog() { document.getElementById('logContainer').innerHTML = ''; }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+        }
+
+        function updateAuthStatus() {
+            const el1 = document.getElementById('authStatus');
+            const el2 = document.getElementById('authStatus2');
+            document.getElementById('currentUser').textContent = TOKENS.userId || '—';
+            if (TOKENS.has()) {
+                el1.className = 'status-badge status-auth';
+                el1.textContent = '✅ ' + TOKENS.userId;
+                el2.textContent = '✅ ' + TOKENS.userId;
+            } else {
+                el1.className = 'status-badge status-noauth';
+                el1.textContent = '⛔ не авторизован';
+                el2.textContent = '—';
+            }
+        }
+
+        function updateCryptoStatus() {
+            const el = document.getElementById('cryptoPasswordStatus');
+            if (CRYPTO.has()) {
+                el.textContent = '✅ пароль установлен (из сессии входа)';
+                el.style.color = '#28a745';
+            } else {
+                el.textContent = '❌ нет пароля — войдите заново';
+                el.style.color = '#dc3545';
+            }
+        }
+
+        async function updateTokenStatus() {
+            const a = await checkAccessToken();
+            const r = await checkRefreshToken();
+            document.getElementById('accessStatus').textContent  = a ? '✅ валиден' : '❌ невалиден';
+            document.getElementById('refreshStatus').textContent = r ? '✅ валиден' : '❌ невалиден';
+        }
+
+        function updateWsStatus(connected) {
+            const el1 = document.getElementById('wsStatus');
+            const el2 = document.getElementById('wsStatus2');
+            const el3 = document.getElementById('liveWsStatus');
+            if (connected) {
+                el1.className = 'status-badge status-online';
+                el1.textContent = '🟢 Подключено';
+                el2.textContent = '🟢 подключено';
+                if (el3) el3.textContent = 'подключён';
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+            } else {
+                el1.className = 'status-badge status-offline';
+                el1.textContent = '⚪ Отключено';
+                el2.textContent = '⚪ отключено';
+                if (el3) el3.textContent = 'не подключён';
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('handshakeStatus').textContent = '⚪ не выполнен';
+                document.getElementById('sessionInfo').textContent = '—';
+            }
+        }
+
+        function showTokens() {
+            const d = document.getElementById('tokenDisplay');
+            if (d.style.display === 'block') { d.style.display = 'none'; return; }
+            document.getElementById('accessTokenDisplay').textContent = TOKENS.access || '—';
+            document.getElementById('refreshTokenDisplay').textContent = TOKENS.refresh || '—';
+            d.style.display = 'block';
+        }
+
+        async function logout() {
+            if (TOKENS.refresh) {
+                try {
+                    await fetch(API_BASE + '/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + TOKENS.refresh,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            refresh_token: TOKENS.refresh,
+                            token_type: 'refresh_token'
+                        })
+                    });
+                } catch (e) {}
+            }
+            if (ws) try { ws.close(); } catch (e) {}
+            TOKENS.clear();
+            CRYPTO.clear();
+            window.location.href = 'login.html';
+        }
+
+        async function apiRequest(method, path, body = null) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (TOKENS.access) headers['Authorization'] = 'Bearer ' + TOKENS.access;
+            const opts = { method, headers };
+            if (body) opts.body = JSON.stringify(body);
+            let res = await fetch(API_BASE + path, opts);
+
+            if (res.status === 401) {
+                log('⚠️ 401, пробуем refresh...');
+                const refreshed = await tryRefreshTokens();
+                if (refreshed) {
+                    headers['Authorization'] = 'Bearer ' + TOKENS.access;
+                    res = await fetch(API_BASE + path, opts);
+                }
+            }
+
+            if (!res.ok) {
+                const errText = await res.text();
+                log('❌ ' + method + ' ' + path + ' → ' + res.status + ' ' + errText);
+                showErrorModal('HTTP ' + res.status + ' — ' + method + ' ' + path, errText);
+                throw new Error(errText);
+            }
+            return res;
+        }
+
+        function getCryptoPassword() {
+            const pwd = CRYPTO.get();
+            if (!pwd) {
+                showErrorModal('crypto_password is null', 'Пароль шифрования не установлен. Войдите заново.');
+                return null;
+            }
+            return pwd;
+        }
+
+        // ============================================================
+        // КРИПТО
+        // ============================================================
+        function str2ab(str) {
+            const clean = str.replace(/[\s\n\r\t]/g, '');
+            const binary = atob(clean);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes.buffer;
+        }
+
+        function ab2str(buf) {
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            return btoa(binary);
+        }
+
+        function formatPem(base64Str, label) {
+            let pem = '-----BEGIN ' + label + '-----\n';
+            for (let i = 0; i < base64Str.length; i += 64) {
+                pem += base64Str.substring(i, i + 64) + '\n';
+            }
+            pem += '-----END ' + label + '-----';
+            return pem;
+        }
+
+        function generateKeyVersion(userId) {
+            const now = new Date();
+            const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            return userId + '_' + dateStr;
+        }
+
+        async function encryptPrivateKey(privateKeyPem, password) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+            );
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv   = crypto.getRandomValues(new Uint8Array(12));
+            const key = await crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false, ['encrypt']
+            );
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv }, key, enc.encode(privateKeyPem)
+            );
+            const result = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+            result.set(salt, 0);
+            result.set(iv, salt.length);
+            result.set(new Uint8Array(encrypted), salt.length + iv.length);
+            return btoa(String.fromCharCode(...result));
+        }
+
+        async function decryptPrivateKey(encryptedBase64, password) {
+            const clean = encryptedBase64.trim().replace(/\s/g, '');
+            const data = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+            const salt       = data.slice(0, 16);
+            const iv         = data.slice(16, 28);
+            const ciphertext = data.slice(28);
+
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+            );
+            const key = await crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false, ['decrypt']
+            );
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv }, key, ciphertext
+            );
+            return new TextDecoder().decode(decrypted);
+        }
+
+        async function importServerPublicKey(pem) {
+            const match = pem.match(/-----BEGIN PUBLIC KEY-----([\s\S]*?)-----END PUBLIC KEY-----/);
+            if (!match) throw new Error('invalid public key format');
+            const binary = str2ab(match[1]);
+            return await crypto.subtle.importKey(
+                'spki', binary, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']
+            );
+        }
+
+        async function importPublicKeyFromPem(pem) {
+            const match = pem.match(/-----BEGIN PUBLIC KEY-----([\s\S]*?)-----END PUBLIC KEY-----/);
+            if (!match) throw new Error('invalid public key format');
+            const binary = str2ab(match[1]);
+            return await crypto.subtle.importKey(
+                'spki', binary, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']
+            );
+        }
+
+        async function importPrivateKeyFromPem(pem) {
+            const match = pem.match(/-----BEGIN PRIVATE KEY-----([\s\S]*?)-----END PRIVATE KEY-----/);
+            if (!match) throw new Error('invalid private key format');
+            const binary = str2ab(match[1]);
+            return await crypto.subtle.importKey(
+                'pkcs8', binary, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']
+            );
+        }
+
+        async function encryptRsa(dataStr, publicKey) {
+            const encoder = new TextEncoder();
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'RSA-OAEP' }, publicKey, encoder.encode(dataStr)
+            );
+            return ab2str(encrypted);
+        }
+
+        async function encryptAesGcm(dataStr, key) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const enc = new TextEncoder();
+            const cipher = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv }, key, enc.encode(dataStr)
+            );
+            const combined = new Uint8Array(iv.length + cipher.byteLength);
+            combined.set(iv, 0);
+            combined.set(new Uint8Array(cipher), iv.length);
+            return btoa(String.fromCharCode(...combined));
+        }
+
+        async function decryptAesGcm(b64, key) {
+            const combined = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const ciphertext = combined.slice(12);
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv }, key, ciphertext
+            );
+            return new TextDecoder().decode(decrypted);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function formatTime(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                const pad = n => String(n).padStart(2, '0');
+                return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            } catch (e) { return iso; }
+        }
+
+        function uuidv4() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // ============================================================
+        // ФАЙЛЫ (вкладка Отправка)
+        // ============================================================
+        function refreshFileList() {
+            const list = document.getElementById('fileList');
+            if (!selectedFiles.length) { list.style.display = 'none'; list.innerHTML = ''; return; }
+            let html = '<strong>📎 Файлы:</strong> ';
+            selectedFiles.forEach((f, i) => {
+                const size = (f.size / 1024).toFixed(1);
+                html += '<span class="file-item">' + escapeHtml(f.name) + ' (' + size + 'KB) <span class="remove-file" onclick="removeFile(' + i + ')">×</span></span>';
+            });
+            list.innerHTML = html;
+            list.style.display = 'block';
+        }
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            document.getElementById('fileInput').files = dt.files;
+            refreshFileList();
+        }
+        function clearFiles() {
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            refreshFileList();
+        }
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const files = e.target.files;
+            selectedFiles = [];
+            for (let i = 0; i < files.length; i++) selectedFiles.push(files[i]);
+            refreshFileList();
+        });
+
+        // ============================================================
+        // КЛЮЧИ
+        // ============================================================
+        async function fetchMyPublicKey() {
+            const res = await apiRequest('GET', '/users/me/keys/public-key');
+            const data = await res.json();
+            const detail = data.detail || data;
+            if (!detail.version) throw new Error('server returned empty version for my public key');
+            if (!detail.public_key) throw new Error('server returned empty public_key for me');
+            return detail;
+        }
+
+        async function fetchUserPublicKey(userId) {
+            const res = await apiRequest('GET', '/users/' + userId + '/keys/public-key');
+            const data = await res.json();
+            const detail = data.detail || data;
+            if (!detail.version) throw new Error('server returned empty version for ' + userId);
+            if (!detail.public_key) throw new Error('server returned empty public_key for ' + userId);
+            return detail;
+        }
+
+        async function loadMyPublicKey() {
+            try {
+                const detail = await fetchMyPublicKey();
+                document.getElementById('publicKeyInput').value = detail.public_key;
+                document.getElementById('publicKeyInfo').textContent = 'Версия: ' + detail.version;
+                document.getElementById('pubKeyStatus').className = 'badge badge-success';
+                document.getElementById('pubKeyStatus').textContent = '✅ Загружен';
+                log('✅ Публичный ключ (version=' + detail.version + ')');
+            } catch (e) { log('❌ ' + e.message); }
+        }
+
+        async function loadAllPrivateKeys() {
+            try {
+                const res = await apiRequest('GET', '/users/me/keys/encrypt-private-key');
+                const data = await res.json();
+                const items = data.detail || data || [];
+
+                const collection = {};
+                items.forEach(it => {
+                    if (it.version && it.private_key) collection[it.version] = it.private_key;
+                });
+                sessionStorage.setItem('private_keys_' + TOKENS.userId, JSON.stringify(collection));
+
+                const container = document.getElementById('privateKeysCollection');
+                if (!items.length) {
+                    container.innerHTML = '<div style="color:#6c757d; text-align:center; padding:20px;">Нет ключей</div>';
+                    document.getElementById('privKeyStatus').className = 'badge badge-warning';
+                    document.getElementById('privKeyStatus').textContent = 'Не загружены';
+                    document.getElementById('privateKeyInfo').textContent = 'Ключей: 0';
+                    return;
+                }
+
+                container.innerHTML = items.map(it =>
+                    '<div class="key-item">' +
+                        '<div class="version">📌 ' + it.version + '</div>' +
+                        '<div class="key-preview">🔒 ' + (it.private_key || '').substring(0, 60) + '...</div>' +
+                    '</div>'
+                ).join('');
+
+                document.getElementById('privKeyStatus').className = 'badge badge-success';
+                document.getElementById('privKeyStatus').textContent = '✅ ' + items.length + ' ключей';
+                document.getElementById('privateKeyInfo').textContent = 'Ключей: ' + items.length;
+                log('✅ Загружено ' + items.length + ' приватных ключей');
+            } catch (e) { log('❌ ' + e.message); }
+        }
+
+        async function generateAndSaveKeys() {
+            const password = getCryptoPassword();
+            if (!password) return;
+
+            const btn = document.getElementById('genKeysBtn');
+            const resultDiv = document.getElementById('genResult');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Генерация...';
+            resultDiv.style.display = 'none';
+            resultDiv.className = 'test-result';
+
+            try {
+                log('🔑 Генерация RSA-2048...');
+
+                const keyPair = await crypto.subtle.generateKey(
+                    { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+                    true, ['encrypt', 'decrypt']
+                );
+
+                const publicBuffer  = await crypto.subtle.exportKey('spki',  keyPair.publicKey);
+                const privateBuffer = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+
+                const publicPem  = formatPem(ab2str(publicBuffer),  'PUBLIC KEY');
+                const privatePem = formatPem(ab2str(privateBuffer), 'PRIVATE KEY');
+
+                const version = generateKeyVersion(TOKENS.userId);
+                log('🔑 Версия ключа: ' + version);
+
+                const encryptedPrivateKey = await encryptPrivateKey(privatePem, password);
+                log('🔒 Приватный ключ зашифрован паролем');
+
+                await apiRequest('POST', '/users/me/keys/save/private-key', {
+                    private_key: encryptedPrivateKey, version: version
+                });
+                log('✅ Приватный ключ сохранён на сервере');
+
+                await apiRequest('POST', '/users/me/keys/save/public-key', {
+                    public_key: publicPem, version: version
+                });
+                log('✅ Публичный ключ сохранён на сервере');
+
+                document.getElementById('publicKeyInput').value = publicPem;
+                document.getElementById('publicKeyInfo').textContent = 'Версия: ' + version;
+                document.getElementById('pubKeyStatus').className = 'badge badge-success';
+                document.getElementById('pubKeyStatus').textContent = '✅ Сохранён';
+
+                const collection = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+                collection[version] = encryptedPrivateKey;
+                sessionStorage.setItem('private_keys_' + TOKENS.userId, JSON.stringify(collection));
+
+                await loadAllPrivateKeys();
+
+                resultDiv.className = 'test-result success';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML =
+                    '✅ Ключи успешно сгенерированы и сохранены!<br>' +
+                    '<strong>Версия:</strong> ' + version + '<br>' +
+                    '<strong>Публичный ключ:</strong> сохранён на сервере<br>' +
+                    '<strong>Приватных ключей в коллекции:</strong> ' + Object.keys(collection).length;
+
+                log('✅ Ключи сохранены (version=' + version + ')');
+
+            } catch (err) {
+                console.error(err);
+                resultDiv.className = 'test-result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '❌ ' + err.message;
+                log('❌ ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔑 Сгенерировать и сохранить';
+            }
+        }
+
+        async function showDecryptedKeys() {
+            const password = getCryptoPassword();
+            if (!password) return;
+
+            let keys = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+
+            if (!Object.keys(keys).length) {
+                await loadAllPrivateKeys();
+                keys = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+                if (!Object.keys(keys).length) {
+                    showErrorModal('no private keys', 'sessionStorage private_keys_* is empty');
+                    return;
+                }
+            }
+
+            const container = document.getElementById('decryptedKeysContainer');
+            container.style.display = 'block';
+
+            let html = '<div style="padding:5px; font-weight:bold; color:#155724;">🔓 Расшифрованные приватные ключи:</div>';
+            let successCount = 0;
+
+            for (const [version, encryptedKey] of Object.entries(keys)) {
+                try {
+                    const decrypted = await decryptPrivateKey(encryptedKey, password);
+                    html += '<div class="key-item">' +
+                                '<div class="version">📌 ' + version + '</div>' +
+                                '<div class="key-full">' + decrypted + '</div>' +
+                            '</div>';
+                    successCount++;
+                } catch (e) {
+                    html += '<div class="key-item" style="border-left: 3px solid #dc3545; padding-left: 10px;">' +
+                                '<div class="version" style="color:#dc3545;">❌ ' + version + '</div>' +
+                                '<div class="key-full" style="color:#dc3545;">' + e.message + '</div>' +
+                            '</div>';
+                }
+            }
+
+            html += '<div style="padding:5px; color:#155724;">✅ Успешно расшифровано: ' + successCount + '/' + Object.keys(keys).length + '</div>';
+            container.innerHTML = html;
+            log('🔓 Показано ' + successCount + ' расшифрованных ключей');
+        }
+
+        function clearAllPrivateKeys() {
+            if (!confirm('Очистить все приватные ключи?')) return;
+            sessionStorage.removeItem('private_keys_' + TOKENS.userId);
+            document.getElementById('privateKeysCollection').innerHTML = '<div style="color:#6c757d; text-align:center; padding:20px;">Нет ключей</div>';
+            document.getElementById('privKeyStatus').className = 'badge badge-warning';
+            document.getElementById('privKeyStatus').textContent = 'Не загружены';
+            document.getElementById('privateKeyInfo').textContent = 'Ключей: 0';
+            document.getElementById('decryptedKeysContainer').style.display = 'none';
+            log('🗑️ Приватные ключи очищены');
+        }
+
+        // ============================================================
+        // ОТПРАВКА (вкладка Chat)
+        // ============================================================
+        function setChatMode(mode) {
+            chatMode = mode;
+            document.getElementById('privateModeBtn').className = mode === 'private' ? 'private-mode active' : 'private-mode';
+            document.getElementById('groupModeBtn').className = mode === 'group' ? 'group-mode active' : 'group-mode';
+            document.getElementById('privateInputs').style.display = mode === 'private' ? 'block' : 'none';
+            document.getElementById('groupInputs').style.display  = mode === 'group' ? 'block' : 'none';
+            document.getElementById('modeStatus').textContent = 'Режим: ' + (mode === 'private' ? 'приватный' : 'групповой');
+        }
+
+        async function loadRoomUsers() {
+            const roomId = document.getElementById('roomIdInput').value.trim();
+            if (!roomId) { showErrorModal('empty room_id', 'введи room_id'); return; }
+
+            try {
+                log('📥 Загрузка участников комнаты ' + roomId + '...');
+                const res = await apiRequest('GET', '/rooms/' + roomId + '/user-public-key');
+                const data = await res.json();
+                const detail = data.detail || data;
+
+                roomUsers = {};
+                if (Array.isArray(detail)) {
+                    detail.forEach(item => { if (item.user_id) roomUsers[item.user_id] = item; });
+                } else if (typeof detail === 'object') {
+                    Object.entries(detail).forEach(([uid, val]) => {
+                        roomUsers[uid] = Array.isArray(val) ? val[val.length - 1] : val;
+                    });
+                }
+
+                const count = Object.keys(roomUsers).length;
+                const list = document.getElementById('roomUsersList');
+
+                if (!count) {
+                    list.innerHTML = '<span style="color:#dc3545;">Участники не найдены</span>';
+                    log('⚠️ пустой список участников');
+                    return;
+                }
+
+                let html = '<strong>👥 Участники (' + count + '):</strong> ';
+                for (const uid of Object.keys(roomUsers)) {
+                    html += '<span style="background:#e9ecef; padding:2px 8px; border-radius:4px; margin:2px; display:inline-block;">' + escapeHtml(uid) + '</span> ';
+                }
+                list.innerHTML = html;
+                log('✅ Загружено ' + count + ' участников');
+            } catch (e) { log('❌ ' + e.message); }
+        }
+
+        async function sendMessage() {
+            const message = document.getElementById('messageInput').value.trim();
+            const btn = document.getElementById('sendBtn');
+            const statusEl = document.getElementById('sendStatus');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Отправка...';
+            statusEl.textContent = '';
+
+            try {
+                if (chatMode === 'group') {
+                    await sendGroupMessageTo(
+                        document.getElementById('roomIdInput').value.trim(),
+                        message,
+                        document.getElementById('fileInput').files
+                    );
+                } else {
+                    await sendPrivateMessageTo(
+                        document.getElementById('targetUserId').value.trim(),
+                        message,
+                        document.getElementById('fileInput').files
+                    );
+                }
+                statusEl.textContent = '⏳ отправлено, ждём realtime...';
+                statusEl.style.color = '#666';
+                document.getElementById('messageInput').value = '';
+                clearFiles();
+            } catch (err) {
+                statusEl.textContent = '❌ ' + err.message;
+                statusEl.style.color = '#dc3545';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Отправить';
+            }
+        }
+
+        async function sendPrivateMessageTo(recipientId, message, files) {
+            if (!recipientId) throw new Error('empty recipient');
+            const payloadText = message || (files.length ? ' ' : '');
+            if (!payloadText && !files.length) throw new Error('empty message');
+
+            const recipientKeyInfo = await fetchUserPublicKey(recipientId);
+            const myKeyInfo = await fetchMyPublicKey();
+
+            const recipientPub = await importPublicKeyFromPem(recipientKeyInfo.public_key);
+            const myPub = await importPublicKeyFromPem(myKeyInfo.public_key);
+
+            const encForRecipient = await encryptRsa(payloadText, recipientPub);
+            const encForSender    = await encryptRsa(payloadText, myPub);
+            log('🔒 Зашифровано для ' + recipientId + ' (me=' + myKeyInfo.version + ', to=' + recipientKeyInfo.version + ')');
+
+            const formData = new FormData();
+            formData.append('message_id', crypto.randomUUID());
+            formData.append('recipient_id', recipientId);
+            formData.append('recipient_key_version', recipientKeyInfo.version);
+            formData.append('sender_id', TOKENS.userId);
+            formData.append('sender_key_version', myKeyInfo.version);
+            formData.append('message_for_recipient', encForRecipient);
+            formData.append('message_for_sender', encForSender);
+
+            for (const file of files) formData.append('files', file);
+
+            log('📤 POST /users/' + recipientId + '/message/send');
+            const res = await fetch(API_BASE + '/users/' + recipientId + '/message/send', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + TOKENS.access },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                log('❌ ' + res.status + ' ' + errText);
+                showErrorModal('HTTP ' + res.status, errText);
+                throw new Error(errText);
+            }
+
+            const result = await res.json();
+            log('✅ отправлено в ' + recipientId + ', ждём realtime');
+            return result;
+        }
+
+        async function sendGroupMessageTo(roomId, message, files) {
+            if (!roomId) throw new Error('empty room_id');
+            const payloadText = message || (files.length ? ' ' : '');
+            if (!payloadText && !files.length) throw new Error('empty message');
+
+            if (!Object.keys(roomUsers).length) {
+                log('📥 подгрузка участников комнаты ' + roomId);
+                const res = await apiRequest('GET', '/rooms/' + roomId + '/user-public-key');
+                const data = await res.json();
+                const detail = data.detail || data;
+                roomUsers = {};
+                if (Array.isArray(detail)) {
+                    detail.forEach(it => { if (it.user_id) roomUsers[it.user_id] = it; });
+                } else if (typeof detail === 'object') {
+                    Object.entries(detail).forEach(([uid, val]) => {
+                        roomUsers[uid] = Array.isArray(val) ? val[val.length - 1] : val;
+                    });
+                }
+            }
+
+            const groupKeyRaw = crypto.getRandomValues(new Uint8Array(32));
+            const groupKey = await crypto.subtle.importKey(
+                'raw', groupKeyRaw, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']
+            );
+            const encryptedMsg = await encryptAesGcm(payloadText, groupKey);
+            const groupKeyB64 = btoa(String.fromCharCode(...groupKeyRaw));
+
+            const myKeyInfo = await fetchMyPublicKey();
+            const keysInfo = [];
+
+            for (const [userId, keyData] of Object.entries(roomUsers)) {
+                try {
+                    let publicKeyPem, keyVersion;
+                    if (userId === TOKENS.userId) {
+                        publicKeyPem = myKeyInfo.public_key;
+                        keyVersion = myKeyInfo.version;
+                    } else {
+                        if (!keyData.version) continue;
+                        publicKeyPem = keyData.public_key;
+                        keyVersion = keyData.version;
+                    }
+                    const pub = await importPublicKeyFromPem(publicKeyPem);
+                    const encKey = await encryptRsa(groupKeyB64, pub);
+                    keysInfo.push({ user_id: userId, key_version: keyVersion, key: encKey });
+                } catch (e) { log('❌ ' + userId + ': ' + e.message); }
+            }
+
+            if (!keysInfo.length) throw new Error('no valid recipients');
+
+            const payloadObj = { message: encryptedMsg, keys: keysInfo };
+
+            const formData = new FormData();
+            formData.append('room_id', roomId);
+            formData.append('sender_id', TOKENS.userId);
+            formData.append('payload', JSON.stringify(payloadObj));
+            for (const file of files) formData.append('files', file);
+
+            log('📤 POST /rooms/' + roomId + '/message/send');
+            const res = await fetch(API_BASE + '/rooms/' + roomId + '/message/send', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + TOKENS.access },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                log('❌ ' + res.status + ' ' + errText);
+                showErrorModal('HTTP ' + res.status, errText);
+                throw new Error(errText);
+            }
+
+            const result = await res.json();
+            log('✅ отправлено в комнату ' + roomId + ', ждём realtime');
+            return result;
+        }
+
+        // ============================================================
+        // ЖИВОЙ ЧАТ
+        // ============================================================
+        function setLiveMode(mode) {
+            liveMode = mode;
+            document.getElementById('livePrivateBtn').className = mode === 'private' ? 'private-mode active' : 'private-mode';
+            document.getElementById('liveGroupBtn').className = mode === 'group' ? 'group-mode active' : 'group-mode';
+            document.getElementById('livePrivateInputs').style.display = mode === 'private' ? 'block' : 'none';
+            document.getElementById('liveGroupInputs').style.display  = mode === 'group' ? 'block' : 'none';
+        }
+
+        async function openLiveChat() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                showErrorModal('ws not open', 'сначала подключись к WebSocket');
+                return;
+            }
+            if (!handshakeDone) {
+                showErrorModal('handshake not done', 'дождись завершения handshake');
+                return;
+            }
+
+            const statusEl = document.getElementById('liveSendStatus');
+            statusEl.textContent = '';
+            statusEl.style.color = '#666';
+
+            const header = document.getElementById('liveChatHeader');
+            const container = document.getElementById('liveChatContainer');
+            container.innerHTML = '<div class="muted center" style="padding:20px;">Загрузка истории...</div>';
+
+            try {
+                let items = [];
+
+                if (liveMode === 'private') {
+                    const userId = document.getElementById('liveUserId').value.trim();
+                    if (!userId) { showErrorModal('empty user_id', 'введи user_id'); return; }
+                    liveChatPeer = userId;
+                    header.textContent = '💬 Чат с ' + userId;
+
+                    log('📥 GET /users/me/message/history/' + userId);
+                    const res = await apiRequest('GET', '/users/me/message/history/' + userId);
+                    const data = await res.json();
+                    items = data.detail || data || [];
+                } else {
+                    const roomId = document.getElementById('liveRoomId').value.trim();
+                    if (!roomId) { showErrorModal('empty room_id', 'введи room_id'); return; }
+                    liveChatPeer = roomId;
+                    header.textContent = '👥 Комната ' + roomId;
+
+                    log('📥 GET /rooms/' + roomId + '/messages/history');
+                    const res = await apiRequest('GET', '/rooms/' + roomId + '/messages/history');
+                    const data = await res.json();
+                    items = data.detail || data || [];
+                }
+
+                items.sort((a, b) => {
+                    const ta = a.time_send || a.created_at || '';
+                    const tb = b.time_send || b.created_at || '';
+                    return ta.localeCompare(tb);
+                });
+
+                container.innerHTML = '';
+                for (const item of items) {
+                    const rendered = await renderMessage(item);
+                    if (rendered.skipped) continue;
+                    container.insertAdjacentHTML('beforeend', rendered.html);
+                }
+                if (!container.innerHTML) {
+                    container.innerHTML = '<div class="muted center" style="padding:40px;">Нет сообщений</div>';
+                }
+
+                scrollChatToBottom(container);
+
+                document.getElementById('liveChatLabel').textContent = 'открыт: ' + liveChatPeer;
+                log('🟢 живой чат открыт: ' + liveChatPeer);
+
+            } catch (e) {
+                container.innerHTML = '<div class="muted center" style="padding:40px;">Ошибка: ' + escapeHtml(e.message) + '</div>';
+                log('❌ ' + e.message);
+            }
+        }
+
+        function closeLiveChat() {
+            liveChatPeer = null;
+            document.getElementById('liveChatHeader').textContent = '— чат не открыт —';
+            document.getElementById('liveChatContainer').innerHTML = '<div class="muted center" style="padding:40px;">Выбери собеседника и нажми «Открыть чат»</div>';
+            document.getElementById('liveChatLabel').textContent = '';
+            document.getElementById('liveSendStatus').textContent = '';
+            liveSelectedFiles = [];
+            document.getElementById('liveFileInput').value = '';
+            document.getElementById('liveFileList').style.display = 'none';
+            log('✖ живой чат закрыт');
+        }
+
+        function refreshLiveFileList() {
+            const list = document.getElementById('liveFileList');
+            if (!liveSelectedFiles.length) { list.style.display = 'none'; list.innerHTML = ''; return; }
+            let html = '<strong>📎 Файлы:</strong> ';
+            liveSelectedFiles.forEach((f, i) => {
+                const size = (f.size / 1024).toFixed(1);
+                html += '<span class="file-item">' + escapeHtml(f.name) + ' (' + size + 'KB) <span class="remove-file" onclick="removeLiveFile(' + i + ')">×</span></span>';
+            });
+            list.innerHTML = html;
+            list.style.display = 'block';
+        }
+        function removeLiveFile(index) {
+            liveSelectedFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            liveSelectedFiles.forEach(f => dt.items.add(f));
+            document.getElementById('liveFileInput').files = dt.files;
+            refreshLiveFileList();
+        }
+        function clearLiveFiles() {
+            liveSelectedFiles = [];
+            document.getElementById('liveFileInput').value = '';
+            refreshLiveFileList();
+        }
+        document.getElementById('liveFileInput').addEventListener('change', (e) => {
+            const files = e.target.files;
+            liveSelectedFiles = [];
+            for (let i = 0; i < files.length; i++) liveSelectedFiles.push(files[i]);
+            refreshLiveFileList();
+        });
+
+        async function sendLiveMessage() {
+            if (!liveChatPeer) { showErrorModal('no chat open', 'открой чат'); return; }
+            if (!ws || ws.readyState !== WebSocket.OPEN) { showErrorModal('ws not open', 'нет соединения'); return; }
+
+            const text = document.getElementById('liveMessageInput').value.trim();
+            const files = document.getElementById('liveFileInput').files;
+
+            if (!text && !files.length) { showErrorModal('empty message', 'введи текст или прикрепи файл'); return; }
+
+            const btn = document.getElementById('liveSendBtn');
+            const statusEl = document.getElementById('liveSendStatus');
+            btn.disabled = true;
+            btn.textContent = '⏳ Отправка...';
+            statusEl.textContent = '';
+
+            try {
+                if (liveMode === 'private') {
+                    await sendPrivateMessageTo(liveChatPeer, text, files);
+                } else {
+                    await sendGroupMessageTo(liveChatPeer, text, files);
+                }
+                statusEl.textContent = '⏳ отправлено, ждём realtime...';
+                statusEl.style.color = '#666';
+                document.getElementById('liveMessageInput').value = '';
+                clearLiveFiles();
+            } catch (e) {
+                statusEl.textContent = '❌ ' + e.message;
+                statusEl.style.color = '#dc3545';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Отправить';
+            }
+        }
+
+        async function pushToLiveChat(item, type) {
+            if (!liveChatPeer) { log('⚠️ pushToLiveChat: liveChatPeer=null'); return; }
+
+            if (type === 'private') {
+                if (liveMode !== 'private') { log('⚠️ pushToLiveChat: режим не private'); return; }
+                const peer = liveChatPeer;
+                if (item.sender_id !== peer && item.recipient_id !== peer) {
+                    log('⚠️ pushToLiveChat: peer=' + peer + ', sender=' + item.sender_id + ', recipient=' + item.recipient_id);
+                    return;
+                }
+            } else {
+                if (liveMode !== 'group') { log('⚠️ pushToLiveChat: режим не group'); return; }
+                if (item.room_id !== liveChatPeer) { log('⚠️ pushToLiveChat: room_id != liveChatPeer'); return; }
+            }
+
+            const container = document.getElementById('liveChatContainer');
+            if (!container) return;
+            if (container.querySelector('.muted')) container.innerHTML = '';
+
+            const rendered = await renderMessage(item);
+            if (rendered.skipped) { log('⚠️ pushToLiveChat: renderMessage skipped'); return; }
+
+            container.insertAdjacentHTML('beforeend', rendered.html);
+            scrollChatToBottom(container);
+            log('✅ pushToLiveChat: сообщение добавлено');
+        }
+
+        // автоскролл вниз
+        function scrollChatToBottom(container) {
+            if (!container) return;
+            // два rAF — на случай, если браузер ещё не пересчитал высоту
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    container.scrollTop = container.scrollHeight;
+                });
+            });
+        }
+
+        // ============================================================
+        // ИСТОРИЯ
+        // ============================================================
+        function setHistoryMode(mode) {
+            historyMode = mode;
+            document.getElementById('historyPrivateBtn').className = mode === 'private' ? 'private-mode active' : 'private-mode';
+            document.getElementById('historyGroupBtn').className = mode === 'group' ? 'group-mode active' : 'group-mode';
+            document.getElementById('historyPrivateInputs').style.display = mode === 'private' ? 'block' : 'none';
+            document.getElementById('historyGroupInputs').style.display  = mode === 'group' ? 'block' : 'none';
+        }
+
+        async function loadHistory() {
+            const statusEl = document.getElementById('historyStatus');
+            const btn = document.getElementById('loadHistoryBtn');
+            statusEl.textContent = '⏳ Загрузка...';
+            statusEl.style.color = '#666';
+            btn.disabled = true;
+
+            try {
+                let items = [];
+
+                if (historyMode === 'private') {
+                    const userId = document.getElementById('historyUserId').value.trim();
+                    log('📥 GET /users/me/message/history/' + userId);
+                    const res = await apiRequest('GET', '/users/me/message/history/' + userId);
+                    const data = await res.json();
+                    items = data.detail || data || [];
+                } else {
+                    const roomId = document.getElementById('historyRoomId').value.trim();
+                    log('📥 GET /rooms/' + roomId + '/messages/history');
+                    const res = await apiRequest('GET', '/rooms/' + roomId + '/messages/history');
+                    const data = await res.json();
+                    items = data.detail || data || [];
+                }
+
+                log('✅ Получено ' + items.length + ' сообщений');
+                await renderHistory(items);
+
+            } catch (e) {
+                statusEl.textContent = '❌ ' + e.message;
+                statusEl.style.color = '#dc3545';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function renderHistory(items) {
+            const container = document.getElementById('historyContainer');
+            const statusEl = document.getElementById('historyStatus');
+
+            if (!items.length) {
+                container.innerHTML = '<div class="muted center" style="padding:40px;">Нет сообщений</div>';
+                document.getElementById('historyCount').textContent = '0';
+                document.getElementById('historyDecrypted').textContent = '0';
+                document.getElementById('historyErrors').textContent = '0';
+                statusEl.textContent = '';
+                return;
+            }
+
+            items.sort((a, b) => {
+                const ta = a.time_send || a.created_at || '';
+                const tb = b.time_send || b.created_at || '';
+                return ta.localeCompare(tb);
+            });
+
+            let decryptedCount = 0;
+            let errorCount = 0;
+            let skippedCount = 0;
+
+            container.innerHTML = '';
+
+            for (const item of items) {
+                const rendered = await renderMessage(item);
+                if (rendered.skipped) { skippedCount++; continue; }
+                container.insertAdjacentHTML('beforeend', rendered.html);
+                if (rendered.decrypted) decryptedCount++;
+                if (rendered.error) errorCount++;
+            }
+
+            if (!container.innerHTML) {
+                container.innerHTML = '<div class="muted center" style="padding:40px;">Все сообщения пропущены</div>';
+            }
+
+            document.getElementById('historyCount').textContent = items.length - skippedCount;
+            document.getElementById('historyDecrypted').textContent = decryptedCount;
+            document.getElementById('historyErrors').textContent = errorCount;
+
+            statusEl.textContent = 'показано ' + (items.length - skippedCount) + ', пропущено ' + skippedCount + ', расшифровано ' + decryptedCount + ', ошибок ' + errorCount;
+            statusEl.style.color = '#28a745';
+
+            scrollChatToBottom(container);
+        }
+
+        async function renderMessage(item) {
+            const sender = item.sender_id || '?';
+            const isOwn = sender === TOKENS.userId;
+            const timeStr = formatTime(item.time_send || item.created_at);
+
+            let ciphertext = null;
+            let keyVersion = null;
+
+            if (item.message_for_sender !== undefined) {
+                if (isOwn) {
+                    ciphertext = item.message_for_sender;
+                    keyVersion = item.sender_key_version;
+                } else {
+                    ciphertext = item.message_for_recipient;
+                    keyVersion = item.recipient_key_version;
+                }
+            } else if (item.payload) {
+                const payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload;
+                ciphertext = payload.message;
+                const myKey = (payload.keys || []).find(k => k.user_id === TOKENS.userId);
+                if (myKey) keyVersion = myKey.key_version;
+                item._myEncryptedGroupKey = myKey ? myKey.key : null;
+            }
+
+            const invalidVersion = !keyVersion || keyVersion === '—' || keyVersion === 'undefined' || keyVersion === 'null';
+            if (invalidVersion) {
+                log('⚠️ пропущено сообщение ' + (item.id || '?') + ': key_version="' + keyVersion + '"');
+                return { html: '', decrypted: false, error: false, skipped: true };
+            }
+
+            let plaintext = '';
+            let error = false;
+            let decrypted = false;
+
+            if (ciphertext) {
+                try {
+                    plaintext = await decryptMessage(item, ciphertext, keyVersion, isOwn);
+                    decrypted = true;
+                } catch (e) {
+                    plaintext = e.message;
+                    error = true;
+                }
+            }
+
+            let filesHtml = '';
+            const fileIds = item.file_id || [];
+            if (fileIds.length) {
+                filesHtml = '<div class="msg-files">';
+                fileIds.forEach(fid => {
+                    filesHtml += '<span class="msg-file" onclick="downloadFile(\'' + fid + '\')">📄 ' + escapeHtml(String(fid)) + '</span>';
+                });
+                filesHtml += '</div>';
+            }
+
+            const editedMark = item.is_edited ? ' <span style="color:#ffc107;">(изм.)</span>' : '';
+
+            const html =
+                '<div class="history-msg ' + (isOwn ? 'own' : '') + ' ' + (error ? 'error' : '') + '">' +
+                    '<div class="msg-bubble">' +
+                        '<div class="msg-header">' +
+                            '<span class="msg-author">' + (isOwn ? 'Вы' : escapeHtml(sender)) + '</span>' +
+                            '<span class="msg-time">' + timeStr + editedMark + '</span>' +
+                        '</div>' +
+                        '<div class="msg-text">' + escapeHtml(plaintext) + '</div>' +
+                        filesHtml +
+                    '</div>' +
+                '</div>';
+
+            return { html, decrypted, error, skipped: false };
+        }
+
+        async function decryptMessage(item, ciphertext, keyVersion, isOwn) {
+            if (item._myEncryptedGroupKey) {
+                return await decryptGroupItem(item, ciphertext);
+            }
+
+            const password = getCryptoPassword();
+            if (!password) throw new Error('crypto_password is null');
+
+            let keys = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+            if (!Object.keys(keys).length) {
+                await loadAllPrivateKeys();
+                keys = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+            }
+
+            const encryptedPrivKey = keys[keyVersion];
+            if (!encryptedPrivKey) {
+                const available = Object.keys(keys).join(', ') || '(none)';
+                throw new Error('private key version "' + keyVersion + '" not found. available: ' + available);
+            }
+
+            const privatePem = await decryptPrivateKey(encryptedPrivKey, password);
+            const privateKey = await importPrivateKeyFromPem(privatePem);
+
+            const clean = ciphertext.trim();
+            const encBytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'RSA-OAEP' }, privateKey, encBytes
+            );
+            return new TextDecoder().decode(decrypted);
+        }
+
+        async function decryptGroupItem(item, ciphertext) {
+            const password = getCryptoPassword();
+            if (!password) throw new Error('crypto_password is null');
+
+            const payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload;
+            const myKey = (payload.keys || []).find(k => k.user_id === TOKENS.userId);
+            if (!myKey) throw new Error('no key for me in message');
+            if (!myKey.key_version) throw new Error('my key_version is empty in message');
+
+            let keys = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+            if (!Object.keys(keys).length) {
+                await loadAllPrivateKeys();
+                keys = JSON.parse(sessionStorage.getItem('private_keys_' + TOKENS.userId) || '{}');
+            }
+
+            const encryptedPrivKey = keys[myKey.key_version];
+            if (!encryptedPrivKey) {
+                const available = Object.keys(keys).join(', ') || '(none)';
+                throw new Error('private key version "' + myKey.key_version + '" not found. available: ' + available);
+            }
+
+            const privatePem = await decryptPrivateKey(encryptedPrivKey, password);
+            const privateKey = await importPrivateKeyFromPem(privatePem);
+
+            const encGroupKeyBytes = Uint8Array.from(atob(myKey.key), c => c.charCodeAt(0));
+            const groupKeyB64Bytes = await crypto.subtle.decrypt(
+                { name: 'RSA-OAEP' }, privateKey, encGroupKeyBytes
+            );
+            const groupKeyB64 = new TextDecoder().decode(groupKeyB64Bytes);
+            const groupKeyRaw = Uint8Array.from(atob(groupKeyB64), c => c.charCodeAt(0));
+
+            const groupKey = await crypto.subtle.importKey(
+                'raw', groupKeyRaw, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+            );
+
+            return await decryptAesGcm(ciphertext, groupKey);
+        }
+
+        function clearHistory() {
+            document.getElementById('historyContainer').innerHTML = '<div class="muted center" style="padding:40px;">Нет загруженных сообщений</div>';
+            document.getElementById('historyCount').textContent = '0';
+            document.getElementById('historyDecrypted').textContent = '0';
+            document.getElementById('historyErrors').textContent = '0';
+            document.getElementById('historyStatus').textContent = '';
+        }
+
+        async function downloadFile(fileId) {
+            try {
+                const res = await fetch(API_BASE + '/files/' + fileId + '/download', {
+                    headers: { 'Authorization': 'Bearer ' + TOKENS.access }
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    showErrorModal('HTTP ' + res.status + ' — GET /files/' + fileId + '/download', errText);
+                    return;
+                }
+
+                let filename = String(fileId);
+                const cd = res.headers.get('content-disposition');
+                if (cd) {
+                    const utf8Match = cd.match(/filename\*=UTF-8''([^;]+)/i);
+                    const plainMatch = cd.match(/filename="?([^";]+)"?/i);
+                    if (utf8Match) filename = decodeURIComponent(utf8Match[1]);
+                    else if (plainMatch) filename = plainMatch[1];
+                }
+
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                log('✅ Файл скачан: ' + filename);
+            } catch (e) {
+                showErrorModal('download failed', e.message);
+            }
+        }
+
+        // ============================================================
+        // КОМНАТЫ
+        // ============================================================
+        function saveLocalRooms() {
+            localStorage.setItem('my_rooms_' + TOKENS.userId, JSON.stringify(localRooms));
+        }
+        function getAllRooms() {
+            const merged = {};
+            serverRooms.forEach(r => { merged[r.id] = r; });
+            localRooms.forEach(r => {
+                if (!merged[r.id]) merged[r.id] = r;
+                else merged[r.id].name = merged[r.id].name || r.name;
+            });
+            return Object.values(merged);
+        }
+        function getFilteredRooms() {
+            const onlyMine = document.getElementById('roomsOnlyMine').checked;
+            const all = getAllRooms();
+            if (!onlyMine) return all;
+            return all.filter(r => r.owner === TOKENS.userId || !r.owner);
+        }
+        function regenerateRoomId() {
+            document.getElementById('newRoomId').value = uuidv4();
+        }
+        function renderRoomsList() {
+            const el = document.getElementById('roomsList');
+            const rooms = getFilteredRooms();
+            if (!rooms.length) {
+                el.innerHTML = '<div style="color:#6c757d; text-align:center; padding:20px;">Нет комнат</div>';
+                refreshRoomDatalist();
+                return;
+            }
+            el.innerHTML = rooms.map(r => {
+                const id = r.id || r.room_id;
+                const name = r.name || '(без названия)';
+                const owner = r.owner || '?';
+                const isMine = owner === TOKENS.userId;
+                const ownerBadge = isMine ? '<span class="badge badge-success" style="font-size:10px;">мой</span>' : '<span class="badge badge-info" style="font-size:10px;">' + escapeHtml(owner) + '</span>';
+                return (
+                    '<div class="key-item" style="display:flex; justify-content:space-between; align-items:center;">' +
+                        '<div>' +
+                            '<div class="version">🏠 ' + escapeHtml(name) + ' ' + ownerBadge + '</div>' +
+                            '<div class="key-preview" style="cursor:pointer;" onclick="copyToClipboard(\'' + id + '\')">' + id + '</div>' +
+                        '</div>' +
+                        '<div style="display:flex; gap:6px;">' +
+                            '<button class="primary" style="padding:4px 10px; font-size:11px;" onclick="useRoomForManage(\'' + id + '\')">Управлять</button>' +
+                            '<button class="secondary" style="padding:4px 10px; font-size:11px;" onclick="removeLocalRoom(\'' + id + '\')">✕</button>' +
+                        '</div>' +
+                    '</div>'
+                );
+            }).join('');
+            refreshRoomDatalist();
+        }
+        function refreshRoomDatalist() {
+            const rooms = getFilteredRooms();
+            const dl1 = document.getElementById('roomDatalist');
+            const dl2 = document.getElementById('liveRoomDatalist');
+            const html = rooms.map(r => {
+                const id = r.id || r.room_id;
+                return '<option value="' + id + '">' + escapeHtml(r.name || '') + '</option>';
+            }).join('');
+            if (dl1) dl1.innerHTML = html;
+            if (dl2) dl2.innerHTML = html;
+        }
+        function fillRoomIdFromList() {
+            const rooms = getFilteredRooms();
+            if (!rooms.length) { showErrorModal('no rooms', 'список пуст'); return; }
+            const input = document.getElementById('roomIdInput');
+            input.focus();
+            if (input.showPicker) input.showPicker();
+        }
+        function removeLocalRoom(roomId) {
+            const idx = localRooms.findIndex(r => r.id === roomId);
+            if (idx >= 0) {
+                localRooms.splice(idx, 1); saveLocalRooms(); renderRoomsList();
+            } else {
+                serverRooms = serverRooms.filter(r => r.id !== roomId); renderRoomsList();
+            }
+        }
+        function addManualRoom() {
+            const id = document.getElementById('manualRoomId').value.trim();
+            if (!id) { showErrorModal('empty room_id', 'введи room_id'); return; }
+            if (!localRooms.find(r => r.id === id)) {
+                localRooms.push({ id: id, name: '(вручную)' }); saveLocalRooms(); renderRoomsList();
+            }
+            document.getElementById('manualRoomId').value = '';
+        }
+        function useRoomForManage(roomId) {
+            document.getElementById('manageRoomId').value = roomId;
+            selectRoomForManage();
+        }
+        function selectRoomForManage() {
+            const roomId = document.getElementById('manageRoomId').value.trim();
+            if (!roomId) { showErrorModal('empty room_id', 'введи room_id'); return; }
+            selectedRoomForManage = roomId;
+            document.getElementById('currentRoomLabel').textContent = 'выбрана: ' + roomId;
+            document.getElementById('inviteResult').style.display = 'none';
+            document.getElementById('roomUsersContainer').style.display = 'none';
+            document.getElementById('roomKeysContainer').style.display = 'none';
+            document.getElementById('manageRoomStatus').textContent = '';
+        }
+        async function loadRoomsFromServer() {
+            const statusEl = document.getElementById('roomsStatus');
+            const limit = document.getElementById('roomsLimit').value || 20;
+            const offset = document.getElementById('roomsOffset').value || 0;
+            const sortField = document.getElementById('roomsSortField').value.trim();
+            const sortOrder = document.getElementById('roomsSortOrder').value;
+
+            statusEl.textContent = '⏳ загрузка...';
+            statusEl.style.color = '#666';
+
+            let url = API_BASE + '/rooms?limit=' + limit + '&offset=' + offset;
+            if (sortField) {
+                url += '&sort_field=' + encodeURIComponent(sortField);
+                url += '&sort_order=' + encodeURIComponent(sortOrder);
+            }
+
+            try {
+                log('📥 GET /rooms?limit=' + limit + '&offset=' + offset);
+                const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + TOKENS.access } });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    log('❌ GET /rooms → ' + res.status + ' ' + errText);
+                    showErrorModal('HTTP ' + res.status + ' — GET /rooms', errText);
+                    statusEl.textContent = '❌ ' + res.status;
+                    statusEl.style.color = '#dc3545';
+                    return;
+                }
+                const data = await res.json();
+                const detail = data.detail || data || [];
+                serverRooms = detail;
+                log('✅ получено комнат: ' + detail.length);
+                renderRoomsList();
+                statusEl.textContent = '✅ загружено ' + detail.length + ' комнат';
+                statusEl.style.color = '#28a745';
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message;
+                statusEl.style.color = '#dc3545';
+            }
+        }
+        async function createRoom() {
+            const name = document.getElementById('newRoomName').value.trim();
+            const roomId = document.getElementById('newRoomId').value.trim();
+            const statusEl = document.getElementById('createRoomStatus');
+            statusEl.textContent = ''; statusEl.style.color = '#666';
+            if (!name || !roomId) { showErrorModal('missing fields', 'name and room_id required'); return; }
+            try {
+                log('📤 POST /rooms?room_id=' + roomId + '&room_name=' + encodeURIComponent(name));
+                const res = await fetch(
+                    API_BASE + '/rooms?room_id=' + encodeURIComponent(roomId) + '&room_name=' + encodeURIComponent(name),
+                    { method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKENS.access } }
+                );
+                if (!res.ok) {
+                    const errText = await res.text();
+                    log('❌ POST /rooms → ' + res.status + ' ' + errText);
+                    showErrorModal('HTTP ' + res.status + ' — POST /rooms', errText);
+                    statusEl.textContent = '❌ ' + res.status; statusEl.style.color = '#dc3545';
+                    return;
+                }
+                const data = await res.json();
+                log('✅ ' + JSON.stringify(data).substring(0, 200));
+                if (!localRooms.find(r => r.id === roomId)) {
+                    localRooms.push({ id: roomId, name: name, owner: TOKENS.userId }); saveLocalRooms();
+                }
+                await loadRoomsFromServer();
+                statusEl.textContent = '✅ Комната создана'; statusEl.style.color = '#28a745';
+                document.getElementById('newRoomName').value = '';
+                regenerateRoomId();
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#dc3545';
+            }
+        }
+        async function joinByInviteToken() {
+            const token = document.getElementById('inviteTokenInput').value.trim();
+            const statusEl = document.getElementById('joinRoomStatus');
+            statusEl.textContent = ''; statusEl.style.color = '#666';
+            if (!token) { showErrorModal('empty token', 'введи invite token'); return; }
+            try {
+                log('📤 POST /rooms/invite/' + token.substring(0, 12) + '...');
+                const res = await fetch(API_BASE + '/rooms/invite/' + encodeURIComponent(token), {
+                    method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKENS.access }
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    log('❌ POST /rooms/invite → ' + res.status + ' ' + errText);
+                    showErrorModal('HTTP ' + res.status + ' — POST /rooms/invite', errText);
+                    statusEl.textContent = '❌ ' + res.status; statusEl.style.color = '#dc3545';
+                    return;
+                }
+                const data = await res.json();
+                log('✅ ' + JSON.stringify(data).substring(0, 200));
+                await loadRoomsFromServer();
+                statusEl.textContent = '✅ Вошли в комнату'; statusEl.style.color = '#28a745';
+                document.getElementById('inviteTokenInput').value = '';
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#dc3545';
+            }
+        }
+        async function generateInviteToken() {
+            if (!selectedRoomForManage) { showErrorModal('no room selected', 'выбери комнату'); return; }
+            const statusEl = document.getElementById('manageRoomStatus');
+            statusEl.textContent = '⏳ генерирую...'; statusEl.style.color = '#666';
+            try {
+                log('📤 POST /rooms/' + selectedRoomForManage + '/invite-token');
+                const res = await fetch(
+                    API_BASE + '/rooms/' + selectedRoomForManage + '/invite-token?hours=24',
+                    { method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKENS.access } }
+                );
+                if (!res.ok) {
+                    const errText = await res.text();
+                    log('❌ → ' + res.status + ' ' + errText);
+                    showErrorModal('HTTP ' + res.status + ' — POST /rooms/invite-token', errText);
+                    statusEl.textContent = '❌ ' + res.status; statusEl.style.color = '#dc3545';
+                    return;
+                }
+                const data = await res.json();
+                const detail = data.detail || {};
+                log('✅ token: ' + (detail.token || '').substring(0, 20) + '...');
+                document.getElementById('inviteTokenResult').value = detail.token || '';
+                document.getElementById('inviteExpires').textContent = detail.expires || '—';
+                document.getElementById('inviteResult').style.display = 'block';
+                statusEl.textContent = '✅ токен создан'; statusEl.style.color = '#28a745';
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#dc3545';
+            }
+        }
+        function copyInviteToken() {
+            const el = document.getElementById('inviteTokenResult');
+            el.select(); document.execCommand('copy');
+            log('📋 invite token скопирован');
+        }
+        async function loadRoomUsersForManage() {
+            if (!selectedRoomForManage) { showErrorModal('no room selected', 'выбери комнату'); return; }
+            const statusEl = document.getElementById('manageRoomStatus');
+            statusEl.textContent = '⏳ загружаю пользователей...'; statusEl.style.color = '#666';
+            try {
+                log('📥 GET /rooms/' + selectedRoomForManage + '/users');
+                const res = await apiRequest('GET', '/rooms/' + selectedRoomForManage + '/users');
+                const data = await res.json();
+                const detail = data.detail || {};
+                const users = detail.users_in_room || detail || [];
+                if (!users.length) {
+                    document.getElementById('roomUsersContent').innerHTML = '<div style="color:#6c757d; padding:10px;">Нет пользователей</div>';
+                } else {
+                    document.getElementById('roomUsersContent').innerHTML = users.map(u =>
+                        '<div class="key-item"><div class="version">👤 ' + escapeHtml(u.user_id || u) + '</div></div>'
+                    ).join('');
+                }
+                document.getElementById('roomUsersContainer').style.display = 'block';
+                statusEl.textContent = '✅ ' + users.length + ' пользователей'; statusEl.style.color = '#28a745';
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#dc3545';
+            }
+        }
+        async function loadRoomPublicKeys() {
+            if (!selectedRoomForManage) { showErrorModal('no room selected', 'выбери комнату'); return; }
+            const statusEl = document.getElementById('manageRoomStatus');
+            statusEl.textContent = '⏳ загружаю ключи...'; statusEl.style.color = '#666';
+            try {
+                log('📥 GET /rooms/' + selectedRoomForManage + '/user-public-key');
+                const res = await apiRequest('GET', '/rooms/' + selectedRoomForManage + '/user-public-key');
+                const data = await res.json();
+                const detail = data.detail || data;
+                let entries = [];
+                if (Array.isArray(detail)) entries = detail.map(d => [d.user_id, d]);
+                else if (typeof detail === 'object') entries = Object.entries(detail);
+                if (!entries.length) {
+                    document.getElementById('roomKeysContent').innerHTML = '<div style="color:#6c757d; padding:10px;">Нет ключей</div>';
+                } else {
+                    document.getElementById('roomKeysContent').innerHTML = entries.map(([uid, val]) => {
+                        const item = Array.isArray(val) ? val[val.length - 1] : val;
+                        const ver = item.version || '—';
+                        const keyPreview = (item.public_key || '').substring(0, 40);
+                        return '<div class="key-item">' +
+                                    '<div class="version">🔑 ' + escapeHtml(uid) + ' (version=' + escapeHtml(ver) + ')</div>' +
+                                    '<div class="key-preview">' + escapeHtml(keyPreview) + '...</div>' +
+                                '</div>';
+                    }).join('');
+                }
+                document.getElementById('roomKeysContainer').style.display = 'block';
+                statusEl.textContent = '✅ ' + entries.length + ' ключей'; statusEl.style.color = '#28a745';
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#dc3545';
+            }
+        }
+        async function deleteRoom() {
+            if (!selectedRoomForManage) { showErrorModal('no room selected', 'выбери комнату'); return; }
+            if (!confirm('Удалить комнату ' + selectedRoomForManage + '?')) return;
+            const statusEl = document.getElementById('manageRoomStatus');
+            statusEl.textContent = '⏳ удаляю...'; statusEl.style.color = '#666';
+            try {
+                log('📤 DELETE /rooms/' + selectedRoomForManage);
+                const res = await fetch(API_BASE + '/rooms/' + selectedRoomForManage, {
+                    method: 'DELETE', headers: { 'Authorization': 'Bearer ' + TOKENS.access }
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    log('❌ → ' + res.status + ' ' + errText);
+                    showErrorModal('HTTP ' + res.status + ' — DELETE /rooms', errText);
+                    statusEl.textContent = '❌ ' + res.status; statusEl.style.color = '#dc3545';
+                    return;
+                }
+                const data = await res.json();
+                log('✅ ' + JSON.stringify(data).substring(0, 200));
+                serverRooms = serverRooms.filter(r => r.id !== selectedRoomForManage);
+                localRooms = localRooms.filter(r => r.id !== selectedRoomForManage);
+                saveLocalRooms(); renderRoomsList();
+                selectedRoomForManage = null;
+                document.getElementById('currentRoomLabel').textContent = 'не выбрана';
+                document.getElementById('manageRoomId').value = '';
+                statusEl.textContent = '✅ комната удалена'; statusEl.style.color = '#28a745';
+            } catch (e) {
+                log('❌ ' + e.message);
+                statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#dc3545';
+            }
+        }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => log('📋 скопировано: ' + text));
+        }
+
+        // ============================================================
+        // WEBSOCKET
+        // ============================================================
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+            const url = document.getElementById('wsUrl').value.replace('{user_id}', TOKENS.userId);
+            log('🔌 Подключение к ' + url + '...');
+            handshakeSent = false; handshakeDone = false; sessionKey = null; serverPublicKey = null;
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                updateWsStatus(true);
+                document.getElementById('handshakeStatus').textContent = '⏳ ожидание ключа сервера...';
+                log('🔌 WS подключён');
+            };
+
+            ws.onmessage = async (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    log('📩 ' + (data.action_type || '?') + ': ' + JSON.stringify(data.payload || {}).substring(0, 120));
+
+                    if (data.action_type === 'get_server_public_key') {
+                        await handleServerPublicKey(data.payload); return;
+                    }
+                    if (data.action_type === 'get_session_id') {
+                        sessionId = data.payload; handshakeDone = true;
+                        document.getElementById('handshakeStatus').textContent = '✅ выполнен';
+                        document.getElementById('sessionInfo').textContent = sessionId;
+                        log('🔐 Session ID: ' + sessionId);
+                        return;
+                    }
+
+                    if (data.action_type === 'send_private_message') {
+                        log('📩 Realtime: private');
+                        if (sessionKey && typeof data.payload === 'string') {
+                            try {
+                                const json = await decryptAesGcm(data.payload, sessionKey);
+                                const payload = JSON.parse(json);
+                                log('🔓 Расшифровано: ' + JSON.stringify(payload).substring(0, 200));
+                                await appendRealtimeMessage(payload, 'private');
+                                await pushToLiveChat(payload, 'private');
+                            } catch (err) { log('❌ decrypt private: ' + err.message); }
+                        } else {
+                            log('⚠️ нет sessionKey или payload не строка');
+                        }
+                        return;
+                    }
+
+                    if (data.action_type === 'send_group_message') {
+                        log('📩 Realtime: group');
+                        try {
+                            let payload = data.payload;
+                            if (typeof payload === 'string') {
+                                try { payload = JSON.parse(payload); }
+                                catch (_) {
+                                    if (sessionKey) {
+                                        const json = await decryptAesGcm(payload, sessionKey);
+                                        payload = JSON.parse(json);
+                                    }
+                                }
+                            }
+                            await appendRealtimeMessage(payload, 'group');
+                            await pushToLiveChat(payload, 'group');
+                        } catch (err) { log('❌ decrypt group: ' + err.message); }
+                        return;
+                    }
+                } catch (err) { log('❌ onmessage: ' + err.message); }
+            };
+
+            ws.onclose = () => {
+                updateWsStatus(false);
+                handshakeSent = false; handshakeDone = false; sessionKey = null;
+                log('🔌 WS отключён');
+            };
+            ws.onerror = () => log('❌ WS error');
+        }
+
+        function disconnectWebSocket() {
+            if (ws) ws.close();
+            ws = null;
+            updateWsStatus(false);
+            handshakeSent = false; handshakeDone = false; sessionKey = null;
+            log('🔌 WS отключён вручную');
+        }
+
+        async function handleServerPublicKey(pem) {
+            if (handshakeSent) return;
+            try {
+                serverPublicKey = await importServerPublicKey(pem);
+                log('🔑 server public key imported');
+                const rawKey = crypto.getRandomValues(new Uint8Array(32));
+                const sessionKeyB64 = btoa(String.fromCharCode(...rawKey));
+                sessionKey = await crypto.subtle.importKey(
+                    'raw', rawKey, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']
+                );
+                const encryptedSessionKey = await encryptRsa(sessionKeyB64, serverPublicKey);
+                ws.send(JSON.stringify({
+                    action_type: 'get_server_public_key',
+                    payload: { user_encrypt_session_key: encryptedSessionKey }
+                }));
+                handshakeSent = true;
+                document.getElementById('handshakeStatus').textContent = '⏳ ожидание session_id...';
+                log('📤 handshake sent');
+            } catch (err) {
+                log('❌ ' + err.message);
+                showErrorModal('handshake failed', err.message);
+            }
+        }
+
+        async function sendWsPacket() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) { showErrorModal('ws not open', 'websocket is not connected'); return; }
+            const raw = document.getElementById('wsPayload').value;
+            let parsed;
+            try { parsed = JSON.parse(raw); } catch (e) { showErrorModal('invalid json', e.message); return; }
+            const actionType = parsed.action_type || 'unknown';
+            const payload = parsed.payload || {};
+            const encrypt = document.getElementById('wsEncrypt').checked;
+            try {
+                let outPayload = payload;
+                if (encrypt) {
+                    if (!sessionKey) { showErrorModal('no session key', 'wait for handshake'); return; }
+                    outPayload = await encryptAesGcm(JSON.stringify(payload), sessionKey);
+                }
+                ws.send(JSON.stringify({ action_type: actionType, payload: outPayload }));
+                log('📤 ' + actionType + ': ' + (encrypt ? '<encrypted>' : JSON.stringify(payload).substring(0, 150)));
+            } catch (err) {
+                log('❌ ' + err.message);
+                showErrorModal('send failed', err.message);
+            }
+        }
+
+        // ============================================================
+        // REALTIME APPEND (в историю)
+        // ============================================================
+        async function appendRealtimeMessage(payload, type) {
+            const container = document.getElementById('historyContainer');
+            if (!container) return;
+            if (container.querySelector('.muted')) container.innerHTML = '';
+
+            const item = Object.assign({}, payload, {
+                payload: type === 'group' ? payload.payload : undefined,
+                time_send: payload.time_send || new Date().toISOString()
+            });
+
+            const rendered = await renderMessage(item);
+            if (rendered.skipped) return;
+            container.insertAdjacentHTML('beforeend', rendered.html);
+            scrollChatToBottom(container);
+
+            const count = parseInt(document.getElementById('historyCount').textContent) || 0;
+            document.getElementById('historyCount').textContent = count + 1;
+
+            if (rendered.decrypted) {
+                const d = parseInt(document.getElementById('historyDecrypted').textContent) || 0;
+                document.getElementById('historyDecrypted').textContent = d + 1;
+            }
+            if (rendered.error) {
+                const e = parseInt(document.getElementById('historyErrors').textContent) || 0;
+                document.getElementById('historyErrors').textContent = e + 1;
+            }
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        updateWsStatus(false);
+        regenerateRoomId();
+        renderRoomsList();
+        setLiveMode('private');
+    </script>
+</body>
+</html>
